@@ -36,6 +36,7 @@
     "dotenv": "^8.2.0",
     "electrum-client": "github:janoside/electrum-client",
     "express": "^4.17.1",
+    "express-async-handler": "^1.1.4",
     "express-rate-limit": "^6.6.0",
     "express-session": "^1.17.1",
     "jstransformer-markdown-it": "^2.1.0",

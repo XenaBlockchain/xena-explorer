@@ -14,6 +14,7 @@ var sha256 = require("crypto-js/sha256");
 var hexEnc = require("crypto-js/enc-hex");
 var Decimal = require("decimal.js");
 var semver = require("semver");
+const asyncHandler = require("express-async-handler");
 
 var utils = require('./../app/utils.js');
 var coins = require("./../app/coins.js");
@@ -25,6 +26,7 @@ var rpcApi = require("./../app/api/rpcApi.js");
 const v8 = require('v8');
 
 const forceCsrf = csurf({ ignoreMethods: [] });
+
 
 router.get("/", function(req, res, next) {
 	if (req.session.host == null || req.session.host.trim() == "") {
@@ -50,9 +52,6 @@ router.get("/", function(req, res, next) {
 
 	// don't need timestamp on homepage "blocks-list", this flag disables
 	//res.locals.hideTimestampColumn = true;
-
-	var feeConfTargets = [1, 6, 144, 1008];
-	res.locals.feeConfTargets = feeConfTargets;
 
 	var promises = [];
 
@@ -147,28 +146,33 @@ router.get("/", function(req, res, next) {
 	});
 });
 
-router.get("/node-status", function(req, res, next) {
-	var required = [
-		{ target: "getblockchaininfo", promise: coreApi.getBlockchainInfo() },
-		{ target: "getnetworkinfo", promise: coreApi.getNetworkInfo() },
-		{ target: "uptimeSeconds", promise: coreApi.getUptimeSeconds() },
-		{ target: "getnettotals", promise: coreApi.getNetTotals() },
-		{ target: "gettxpoolinfo", promise: coreApi.getTxpoolInfo() },
-	];
-	Promise.allSettled(required.map(r => r.promise)).then(function(promiseResults) {
-		var rejects = promiseResults.filter(r => r.status === "rejected");
-		if (rejects.length > 0)
-			res.locals.userMessage = "Error getting node status: err=" +
-				rejects.map(r => r.reason).join('\n');
+router.get("/node-status", asyncHandler(async (req, res, next) => {
+	try {
+		var required = [
+			{ target: "getblockchaininfo", promise: coreApi.getBlockchainInfo() },
+			{ target: "getnetworkinfo", promise: coreApi.getNetworkInfo() },
+			{ target: "uptimeSeconds", promise: coreApi.getUptimeSeconds() },
+			{ target: "getnettotals", promise: coreApi.getNetTotals() },
+			{ target: "gettxpoolinfo", promise: coreApi.getTxpoolInfo() },
+		];
+		await Promise.allSettled(required.map(r => r.promise)).then(function(promiseResults) {
+			var rejects = promiseResults.filter(r => r.status === "rejected");
+			if (rejects.length > 0)
+				res.locals.userMessage = "Error getting node status: err=" +
+					rejects.map(r => r.reason).join('\n');
 
-		promiseResults.map((r, i) => [r, i])
-			.filter(r => r[0].status === "fulfilled")
-			.forEach(r => res.locals[required[r[1]].target] = r[0].value);
+			promiseResults.map((r, i) => [r, i])
+				.filter(r => r[0].status === "fulfilled")
+				.forEach(r => res.locals[required[r[1]].target] = r[0].value);
 
-		res.render("node-status");
-		utils.perfMeasure(req);
-	});
-});
+			res.render("node-status");
+			utils.perfMeasure(req);
+		});
+	} catch (err) {
+		utils.logError("32978efegdde", err);
+		res.locals.userMessage = "Error building page: " + err;
+	}
+}));
 
 router.get("/txpool-summary", function(req, res, next) {
 	res.locals.satoshiPerByteBucketMaxima = coinConfig.feeSatoshiPerByteBucketMaxima;
@@ -451,6 +455,7 @@ router.get("/decoded-tx/:txHex",function(req, res, next) {
 		res.render("decoded-hex");
 	});
 });
+
 router.post("/decoder", function(req, res, next) {
 	if (!req.body.query) {
 		req.session.userMessage = "Enter a hex-encoded transaction or script";
