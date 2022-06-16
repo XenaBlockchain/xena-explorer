@@ -1,0 +1,15 @@
+{
+    "coinbase_tags" : {
+        "mined from niftyart.cash": {
+            "name": "Niftyart",
+            "link": "http://niftyart.cash/"
+        }
+    },
+    "payout_addresses" : {
+        "nexatest:nqtsq5g5qlysklhnme0zdpqvnu3fgf8ehpdp3uh80lfu9m30": {
+            "name": "Andrew's",
+            "link": "url"
+        }
+
+    }
+}

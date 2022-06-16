@@ -1,0 +1,82 @@
+{
+    "coinbase_tags" : {
+        "Calin": {
+            "name": "Calin",
+            "link": "https://bitcoincashnode.org/members/calin-calianu"
+        },
+        "rome.toom.im": {
+            "name": "Rome",
+            "link": "https://toom.im/"
+        },
+        "troy.toom.im": {
+            "name": "Troy",
+            "link": "https://toom.im/"
+        },
+        "athens.toom.im": {
+            "name": "Athens",
+            "link": "https://toom.im/"
+        },
+        "memphis.toom.im": {
+            "name": "Memphis",
+            "link": "https://toom.im/"
+        },
+        "nucleus.toom.im": {
+            "name": "Nucleus",
+            "link": "https://toom.im/"
+        },
+        "jtoomim": {
+            "name": "jtoomim",
+            "link": "https://toom.im/"
+        },
+        "BCH Unlimited": {
+            "name": "BCH Unlimited",
+            "link": "https://bitcoinunlimited.info/"
+        },
+        "bitcoincash.network": {
+            "name": "bitcoincash.network",
+            "link": "https://bitcoincash.network/"
+        },
+        "mined_by_STK": {
+            "name": "STK",
+            "link": ""
+        },
+        "Imma firin mah lazors": {
+            "name": "Lazors",
+            "link": "https://bitcoincashnode.org/members/matricz"
+        },
+        "Imma firing mah lazors": {
+            "name": "Lazors",
+            "link": "https://bitcoincashnode.org/members/matricz"
+        },
+        "FirinLazorsOnAnRPi": {
+            "name": "Lazors",
+            "link": "https://bitcoincashnode.org/members/matricz"
+        },
+        "Justaphf-BU": {
+            "name": "Justaphf",
+            "link": "https://gitlab.com/Justaphf"
+        },
+        "Andrew_BCHUnlimited": {
+            "name": "AndrewBU",
+            "link": "https://gitlab.com/gandrewstone"
+        }
+    },
+    "payout_addresses" : {
+        "bchtest:qpmlwqrqhy0r7k5fkm0r2vd9sryyj3s9ayn5eje6ua": {
+            "name": "checksum0",
+            "link": "https://google.com/"
+        },
+        "bchtest:qqjhhc9nmklpgxphwut3dfgqfx6cax4zl5kzuzs97u": {
+            "name": "Loping.net",
+            "link": "http://tbch4.loping.net/"
+        },
+        "bchtest:qzt0hqx73cwpevp2k4w87hgwyx4zhhnyass86z5j7p": {
+            "name": "Loping.net",
+            "link": "http://sbch.loping.net/"
+        },
+        "bchtest:qz97l9e4mxl248hcwsqvmtuwm9slu58rm585nes0ra": {
+            "name": "AndrewBU",
+            "link": "https://gitlab.com/gandrewstone"
+        }
+    }
+}

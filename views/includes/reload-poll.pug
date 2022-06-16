@@ -1,0 +1,14 @@
+script.
+	$(document).ready(function() {
+		setInterval(function() {
+			if (document.hidden)
+				return;
+			$.ajax({
+				url: "!{reloadPollUrl}",
+			}).done(function(reload) {
+				if (reload) {
+					window.location.reload(false);
+				}
+			});
+		}, 20000);
+	});

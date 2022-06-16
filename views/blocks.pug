@@ -1,0 +1,44 @@
+extends layout
+
+block headContent
+	+title('Blocks')
+
+block content
+	h1.h3 Blocks
+	hr
+
+	if (blockList)
+		nav(aria-label="Page navigation")
+			ul.pagination.justify-content-center
+				
+				li.page-item(class=(blockListArgs.sort == "desc" ? "active" : false))
+					a.page-link(href=(blockListArgs.sort == "desc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=desc"))
+						span(aria-hidden="true") Newest blocks first
+
+				li.page-item(class=(blockListArgs.sort == "asc" ? "active" : false))
+					a.page-link(href=(blockListArgs.sort == "asc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=asc"))
+						span(aria-hidden="true") Oldest blocks first
+
+		div.card.shadow-sm.mb-3
+			div.card-body
+				include includes/blocks-list.pug
+
+				if (blockChainInfo.blocks > blockListArgs.limit)
+					- var pageNumber = blockListArgs.offset / blockListArgs.limit + 1;
+					- var pageCount = Math.floor(blockChainInfo.blocks / blockListArgs.limit);
+					- if (pageCount * blockListArgs.limit < blockChainInfo.blocks) {
+						- pageCount++;
+					- }
+					- var paginationUrlFunction = function(x) {
+						- return paginationBaseUrl + "?limit=" + blockListArgs.limit + "&offset=" + ((x - 1) * blockListArgs.limit + "&sort=" + blockListArgs.sort);
+					- }
+					
+					div.pt-5
+						include includes/pagination.pug
+	else
+		p No blocks found
+
+
+block endOfBody
+	- var reloadPollUrl = `/api/check-for-new-block/${blockChainInfo.blocks}`;
+		include includes/reload-poll.pug

@@ -1,0 +1,151 @@
+extends layout
+
+block headContent
+	+title('Home')
+
+block content
+	if (blockChainInfo == null)
+		div.alert.alert-warning
+			p.font-weight-bold Unable to get basic blockchain data
+			ul
+				li If you just started your node, it may still be initializing.
+				li If your node is already initialized, check your RPC connection info.
+	else
+
+		if (config.demoSite && session.hideHomepageBanner != "true")
+			div.alert.alert-primary.alert-dismissible.shadow-sm.mb-3(role="alert")
+				span
+					span.font-weight-bold #{coinConfig.siteTitlesByNetwork[activeBlockchain]}
+					span  is 
+					a(href="https://gitlab.com/nexa/nex-rpc-explorer", target="_blank") open-source
+					span  and easy to set up. It can communicate with your 
+					a(href=coinConfig.nodeUrl, target="_blank") #{coinConfig.name} Full Node
+					span  via RPC. See the 
+					a(href="https://gitlab.com/nexa/nex-rpc-explorer", target="_blank") project description
+					span  for a list of features and instructions for running.
+
+				if (global.sourcecodeProjectMetadata)
+					div.mt-2
+						a.btn.btn-primary.btn-sm.mr-3.mb-1(href="https://gitlab.com/nexa/nex-rpc-explorer")
+							i.fas.fa-star.mr-2
+							span.mr-2 Star 
+							span.badge.bg-white.text-dark #{global.sourcecodeProjectMetadata.stargazers_count}
+
+						a.btn.btn-primary.btn-sm.mr-3.mb-1(href="https://gitlab.com/nexa/nex-rpc-explorer/fork")
+							i.fas.fa-code-branch.mr-2
+							span.mr-2 Fork 
+							span.badge.bg-white.text-dark #{global.sourcecodeProjectMetadata.forks_count}
+
+						if (!crawlerBot)
+							button.btn.btn-primary.btn-sm.mb-1(type="button", data-toggle="modal", data-target="#exampleModalCenter")
+								i.fas.fa-heart.mr-2
+								span Support Project
+
+				a.close(href="/changeSetting?name=hideHomepageBanner&value=true", aria-label="Close", style="text-decoration: none;")
+					span(aria-hidden="true") &times;
+
+		if (blockChainInfo.initialblockdownload)
+			div.alert.alert-warning.shadow-sm.border.mb-3
+				div.font-weight-bold.mb-1 Initial Block Download (IBD) - In Progress...
+
+				div.mb-1 Your node is currently downloading and verifying blockchain data. Until the process is finished, some features of this tool will be unusable and/or unreliable.
+
+				span.font-weight-bold Progress: 
+				span.text-monospace #{new Decimal(blockChainInfo.verificationprogress).times(100).toDP(3)}%
+
+
+		div.row
+			- var summaryColCount = 8;
+			if (exchangeRates)
+				- summaryColCount = 9;
+
+			div.mb-3(class=`col-xxl-${summaryColCount}`)
+				div.card.shadow-sm(style="height: 100%;")
+					div.card-body.px-2.px-sm-3
+						h3.h6.mb-0 Network Summary
+						hr
+
+						include includes/index-network-summary.pug
+
+			div.mb-3(class=`col-xxl-${12 - summaryColCount}`)
+				div.card.shadow-sm(style="height: 100%;")
+					div.card-body.px-2.px-sm-3
+						div.row
+							div.col
+								h3.h6.mb-0 Tools
+
+							div.col.text-right
+								a(href="/tools") More info &raquo;
+						hr
+
+						include includes/tools-card.pug
+
+
+		div.row.mb-3
+			div.col
+				div.card.shadow-sm
+					div.card-body.px-2.px-sm-3
+						div.row
+							div.col
+								h3.h6.mb-0 Latest Blocks
+
+							div.col.text-right
+								a(href="/blocks") See more &raquo;
+
+						hr
+
+						- var blockOffset = 0;
+
+						include includes/blocks-list.pug
+
+		if (txStats)
+			div.row.mb-3
+				div.col
+					div.card.shadow-sm
+						div.card-body.px-2.px-sm-3
+							div.row
+								div.col
+									h3.h6.mb-0 Transaction Stats
+
+								div.col.text-right
+									a(href="/tx-stats") See more &raquo;
+
+							hr
+
+							div.row
+								div.col-lg-6
+									div.table-responsive
+										table.table.text-right.mb-3.mb-lg-0
+											thead
+												tr
+													th Period
+													th Transactions
+													th Transactions Per Sec
+											tbody
+												each item, index in chainTxStats
+													tr.text-monospace
+														td #{chainTxStatsLabels[index]}
+														td #{item.window_tx_count.toLocaleString()}
+														td #{new Decimal(item.txrate).toDecimalPlaces(4)}
+
+
+								div.col-lg-6
+									h4.h6.text-center Tx Rate, 24hr
+
+									script var txRateDataDay = [];
+									each item, index in txStats.txCountStats.txRates
+										script txRateDataDay.push({x:#{item.x}, y:#{item.y}});
+
+									- var graphData = {id:"graphRateDay", dataVar:"txRateDataDay", labels:txStats.txCountStats.txLabels, title:"Tx Rate, 24hr", xaxisTitle:"Block", xaxisStep:5, yaxisTitle:"Tx Per Sec"};
+									include ./includes/line-graph.pug
+
+
+block endOfBody
+	script.
+		if (typeof blockChainInfo !== 'undefined') {
+			console.log(blockChainInfo);
+			var reloadPollUrl = `/api/check-for-new-block/${blockChainInfo.blocks}`;
+		} else {
+			var reloadPollUrl = "/api/check-for-new-block/0";
+		}
+	include includes/reload-poll.pug

@@ -1,0 +1,43 @@
+div
+	- var priorityList = config.site.prioritizedToolIdsList;
+	- var indexLists2Col = utils.splitArrayIntoChunksByChunkCount(priorityList, 2);
+	- var indexLists3Col = utils.splitArrayIntoChunksByChunkCount(priorityList, 3);
+	- var indexLists4Col = utils.splitArrayIntoChunksByChunkCount(priorityList, 4);
+	- var indexLists5Col = utils.splitArrayIntoChunksByChunkCount(priorityList, 5);
+
+	// xs, sm, xxl
+	div.d-block.d-md-none.d-xxl-block(id="tools-2-col")
+		div.row
+			each indexList in indexLists2Col
+				div.col
+					ul.list-unstyled.mb-0
+						each toolsItemIndex in indexList
+							include tools-card-block.pug
+
+	// md
+	div.d-none.d-md-block.d-lg-none(id="tools-3-col")
+		div.row
+			each indexList in indexLists3Col
+				div.col
+					ul.list-unstyled.mb-0
+						each toolsItemIndex in indexList
+							include tools-card-block.pug
+
+	// lg
+	div.d-none.d-lg-block.d-xl-none(id="tools-4-col")
+		div.row
+			each indexList in indexLists4Col
+				div.col
+					ul.list-unstyled.mb-0
+						each toolsItemIndex in indexList
+							include tools-card-block.pug
+
+	// xl
+	div.d-none.d-xl-block.d-xxl-none(id="tools-5-col")
+		div.row
+			each indexList in indexLists5Col
+				div.col
+					ul.list-unstyled.mb-0
+						each toolsItemIndex in indexList
+							include tools-card-block.pug
+

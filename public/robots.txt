@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /address/
+Disallow: /rpc*
+Disallow: /tx-stats
+Disallow: /peers
+Disallow: /unconfirmed-tx
+Disallow: /block-analysis/
+Disallow: /tx/
+Disallow: /block-height/
+Disallow: /block/
+
+User-agent: AhrefsBot
+User-agent: DotBot
+User-agent: SemrushBot
+Disallow: /
