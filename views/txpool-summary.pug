@@ -14,7 +14,7 @@ block content
 					span(id="progress-text")
 				div.progress.mt-2(id="progress-bar", style="height: 7px;")
 					div.progress-bar(id="data-progress", role="progressbar", aria-valuenow="0", aria-valuemin="0" ,aria-valuemax="100")
-	
+
 
 	div(id="main-content", style="display: none;")
 		div.card.shadow-sm.mb-3
@@ -80,7 +80,7 @@ block content
 				hr
 
 				canvas.mb-3(id="txAgesBarChart", height="100")
-		
+
 
 block endOfBody
 	script(src="/js/chart.bundle.min.js", integrity="sha384-qgOtiGNaHh9fVWUnRjyHlV39rfbDcvPPkEzL1RHvsHKbuqUqM6uybNuVnghY2z4/")
@@ -96,7 +96,7 @@ block endOfBody
 
 		function loadTxpool(txidChunks, chunkSize, count) {
 			var chunkStrs = [];
-			
+
 			for (var i = 0; i < txidChunks.length; i++) {
 				var txidChunk = txidChunks[i];
 

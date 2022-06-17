@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/nexa/nex-rpc-explorer.git"
+    "url": "git+https://gitlab.com/nexa/explorer.git"
   },
   "dependencies": {
     "async": "^3.2.2",

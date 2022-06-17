@@ -65,7 +65,7 @@ module.exports = {
 	faviconUrl:"/img/logo/nex.ico",
 	siteTitle:"Nexa Explorer",
 	siteTitleHtml:"Nexa Explorer",
-	siteDescriptionHtml:"<b>NEX Explorer</b> is <a href='https://gitlab.com/nexa/nex-rpc-explorer). If you run your own Nexa Full Node, **NEX Explorer** can easily run alongside it, communicating via RPC calls. See the project [ReadMe](https://gitlab.com/nexa/nex-rpc-explorer/README.md) for a list of features and instructions for running.",
+	siteDescriptionHtml:"<b>NEX Explorer</b> is <a href='https://gitlab.com/nexa/explorer). If you run your own Nexa Full Node, **NEX Explorer** can easily run alongside it, communicating via RPC calls. See the project [ReadMe](https://gitlab.com/nexa/nex-rpc-explorer/README.md) for a list of features and instructions for running.",
 	nodeTitle:"Nexa Full Node",
 	nodeUrl:"https://nexa.org/download",
 	demoSiteUrl: "https://explorer.nexa.org",
