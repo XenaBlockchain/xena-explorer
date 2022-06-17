@@ -472,10 +472,12 @@ app.continueStartup = function() {
 
 	loadMiningPoolConfigs();
 
-	getSourcecodeProjectMetadata();
-	if (config.demoSite) {
-		setInterval(getSourcecodeProjectMetadata, 3600000);
-	}
+	// disable projects metadat a till we
+	// find a proper API for gitlab
+	//getSourcecodeProjectMetadata();
+	//if (config.demoSite) {
+	//	setInterval(getSourcecodeProjectMetadata, 3600000);
+	//}
 
 	utils.logMemoryUsage();
 	setInterval(utils.logMemoryUsage, 5000);
