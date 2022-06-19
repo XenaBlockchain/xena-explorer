@@ -17,12 +17,14 @@ block content
 					div(id="time-range-buttons")
 						h3.h6 Latest N Blocks
 						div.btn-group
-							a.btn.btn-primary.block-count-btn(href="javascript:void(0)", data-blockCount="144") 144
+							a.btn.btn-primary.block-count-btn(href="javascript:void(0)", data-blockCount="180") 180
+								small.ml-2 (~6h)
+							a.btn.btn-outline-primary.block-count-btn(href="javascript:void(0)", data-blockCount="360") 360
+								small.ml-2 (~12h)
+							a.btn.btn-outline-primary.block-count-btn(href="javascript:void(0)", data-blockCount="720") 720
 								small.ml-2 (~1d)
-							a.btn.btn-outline-primary.block-count-btn(href="javascript:void(0)", data-blockCount="432") 432
+							a.btn.btn-outline-primary.block-count-btn(href="javascript:void(0)", data-blockCount="2160") 2160
 								small.ml-2 (~3d)
-							a.btn.btn-outline-primary.block-count-btn(href="javascript:void(0)", data-blockCount="1008") 1,008
-								small.ml-2 (~7d)
 
 				div.float-left.mr-4
 					div(id="block-selections-buttons")
@@ -32,10 +34,6 @@ block content
 							button.btn.btn-outline-primary.dropdown-toggle(type="button", id="preconfigured-dropdown", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") Selections
 							div.dropdown-menu(aria-labelledby="preconfigured-dropdown")
 								a.dropdown-item(href="javascript:void(0)", data-blocks="0-199") First 200 Blocks
-								a.dropdown-item(href="javascript:void(0)", data-blocks="209900-210100") First Halving ±100
-								a.dropdown-item(href="javascript:void(0)", data-blocks="419900-420100") Second Halving ±100
-								a.dropdown-item(href="javascript:void(0)", data-blocks="478459-478659") BCH/BTC fork ±100
-								a.dropdown-item(href="javascript:void(0)", data-blocks="629900-630100") Third Halving ±100
 
 				div.float-left
 					div(id="time-range-buttons")
