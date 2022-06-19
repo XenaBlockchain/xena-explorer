@@ -12,7 +12,7 @@ div.table-responsive
 
 				th.data-header.text-right Age
 				th.data-header.text-right
-					span.border-dotted(title="Time To Mine - The time it took to mine this block after the previous block. 'Fast' blocks (mined in < 5min) are shown in green; 'slow' blocks (mined in > 15min) are shown in red.", data-toggle="tooltip") T.T.M.
+					span.border-dotted(title="Time To Mine - The time it took to mine this block after the previous block. 'Fast' blocks (mined in < 1min) are shown in green; 'slow' blocks (mined in > 3min) are shown in red.", data-toggle="tooltip") T.T.M.
 				th.data-header.text-right Miner
 				th.data-header.text-right
 					span.border-dotted(title="The number of transactions included in each block.", data-toggle="tooltip") N(tx)
@@ -25,8 +25,10 @@ div.table-responsive
 					span.border-dotted(title="The average fee (sat/B) for all block transactions.", data-toggle="tooltip") Avg Fee
 
 				th.data-header.text-right Σ Fee
-				
-				th.data-header.text-right % Full
+
+				//-
+					th.data-header.text-right % Full
+				//
 
 		tbody
 
@@ -68,9 +70,9 @@ div.table-responsive
 					td.data-cell.text-monospace.text-right
 						if (timeDiff)
 							- var colorClass = "text-muted";
-							if (timeDiff < 300000)
+							if (timeDiff < 60000)
 								- var colorClass = "text-success";
-							if (timeDiff > 900000)
+							if (timeDiff > 180000)
 								- var colorClass = "text-danger";
 
 							span.font-weight-light(class=colorClass)
@@ -107,22 +109,23 @@ div.table-responsive
 						- var currencyValue = new Decimal(block.totalFees).toDecimalPlaces(9);
 						- var currencyValueDecimals = 2;
 						include ./value-display.pug
-						
-					
-					td.data-cell.text-monospace.text-right
-						- var data = utils.formatLargeNumber(block.size, 1);
-						- var fullRatio = block.size / coinConfig.maxBlockSizeByNetwork[activeBlockchain];
-						- var full = new Decimal(100 * fullRatio).toDecimalPlaces(1);
-						- var abbr = data[1].abbreviation || "";
-						- var toolTip = `${data[0]} ${abbr}B`;
 
-							span.border-dotted(title=toolTip, data-toggle="tooltip") #{full}%
-							span  
-							if (full > 90)
-								img(src="/img/block-fullness-3.png", style="width: 18px; height: 18px;")
-							else if (full > 50)
-								img(src="/img/block-fullness-2.png", style="width: 18px; height: 18px;")
-							else if (full > 25)
-								img(src="/img/block-fullness-1.png", style="width: 18px; height: 18px;")
-							else
-								img(src="/img/block-fullness-0.png", style="width: 18px; height: 18px;")
+					//-
+						td.data-cell.text-monospace.text-right
+							- var data = utils.formatLargeNumber(block.size, 1);
+							- var fullRatio = block.size / coinConfig.maxBlockSizeByNetwork[activeBlockchain];
+							- var full = new Decimal(100 * fullRatio).toDecimalPlaces(1);
+							- var abbr = data[1].abbreviation || "";
+							- var toolTip = `${data[0]} ${abbr}B`;
+
+								span.border-dotted(title=toolTip, data-toggle="tooltip") #{full}%
+								span
+								if (full > 90)
+									img(src="/img/block-fullness-3.png", style="width: 18px; height: 18px;")
+								else if (full > 50)
+									img(src="/img/block-fullness-2.png", style="width: 18px; height: 18px;")
+								else if (full > 25)
+									img(src="/img/block-fullness-1.png", style="width: 18px; height: 18px;")
+								else
+									img(src="/img/block-fullness-0.png", style="width: 18px; height: 18px;")
+					//
