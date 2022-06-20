@@ -27,7 +27,7 @@ block content
 						div(id="time-range-buttons")
 							h3.h6 Latest N Blocks
 							div.btn-group
-								a.btn.btn-primary.block-count-btn(href="javascript:void(0)", data-blockCount="180")180
+								a.btn.btn-primary.block-count-btn(href="javascript:void(0)", data-blockCount="180") 180
 									small.ml-2 (~6h)
 								a.btn.btn-outline-primary.block-count-btn(href="javascript:void(0)", data-blockCount="360") 360
 									small.ml-2 (~12h)
@@ -114,7 +114,6 @@ block endOfBody
 
 				$("#main-content").hide();
 				$("#progress-wrapper").show();
-
 				getData(currentBlockHeight, blockCount, 15);
 			});
 
@@ -429,6 +428,6 @@ block endOfBody
 	if (rpcApiUnsupportedError == null)
 		script.
 			$(document).ready(function() {
-				getData(currentBlockHeight, 144, 15);
+				getData(currentBlockHeight, 180, 15);
 			});
 		
