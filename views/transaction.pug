@@ -28,11 +28,12 @@ block content
 		- var totalInputValue = new Decimal(0);
 		if (result.getrawtransaction.vin.length == 0)
 			- totalInputValue = totalInputValue.plus(new Decimal(coinConfig.blockRewardFunction(result.blockHeader.height, activeBlockchain)));
-		each txInput, txInputIndex in result.txInputs
-			if (txInput)
-				- var vout = txInput;
-				if (vout.value)
-					- totalInputValue = totalInputValue.plus(new Decimal(vout.value));
+		else
+			each txInput, txInputIndex in result.txInputs
+				if (txInput)
+					- var vout = txInput;
+					if (vout.value)
+						- totalInputValue = totalInputValue.plus(new Decimal(vout.value));
 
 		- var totalOutputValue = new Decimal(0);
 		each vout, voutIndex in result.getrawtransaction.vout
