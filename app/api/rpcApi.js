@@ -229,7 +229,7 @@ function getTxpoolTxDetails(txid, includeAncDec=true) {
 	var txpoolDetails = {};
 
 	promises.push(new Promise(function(resolve, reject) {
-		getRpcDataWithParams({method:"getxpoolentry", parameters:[txid]}).then(function(result) {
+		getRpcDataWithParams({method:"gettxpoolentry", parameters:[txid]}).then(function(result) {
 			txpoolDetails.entry = result;
 
 			resolve();
