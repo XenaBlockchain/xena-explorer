@@ -77,9 +77,9 @@ module.exports = {
 	difficultyAdjustmentBlockOffset: 1008,
 	difficultyAdjustmentBlockCount: 4,
 	maxSupplyByNetwork: {
-		"main": new Decimal(100), // 1 nex = 100 statoshi, which means 2 decimal digit precision
-		"test": new Decimal(100),
-		"regtest": new Decimal(100)
+		"main": new Decimal(20999999863500), // 1 nex = 100 statoshi, which means 2 decimal digit precision
+		"test": new Decimal(21000000000000),
+		"regtest": new Decimal(210000000000000)
 	},
 	targetBlockTimeSeconds: 120,
 	targetBlockTimeMinutes: 2,
