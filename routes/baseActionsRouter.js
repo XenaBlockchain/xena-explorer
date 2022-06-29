@@ -92,10 +92,10 @@ router.get("/", function(req, res, next) {
 			// promiseResults[7] (if not regtest)
 			promises.push(coreApi.getTxCountStats(targetBlocksPerDay / 4, -targetBlocksPerDay, "latest"));
 
-			var chainTxStatsIntervals = [ targetBlocksPerDay, targetBlocksPerDay * 7, targetBlocksPerDay * 30, targetBlocksPerDay * 365 ]
+			var chainTxStatsIntervals = [ targetBlocksPerDay / 24, targetBlocksPerDay, targetBlocksPerDay * 7]
 				.filter(numBlocks => numBlocks <= data.blockChainInfo.blocks);
 
-			res.locals.chainTxStatsLabels = [ "24 hours", "1 week", "1 month", "1 year" ]
+			res.locals.chainTxStatsLabels = [ "1 hours", "1 day", "1 week"]
 				.slice(0, chainTxStatsIntervals.length)
 				.concat("All time");
 
