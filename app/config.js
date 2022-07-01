@@ -76,7 +76,6 @@ module.exports = {
   showRpc: (process.env.NEXEXP_UI_SHOW_RPC.toLowerCase() === "true"),
   queryExchangeRates: (process.env.NEXEXP_NO_RATES.toLowerCase() != "true"),
   noInmemoryRpcCache: (process.env.NEXEXP_NO_INMEMORY_RPC_CACHE.toLowerCase() == "true"),
-  headerByHeightSupport: (process.env.NEXEXP_HEADER_BY_HEIGHT_SUPPORT.toLowerCase() == "true"),
   blockByHeightSupport: (process.env.NEXEXP_BLOCK_BY_HEIGHT_SUPPORT.toLowerCase() == "true"),
   hideIp: (process.env.NEXEXP_HIDE_IP.toLowerCase() == "true"),
 

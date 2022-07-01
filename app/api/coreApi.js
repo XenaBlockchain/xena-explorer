@@ -124,7 +124,7 @@ if (redisCache.active) {
 	// a single redis instance peacefully
 	var rpcHostPort = `${config.credentials.rpc.host}:${config.credentials.rpc.port}`;
 	var rpcCredKeyComponent = md5(JSON.stringify(config.credentials.rpc)).substring(0, 8);
-	
+
 	var redisCacheObj = redisCache.createCache(`${cacheKeyVersion}-${rpcCredKeyComponent}`, onRedisCacheEvent);
 
 	miscCaches.push(redisCacheObj);
@@ -182,7 +182,7 @@ function tryCacheThenRpcApi(cache, cacheKey, cacheMaxAge, rpcApiFunction, cacheC
 			cacheResult = result;
 
 			finallyFunc();
-			
+
 		}).catch(function(err) {
 			utils.logError("nds9fc2eg621tf3", err, {cacheKey:cacheKey});
 
@@ -195,7 +195,7 @@ function shouldCacheTransaction(tx) {
 	if (!tx.confirmations) {
 		return false;
 	}
-	
+
 	if (tx.confirmations < 1) {
 		return false;
 	}
@@ -544,23 +544,9 @@ function getBlockHeader(blockHash) {
 }
 
 function getBlockHeaderByHeight(blockHeight) {
-	if (!config.headerByHeightSupport) {
-		return new Promise(function(resolve, reject) {
-			rpcApi.getBlockHash(blockHeight).then(function(blockhash) {
-				getBlockHeader(blockhash).then(function(blockHeader) {
-					resolve(blockHeader);
-				}).catch(function(err) {
-					reject(err);
-				});
-			}).catch(function(err) {
-				reject(err);
-			});
-		});
-	} else {
-		return tryCacheThenRpcApi(blockCache, "getBlockHeader-" + blockHeight, ONE_YR, function() {
-			return rpcApi.getBlockHeader(blockHeight);
-		});
-	}
+	return tryCacheThenRpcApi(blockCache, "getBlockHeader-" + blockHeight, ONE_YR, function() {
+		return rpcApi.getBlockHeader(blockHeight);
+	});
 }
 
 function getBlockHeadersByHeight(blockHeights) {
@@ -1086,7 +1072,7 @@ function getRpcMethodHelp(methodName) {
 
 function logCacheSizes() {
 	var itemCounts = [ miscCache.itemCount, blockCache.itemCount, txCache.itemCount ];
-	
+
 	var stream = fs.createWriteStream("memoryUsage.csv", {flags:'a'});
 	stream.write("itemCounts: " + JSON.stringify(itemCounts) + "\n");
 	stream.end();

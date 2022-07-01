@@ -71,10 +71,10 @@ module.exports = {
 	demoSiteUrl: "https://explorer.nexa.org",
 	miningPoolsConfigUrls:["https://nexa.org"],
 	maxBlockSizeByNetwork: {
-		"main":   32000000,
+		"main":   32000000, //FIXME:" nexa as an adptive blocksize maximum
 		"test":   32000000,
 	},
-	difficultyAdjustmentBlockOffset: 1008,
+	difficultyAdjustmentBlockOffset: 5040,
 	difficultyAdjustmentBlockCount: 4,
 	maxSupplyByNetwork: {
 		"main": new Decimal(20999999863500), // 1 nex = 100 statoshi, which means 2 decimal digit precision
@@ -89,8 +89,8 @@ module.exports = {
 	defaultCurrencyUnit:currencyUnits[0],
 	feeSatoshiPerByteBucketMaxima: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, 100, 150],
 // need to be chainged once we get it lunched
-	genesisBlockHashesByNetwork:{ //FIXME: main net data need to be fixed after launch
-		"main":    "4664461cc431873fd25559286065680b729be51877afe9657ec61f344eced50e",
+	genesisBlockHashesByNetwork:{
+		"main":    "edc7144fe1ba4edd0edf35d7eea90f6cb1dba42314aa85da8207e97c5339c801",
 		"test":    "508c843a4b98fb25f57cf9ebafb245a5c16468f06519cdd467059a91e7b79d52",
 		"regtest": "d71ee431e307d12dfef31a6b21e071f1d5652c0eb6155c04e3222612c9d0b371"
 	},
@@ -100,7 +100,48 @@ module.exports = {
 		"regtest": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
 	},
 	genesisCoinbaseTransactionsByNetwork:{
-		"main": {},
+		"main": {
+			"in_txpool": false,
+			"in_orphanpool": false,
+			"txid": "9173ec5d14df32ea30470ef85770aeaab8faf046e58e8c61944b1fe422b5afcd",
+			"txidem": "17c6bd3bbf76c3225482a370f4eda4c63f894e0ed00a75b223f7b91875f292e1",
+			"size": 188,
+			"version": 0,
+			"locktime": 0,
+			"spends": 0,
+			"sends": 0,
+			"fee": 0,
+			"vin": [],
+			"vout": [
+				{
+					"value": 0,
+					"type": 0,
+					"n": 0,
+					"scriptPubKey": {
+						"asm": "0",
+						"hex": "00",
+						"type": "nonstandard"
+					},
+					"outpoint": "1bed9d880d0523818bd3f3bde7cd45733f28a96dfdea2b5c7328d6f433a97d42"
+				},
+				{
+					"value": 0,
+					"type": 0,
+					"n": 1,
+					"scriptPubKey": {
+						"asm": "OP_RETURN 0 7227 526575746572733a204a6170616e20504d204b697368696461206261636b7320424f4a20756c7472612d6561737920706f6c696379207768696c652079656e20776f7272696573206d6f756e74204254433a3734313731313a30303030303030303030303030303030303030373566346263303865316437386133616233616638323734643133333334633061633264653235333039373638",
+						"hex": "6a00023b1c4c99526575746572733a204a6170616e20504d204b697368696461206261636b7320424f4a20756c7472612d6561737920706f6c696379207768696c652079656e20776f7272696573206d6f756e74204254433a3734313731313a30303030303030303030303030303030303030373566346263303865316437386133616233616638323734643133333334633061633264653235333039373638",
+						"type": "nulldata"
+					},
+					"outpoint": "3719996d2506c0032901d593b91b6a6ee7134128b26c054eafa26b23a9718127"
+				}
+			],
+			"blockhash": "edc7144fe1ba4edd0edf35d7eea90f6cb1dba42314aa85da8207e97c5339c801",
+			"confirmations": 12837,
+			"time": 1655812800,
+			"blocktime": 1655812800,
+			"hex": "0000020000000000000000000100000000000000000000a06a00023b1c4c99526575746572733a204a6170616e20504d204b697368696461206261636b7320424f4a20756c7472612d6561737920706f6c696379207768696c652079656e20776f7272696573206d6f756e74204254433a3734313731313a3030303030303030303030303030303030303037356634626330386531643738613361623361663832373464313333333463306163326465323533303937363800000000"
+		},
 		"test": {
 			"hex": "00000200000000000000000001510000000000000000001a6a00023b1c1474686973206973206e65786120746573746e657400000000",
 			"txid": "bced5e4146c9b486b468023dd4f33b00d4e62c14a5c8cfc93f4c51f6246325dd",

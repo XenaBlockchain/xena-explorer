@@ -1550,7 +1550,7 @@ router.get("/tx-stats", function(req, res, next) {
 
 router.get("/difficulty-history", function(req, res, next) {
 	coreApi.getBlockchainInfo().then(function(getblockchaininfo) {
-		var blockHeights = Array.from({length: global.coinConfig.difficultyAdjustmentBlockOffset}, (_, i) => getblockchaininfo.blocks - i);
+		var blockHeights = Array.from({length: global.coinConfig.difficultyAdjustmentBlockOffset / global.coinConfig.difficultyAdjustmentBlockCount}, (_, i) => getblockchaininfo.blocks - (i * global.coinConfig.difficultyAdjustmentBlockCount));
 		coreApi.getBlockHeadersByHeight(blockHeights).then(function(blockHeaders) {
 			var data = blockHeaders.map((b, i) => {
 				return {
@@ -1560,7 +1560,8 @@ router.get("/difficulty-history", function(req, res, next) {
 				}
 			});
 
-			var avglen = 36;
+			// 3hrs
+			var avglen = Math.floor(90 / global.coinConfig.difficultyAdjustmentBlockCount) ;
 			var avg = data[data.length - 1].d;
 			var avgd = data[data.length - 1].dd;
 			for (var i = data.length - 1; i >= 0; i--) {
