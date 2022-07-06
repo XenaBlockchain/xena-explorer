@@ -39,7 +39,7 @@ for (var i = 0; i < electrumXServerUriStrings.length; i++) {
   }
 });
 
-["NEXEXP_NO_RATES", "NEXEXP_UI_SHOW_TOOLS_SUBHEADER", "NEXEXP_SLOW_DEVICE_MODE", "NEXEXP_HIDE_IP"].forEach(function(item) {
+["NEXEXP_NO_RATES", "NEXEXP_UI_SHOW_TOOLS_SUBHEADER", "NEXEXP_SLOW_DEVICE_MODE", "NEXEXP_HIDE_IP", "NEXEXP_SHOW_PUG_RENDER_STACKTRACE"].forEach(function(item) {
   if (process.env[item] === undefined) {
     process.env[item] = "true";
   }
@@ -69,6 +69,7 @@ module.exports = {
   coin: currentCoin,
 
   cookieSecret: cookieSecret,
+  renderPugError: (process.env.NEXEXP_SHOW_PUG_RENDER_STACKTRACE == "true"),
 
   privacyMode: (process.env.NEXEXP_PRIVACY_MODE.toLowerCase() == "true"),
   slowDeviceMode: (process.env.NEXEXP_SLOW_DEVICE_MODE.toLowerCase() == "true"),

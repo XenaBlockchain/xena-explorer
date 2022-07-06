@@ -1,16 +1,19 @@
 extends layout
 
 block content
-	h1 Error
-	hr
+	h3 Internal error
 
-	if (message)
+	if (message && config.renderPugError)
+		hr
 		pre
 			code.json.bg-light !{message}
 	else
 		p Unknown error
+		p Please report the problem on 
+			a(href="https://gitlab.com/nexa/explorer/issues") nexa eplorer issues page
 
-	if (error)
-		h2 #{error.status}
+	if (error && config.renderPugError)
+		hr
+		h3 #{error.status}
 		pre
 			code.json.bg-light #{error.stack}
