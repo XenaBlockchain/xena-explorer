@@ -451,7 +451,7 @@ router.get("/search", function(req, res, next) {
 
 router.post("/search", function(req, res, next) {
 	if (!req.body.query) {
-		req.session.userMessage = "Enter a block height, block hash, or transaction id.";
+		req.session.userMessage = "Enter a block height, block hashi, transaction id or idem.";
 
 		res.redirect("/");
 
