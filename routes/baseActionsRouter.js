@@ -881,7 +881,8 @@ function calcFee(tx, inputTxs) {
       outputAmount = outputAmount.plus(tx.vout[0].value);
     }
     const fee = inputAmount.minus(outputAmount);
-    const feeSatoshis = fee.times(100000000);
+    // in Nexa a NEX is 100 satoshis not 10^8
+    const feeSatoshis = fee.times(100);
     if (feeSatoshis.isZero()) {
       return 0;
     }
