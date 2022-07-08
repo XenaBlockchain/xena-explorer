@@ -615,7 +615,7 @@ function getSummarizedTransactionOutput(txid, voutIndex) {
 				vout.txid = txid;
 				vout.utxoTime = rawTx.time;
 
-				if (rawTx.vin.length == 1 && rawTx.vin[0].coinbase) {
+				if (rawTx.vin.length == 0) {
 					vout.coinbaseSpend = true;
 				}
 
@@ -707,7 +707,7 @@ function buildBlockAnalysisData(blockHeight, txids, txIndex, results, callback) 
 
 	getRawTransactionsWithInputs([txid]).then(function(txData) {
 		results.push(summarizeBlockAnalysisData(blockHeight, txData.transactions[0], txData.txInputsByTransaction[txid]));
-		
+
 		buildBlockAnalysisData(blockHeight, txids, txIndex + 1, results, callback);
 	});
 }
@@ -784,7 +784,7 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1) {
 	return new Promise(function(resolve, reject) {
 		getRawTransactions(txids).then(function(transactions) {
 			var maxInputsTracked = config.site.txMaxInput;
-			
+
 			if (maxInputs <= 0) {
 				maxInputsTracked = 1000000;
 
