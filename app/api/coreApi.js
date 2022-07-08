@@ -615,7 +615,7 @@ function getSummarizedTransactionOutput(txid, voutIndex) {
 				vout.txid = txid;
 				vout.utxoTime = rawTx.time;
 
-				if (rawTx.vin.length == 1 && rawTx.vin[0].coinbase) {
+				if (rawTx.vin.length == 0) {
 					vout.coinbaseSpend = true;
 				}
 
@@ -707,7 +707,7 @@ function buildBlockAnalysisData(blockHeight, txids, txIndex, results, callback) 
 
 	getRawTransactionsWithInputs([txid]).then(function(txData) {
 		results.push(summarizeBlockAnalysisData(blockHeight, txData.transactions[0], txData.txInputsByTransaction[txid]));
-		
+
 		buildBlockAnalysisData(blockHeight, txids, txIndex + 1, results, callback);
 	});
 }
@@ -772,7 +772,6 @@ function summarizeBlockAnalysisData(blockHeight, tx, inputs) {
 
 	if (txSummary.coinbase) {
 		txSummary.totalFee = new Decimal(0);
-		
 	} else {
 		txSummary.totalFee = txSummary.totalInput.minus(txSummary.totalOutput);
 	}
@@ -784,10 +783,10 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1) {
 	return new Promise(function(resolve, reject) {
 		getRawTransactions(txids).then(function(transactions) {
 			var maxInputsTracked = config.site.txMaxInput;
-			
+
+			// FIXME need top make this magic number a parameter
 			if (maxInputs <= 0) {
 				maxInputsTracked = 1000000;
-
 			} else if (maxInputs > 0) {
 				maxInputsTracked = maxInputs;
 			}
@@ -795,9 +794,16 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1) {
 			var vinIds = [];
 			for (var i = 0; i < transactions.length; i++) {
 				var transaction = transactions[i];
+				// try to determine if the query has been done by txid or txidem
+				if (transaction.txidem == txids[i]) {
+					transactions[i].searchByIdem = true;
+				} else {
+					transactions[i].searchByIdem = false;
+				}
 
 				if (transaction && transaction.vin) {
 					for (var j = 0; j < Math.min(maxInputsTracked, transaction.vin.length); j++) {
+						// FIXME: in Nexa there's no txid in vin[] vectos
 						if (transaction.vin[j].txid) {
 							vinIds.push({txid:transaction.vin[j].txid, voutIndex:transaction.vin[j].vout});
 						}
@@ -817,7 +823,6 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1) {
 				var summarizedTxOutputs = {};
 				for (var i = 0; i < promiseResults.length; i++) {
 					var summarizedTxOutput = promiseResults[i];
-
 					summarizedTxOutputs[`${summarizedTxOutput.txid}:${summarizedTxOutput.n}`] = summarizedTxOutput;
 				}
 
@@ -825,12 +830,16 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1) {
 
 				transactions.forEach(function(tx) {
 					txInputsByTransaction[tx.txid] = {};
-
+					txInputsByTransaction[tx.txidem] = {};
 					if (tx && tx.vin) {
 						for (var i = 0; i < Math.min(maxInputsTracked, tx.vin.length); i++) {
 							var summarizedTxOutput = summarizedTxOutputs[`${tx.vin[i].txid}:${tx.vin[i].vout}`];
 							if (summarizedTxOutput) {
-								txInputsByTransaction[tx.txid][i] = summarizedTxOutput;
+								if (tx.searchByIdem) {
+									txInputsByTransaction[tx.txidem][i] = summarizedTxOutput;
+								} else {
+									txInputsByTransaction[tx.txid][i] = summarizedTxOutput;
+								}
 							}
 						}
 					}
