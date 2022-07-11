@@ -6,7 +6,7 @@
 
 if (dateStr == nowDateStr)
 else
-	span #{moment.utc(new Date(parseInt(timestampHuman) * 1000)).format("M/D")}
+	span #{moment.utc(new Date(parseInt(timestampHuman) * 1000)).format("D/M")}
 	if (yearStr != nowYearStr)
 		span , #{yearStr}
 
