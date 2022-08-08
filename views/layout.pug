@@ -135,10 +135,10 @@ html(lang="en")
 
 		- var bodyBgColor = "#ffffff;";
 		if (session.uiTheme && session.uiTheme == "dark")
-			- bodyBgColor = "#0c0c0c;";
+			- bodyBgColor = "#3C2F48;";
 
 		div(class="pb-4 pt-3 pt-md-4", style=("background-color: " + bodyBgColor))
-			div(class="container px-2 px-sm-3")
+			div(class="container px-2 px-sm-3", style=("background-color: " + bodyBgColor))
 				if (pageErrors && pageErrors.length > 0)
 					include includes/page-errors-modal.pug
 
@@ -155,8 +155,8 @@ html(lang="en")
 				if (userMessage)
 					div.alert(class=(userMessageType ? `alert-${userMessageType} border-${userMessageType}` : "alert-warning border-warning"), role="alert")
 						span #{userMessage}
-							
-				
+
+
 				div(style="min-height: 500px;")
 					block content
 
