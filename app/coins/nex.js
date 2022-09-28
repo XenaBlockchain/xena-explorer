@@ -74,7 +74,7 @@ module.exports = {
 		"main":   32000000, //FIXME:" nexa as an adptive blocksize maximum
 		"test":   32000000,
 	},
-	difficultyAdjustmentBlockOffset: 5040,
+	difficultyAdjustmentBlockOffset: 20160,
 	difficultyAdjustmentBlockCount: 4,
 	maxSupplyByNetwork: {
 		"main": new Decimal(20999999863500), // 1 nex = 100 statoshi, which means 2 decimal digit precision
