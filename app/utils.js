@@ -416,6 +416,10 @@ function getMinerFromCoinbaseTx(tx) {
 				}
 			}
 
+			if ((!minerInfo.indentiedBy) && (minerInfo.possibleSignal)) {
+				minerInfo.name = minerInfo.possibleSignal;
+			}
+
 			for (var blockHash in miningPoolsConfig.block_hashes) {
 				if (blockHash == tx.blockhash) {
 					Object.assign(minerInfo, miningPoolsConfig.block_hashes[blockHash]);
