@@ -351,21 +351,21 @@ module.exports = {
 		{
 			type: "blockheight",
 			date: "2022-04-14",
-			chain: "testnet",
+			chain: "test",
 			blockHeight: 0,
 			blockHash: "508c843a4b98fb25f57cf9ebafb245a5c16468f06519cdd467059a91e7b79d52",
-			summary: "Nexa Test Genesis Block.",
+			summary: "Nexa Testnet Genesis Block.",
 			alertBodyHtml: "This is the first block in the Nexa testnet blockchain, known as the 'Genesis Block'",
 			referenceUrl: "https://nexa.org"
 		},
 		{
-			type: "placeholder",
-			date: "2022-04-14",
-			chain: "testnet",
+			type: "blockheight",
+			date: "2022-06-21",
+			chain: "main",
 			blockHeight: 0,
-			blockHash: "508c843a4b98fb25f57cf9ebafb245a5c16468f06519cdd467059a91e7b79d52",
-			summary: "Place Holding.",
-			alertBodyHtml: "or was it hodling? :P",
+			blockHash: "edc7144fe1ba4edd0edf35d7eea90f6cb1dba42314aa85da8207e97c5339c801",
+			summary: "Nexa Mainnet Genesis Block.",
+			alertBodyHtml: "This is the first block in the Nexa mainnet blockchain, known as the 'Genesis Block'",
 			referenceUrl: "https://nexa.org"
 		}
 	],
