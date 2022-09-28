@@ -8,26 +8,26 @@ var currencyUnits = [
 		multiplier:1,
 		default:true,
 		values:["", "nex", "NEX"],
-		decimalPlaces:8
-	},
-	{
-		type:"native",
-		name:"mNEX",
-		multiplier:1000,
-		values:["mnex"],
-		decimalPlaces:5
-	},
-	{
-		type:"native",
-		name:"bits",
-		multiplier:1000000,
-		values:["bits"],
 		decimalPlaces:2
 	},
 	{
 		type:"native",
+		name:"KEX",
+		multiplier:0.001,
+		values:["kex", "KEX"],
+		decimalPlaces:5
+	},
+	{
+		type:"native",
+		name:"MEX",
+		multiplier:0.000001,
+		values:["mex", "MEX"],
+		decimalPlaces:8
+	},
+	{
+		type:"native",
 		name:"sat",
-		multiplier:100000000,
+		multiplier:100,
 		values:["sat", "satoshi"],
 		decimalPlaces:0
 	},
