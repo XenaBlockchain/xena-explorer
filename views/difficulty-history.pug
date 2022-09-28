@@ -13,7 +13,7 @@ block content
 			hr
 
 			ul.mb-0
-				li Mining difficulty adjusts automatically every block. The graphs below show the difficulty time series for the last week's worth of blocks (#{coinConfig.difficultyAdjustmentBlockOffset} blocks).
+				li Mining difficulty adjusts automatically every block. The graphs below show the difficulty time series for the last 4 weeks worth of blocks (#{coinConfig.difficultyAdjustmentBlockOffset} blocks).
 				li The adjustment aims to maintain an average block-mining time of #{coinConfig.targetBlockTimeMinutes} minutes.
 				li A growth in the difficulty indicates that the average block-mining time during the last block(s) was less than #{coinConfig.targetBlockTimeMinutes} minutes (due to more miners joining the network and 'searching' / 'mining' for blocks).
 				li A drop in difficulty indicates miners have left the network so finding each block is adjusted to be 'easier' for the smaller number remaining.
