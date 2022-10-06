@@ -416,7 +416,7 @@ function getMinerFromCoinbaseTx(tx) {
 				}
 			}
 
-			if ((!minerInfo.indentiedBy) && (minerInfo.possibleSignal)) {
+			if ((!minerInfo.indentifiedBy) && (minerInfo.possibleSignal)) {
 				minerInfo.name = minerInfo.possibleSignal;
 			}
 
