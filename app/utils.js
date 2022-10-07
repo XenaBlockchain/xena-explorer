@@ -416,10 +416,6 @@ function getMinerFromCoinbaseTx(tx) {
 				}
 			}
 
-			if ((!minerInfo.indentiedBy) && (minerInfo.possibleSignal)) {
-				minerInfo.name = minerInfo.possibleSignal;
-			}
-
 			for (var blockHash in miningPoolsConfig.block_hashes) {
 				if (blockHash == tx.blockhash) {
 					Object.assign(minerInfo, miningPoolsConfig.block_hashes[blockHash]);
@@ -427,6 +423,13 @@ function getMinerFromCoinbaseTx(tx) {
 					break poolLoop;
 				}
 			}
+
+			if ((!minerInfo.indentifiedBy) && (minerInfo.possibleSignal)) {
+				minerInfo.name = minerInfo.possibleSignal;
+				minerInfo.identifiedBy = "properly formatted signal e.g. '/tag/'";
+				break poolLoop;
+			}
+
 		}
 	}
 	return minerInfo;

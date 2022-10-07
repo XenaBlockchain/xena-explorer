@@ -312,16 +312,11 @@ div.tab-content
 								div.summary-split-table-label Difficulty
 								div.summary-split-table-content.text-monospace
 									- var difficultyData = utils.formatLargeNumber(result.getblock.difficulty, 3);
-									
+
 									span(title=parseFloat(result.getblock.difficulty).toLocaleString(), data-toggle="tooltip")
 										span #{difficultyData[0]}
 										span  x 10
 										sup #{difficultyData[1].exponent}
-
-							div.row
-								div.summary-split-table-label Version
-								div.summary-split-table-content.text-monospace 0x#{result.getblock.versionHex}
-									span.text-muted  (decimal: #{result.getblock.version})
 
 								div.summary-split-table-label Nonce
 								div.summary-split-table-content.text-monospace #{result.getblock.nonce}
