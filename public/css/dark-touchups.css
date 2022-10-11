@@ -1,5 +1,58 @@
+a {
+	color: #fcd34d !important;
+}
+
+#data-progress {
+	background-color: #6F6577;
+}
+
+.border-primary {
+	border-color: #6F6577 !important;
+}
+
+.page-item.active .page-link {
+	background-color: #fcd34d !important;
+	border: #fcd34d !important;
+	color: #2e2634 !important;
+}
+
+.btn-primary {
+	background-color: #fcd34d !important;
+	border: #fcd34d !important;
+	color: #2e2634 !important;
+}
+
+.show>.btn-outline-primary.dropdown-toggle  {
+	background-color: #2e2634;
+	border: 2px solid #2e2634;
+}
+
+.btn-outline-primary {
+	color: #fcd34d !important;
+	background-color: #2e2634 ;
+	border: 2px solid rgba(154,155,156,0);
+}
+
+.btn-outline-primary:hover {
+	background-color: black ;
+	border:2px solid grey;
+}
+
+a.dropdown-item:hover {
+	background-color: #2e2634 ;
+}
+.form-control {
+	color: #fcd34d !important;
+	background-color: #2e2634 ;
+}
+
+.bg-primary {
+	background-color: #fcd34d !important;
+	color: #2e2634 !important;
+}
+
 .card-body {
-	background-color: #3C2F48 !important;
+	background-color: #3c2f48 !important;
 	border: 2px solid rgba(154,155,156,0);
 }
 
