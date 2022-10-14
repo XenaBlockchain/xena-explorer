@@ -60,9 +60,9 @@ router.get("/", function(req, res, next) {
 
 	promises.push(coreApi.getTxpoolInfo());
 	promises.push(coreApi.getMiningInfo());
-	promises.push(coreApi.getNetworkHashrate(6));
-	promises.push(coreApi.getNetworkHashrate(144));
-	promises.push(coreApi.getNetworkHashrate(1008));
+	promises.push(coreApi.getNetworkHashrate(30));
+	promises.push(coreApi.getNetworkHashrate(720));
+	promises.push(coreApi.getNetworkHashrate(5040));
 
 	coreApi.getBlockList({ limit: config.site.homepage.recentBlocksCount }).then(function(data) {
 		Object.assign(res.locals, data);
