@@ -60,9 +60,8 @@ router.get("/", function(req, res, next) {
 
 	promises.push(coreApi.getTxpoolInfo());
 	promises.push(coreApi.getMiningInfo());
-	promises.push(coreApi.getNetworkHashrate(30));
-	promises.push(coreApi.getNetworkHashrate(720));
 	promises.push(coreApi.getNetworkHashrate(5040));
+	promises.push(coreApi.getNetworkHashrate(21600));
 
 	coreApi.getBlockList({ limit: config.site.homepage.recentBlocksCount }).then(function(data) {
 		Object.assign(res.locals, data);
@@ -114,23 +113,22 @@ router.get("/", function(req, res, next) {
 		Promise.all(promises).then(function(promiseResults) {
 			res.locals.txpoolInfo = promiseResults[0];
 			res.locals.miningInfo = promiseResults[1];
-			res.locals.hashrate1h = promiseResults[2];
-			res.locals.hashrate1d = promiseResults[3];
-			res.locals.hashrate7d = promiseResults[4];
+			res.locals.hashrate7d = promiseResults[2];
+			res.locals.hashrate30d = promiseResults[3];
 
-			if (promiseResults[5]) {
-				res.locals.blockTemplate = promiseResults[5];
-				res.locals.realDifficulty = nex.GetDifficulty(parseInt(promiseResults[5].bits, 16));
+			if (promiseResults[4]) {
+				res.locals.blockTemplate = promiseResults[4];
+				res.locals.realDifficulty = nex.GetDifficulty(parseInt(promiseResults[4].bits, 16));
 			}
 
-			res.locals.difficultyPeriodFirstBlockHeader = promiseResults[6];
+			res.locals.difficultyPeriodFirstBlockHeader = promiseResults[5];
 
 			if (data.blockChainInfo.chain !== 'regtest') {
-				res.locals.txStats = promiseResults[7];
+				res.locals.txStats = promiseResults[6];
 
 				var chainTxStats = [];
 				for (var i = 0; i < res.locals.chainTxStatsLabels.length; i++) {
-					chainTxStats.push(promiseResults[i + 8]);
+					chainTxStats.push(promiseResults[i + 7]);
 				}
 
 				res.locals.chainTxStats = chainTxStats;
