@@ -58,7 +58,7 @@ function getTxpoolTxids() {
 	return getRpcDataWithParams({method:"getrawtxpool", parameters:[false]});
 }
 
-function getNetworkHashrate(blockCount=144) {
+function getNetworkHashrate(blockCount=720) {
 	return getRpcDataWithParams({method:"getnetworkhashps", parameters:[blockCount]});
 }
 
