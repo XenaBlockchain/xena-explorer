@@ -21,6 +21,22 @@ var addressApi = require("./../app/api/addressApi.js");
 
 const forceCsrf = csurf({ ignoreMethods: [] });
 
+router.get("/decode-script/:scriptHex", function(req, res, next) {
+	var hex = req.params.scriptHex;
+	coreApi.decodeScript(hex).then(function(decodedScript){
+		res.json(decodedScript);
+		utils.perfMeasure(req);
+	});
+});
+
+router.get("/decode-raw-tx/:txHex", function(req, res, next) {
+	var hex = req.params.txHex;
+	coreApi.decodeRawTransaction(hex).then(function(decodedTx) {
+		res.json(decodedTx);
+		utils.perfMeasure(req);
+	});
+});
+
 router.get("/txpoolinfo", function(req, res, next) {
 	coreApi.getTxpoolInfo().then(function(info) {
 		["bytes", "usage", "maxtxpool"].map(p => {
@@ -55,7 +71,7 @@ router.get("/blocks", function(req, res, next) {
 
 router.get("/blocks-by-height/:blockHeights", function(req, res, next) {
 	var blockHeightStrs = req.params.blockHeights.split(",");
-	
+
 	var blockHeights = [];
 	for (var i = 0; i < blockHeightStrs.length; i++) {
 		blockHeights.push(parseInt(blockHeightStrs[i]));
@@ -70,7 +86,7 @@ router.get("/blocks-by-height/:blockHeights", function(req, res, next) {
 
 router.get("/block-headers-by-height/:blockHeights", function(req, res, next) {
 	var blockHeightStrs = req.params.blockHeights.split(",");
-	
+
 	var blockHeights = [];
 	for (var i = 0; i < blockHeightStrs.length; i++) {
 		blockHeights.push(parseInt(blockHeightStrs[i]));
@@ -85,7 +101,7 @@ router.get("/block-headers-by-height/:blockHeights", function(req, res, next) {
 
 router.get("/block-stats-by-height/:blockHeights", function(req, res, next) {
 	var blockHeightStrs = req.params.blockHeights.split(",");
-	
+
 	var blockHeights = [];
 	for (var i = 0; i < blockHeightStrs.length; i++) {
 		blockHeights.push(parseInt(blockHeightStrs[i]));
