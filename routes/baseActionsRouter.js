@@ -396,9 +396,9 @@ allSettled = function(promiseList) {
 
 router.post("/decoder", function(req, res, next) {
 	if (!req.body.query) {
-	req.session.userMessage = "Enter a hex-encoded transaction or script";
-	res.redirect("/decoder");
-	return;
+		req.session.userMessage = "Enter a hex-encoded transaction or script";
+		res.redirect("/decoder");
+		return;
 	}
 
 	var promises = [];
