@@ -40,6 +40,7 @@
     "electrum-client": "github:janoside/electrum-client",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
+    "express-rate-limit": "^6.6.0",
     "jstransformer-markdown-it": "^2.1.0",
     "lru-cache": "6.0.0",
     "markdown-it": "^12.3.2",

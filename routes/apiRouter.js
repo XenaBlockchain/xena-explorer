@@ -2,6 +2,7 @@ var debug = require("debug");
 var debugLog = debug("nexexp:router");
 
 var express = require('express');
+const rateLimit = require('express-rate-limit')
 var csurf = require('csurf');
 var router = express.Router();
 var util = require('util');
@@ -20,6 +21,14 @@ var coreApi = require("./../app/api/coreApi.js");
 var addressApi = require("./../app/api/addressApi.js");
 
 const forceCsrf = csurf({ ignoreMethods: [] });
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+})
+
+router.use(limiter);
 
 router.get("/decode-script/:scriptHex", function(req, res, next) {
 	var hex = req.params.scriptHex;
