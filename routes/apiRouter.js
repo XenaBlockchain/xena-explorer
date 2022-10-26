@@ -23,17 +23,37 @@ const forceCsrf = csurf({ ignoreMethods: [] });
 
 router.get("/decode-script/:scriptHex", function(req, res, next) {
 	var hex = req.params.scriptHex;
-	coreApi.decodeScript(hex).then(function(decodedScript){
-		res.json(decodedScript);
+	var promises = [];
+
+	promises.push(coreApi.decodeScript(hex));
+
+	Promise.all(promises).then(function(results) {
+		res.json(results);
+
 		utils.perfMeasure(req);
+
+	}).catch(function(err) {
+		res.json({success:false, error:err});
+
+		next();
 	});
 });
 
 router.get("/decode-raw-tx/:txHex", function(req, res, next) {
 	var hex = req.params.txHex;
-	coreApi.decodeRawTransaction(hex).then(function(decodedTx) {
-		res.json(decodedTx);
+	var promises = [];
+
+	promises.push(coreApi.decodeRawTransaction(hex));
+
+	Promise.all(promises).then(function(results) {
+		res.json(results);
+
 		utils.perfMeasure(req);
+
+	}).catch(function(err) {
+		res.json({success:false, error:err});
+
+		next();
 	});
 });
 
