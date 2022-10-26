@@ -2,6 +2,7 @@ var debug = require("debug");
 var debugLog = debug("nexexp:router");
 
 var express = require('express');
+const rateLimit = require('express-rate-limit')
 var csurf = require('csurf');
 var router = express.Router();
 var util = require('util');
@@ -20,6 +21,50 @@ var coreApi = require("./../app/api/coreApi.js");
 var addressApi = require("./../app/api/addressApi.js");
 
 const forceCsrf = csurf({ ignoreMethods: [] });
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+})
+
+router.use(limiter);
+
+router.get("/decode-script/:scriptHex", function(req, res, next) {
+	var hex = req.params.scriptHex;
+	var promises = [];
+
+	promises.push(coreApi.decodeScript(hex));
+
+	Promise.all(promises).then(function(results) {
+		res.json(results);
+
+		utils.perfMeasure(req);
+
+	}).catch(function(err) {
+		res.json({success:false, error:err});
+
+		next();
+	});
+});
+
+router.get("/decode-raw-tx/:txHex", function(req, res, next) {
+	var hex = req.params.txHex;
+	var promises = [];
+
+	promises.push(coreApi.decodeRawTransaction(hex));
+
+	Promise.all(promises).then(function(results) {
+		res.json(results);
+
+		utils.perfMeasure(req);
+
+	}).catch(function(err) {
+		res.json({success:false, error:err});
+
+		next();
+	});
+});
 
 router.get("/txpoolinfo", function(req, res, next) {
 	coreApi.getTxpoolInfo().then(function(info) {
@@ -55,7 +100,7 @@ router.get("/blocks", function(req, res, next) {
 
 router.get("/blocks-by-height/:blockHeights", function(req, res, next) {
 	var blockHeightStrs = req.params.blockHeights.split(",");
-	
+
 	var blockHeights = [];
 	for (var i = 0; i < blockHeightStrs.length; i++) {
 		blockHeights.push(parseInt(blockHeightStrs[i]));
@@ -70,7 +115,7 @@ router.get("/blocks-by-height/:blockHeights", function(req, res, next) {
 
 router.get("/block-headers-by-height/:blockHeights", function(req, res, next) {
 	var blockHeightStrs = req.params.blockHeights.split(",");
-	
+
 	var blockHeights = [];
 	for (var i = 0; i < blockHeightStrs.length; i++) {
 		blockHeights.push(parseInt(blockHeightStrs[i]));
@@ -85,7 +130,7 @@ router.get("/block-headers-by-height/:blockHeights", function(req, res, next) {
 
 router.get("/block-stats-by-height/:blockHeights", function(req, res, next) {
 	var blockHeightStrs = req.params.blockHeights.split(",");
-	
+
 	var blockHeights = [];
 	for (var i = 0; i < blockHeightStrs.length; i++) {
 		blockHeights.push(parseInt(blockHeightStrs[i]));
