@@ -394,6 +394,49 @@ allSettled = function(promiseList) {
     });
 }
 
+router.get("/decoded-script/:scriptHex",function(req, res, next) {
+	var hex = req.params.scriptHex;
+	var promises = [];
+	res.locals.type = "script";
+
+	promises.push(coreApi.decodeScript(hex));
+
+	Promise.all(promises).then(function(results) {
+		var decodedScript = results[0];
+		res.locals.decodedDetails = utils.prettyScript(decodedScript.asm, '\t');
+		res.locals.decodedJson = decodedScript;
+		res.render("decoded-hex");
+		utils.perfMeasure(req);
+
+	}).catch(function(err) {
+		req.session.userMessage = "Error: " + err;
+		res.locals.userMessage = "Decoded failed";
+		res.locals.type = "unknown";
+		res.render("decoded-hex");
+	});
+});
+
+router.get("/decoded-tx/:txHex",function(req, res, next) {
+	var hex = req.params.txHex;
+	var promises = [];
+	res.locals.type = "tx";
+
+	promises.push(coreApi.decodeRawTransaction(hex));
+
+	Promise.all(promises).then(function(results) {
+		var decodedTx = results[0];
+		res.locals.tx = decodedTx;
+		res.locals.decodedJson = decodedTx;
+		res.render("decoded-hex");
+		utils.perfMeasure(req);
+
+	}).catch(function(err) {
+		req.session.userMessage = "Error: " + err;
+		res.locals.userMessage = "Decoded failed";
+		res.locals.type = "unknown";
+		res.render("decoded-hex");
+	});
+});
 router.post("/decoder", function(req, res, next) {
 	if (!req.body.query) {
 		req.session.userMessage = "Enter a hex-encoded transaction or script";
