@@ -33,19 +33,11 @@ var currencyUnits = [
 	},
 	{
 		type:"exchanged",
-		name:"USD",
-		multiplier:"usd",
-		values:["usd"],
-		decimalPlaces:2,
+		name:"USDT",
+		multiplier:"usdt",
+		values:["usdt"],
+		decimalPlaces:8,
 		symbol:"$"
-	},
-	{
-		type:"exchanged",
-		name:"EUR",
-		multiplier:"eur",
-		values:["eur"],
-		decimalPlaces:2,
-		symbol:"€"
 	},
 	{
 		type:"exchanged",
@@ -84,7 +76,7 @@ module.exports = {
 	targetBlockTimeSeconds: 120,
 	targetBlockTimeMinutes: 2,
 	currencyUnits:currencyUnits,
-	currencyUnitsByName:{"NEX":currencyUnits[0], "KEX":currencyUnits[1], "MEX":currencyUnits[2], "sat":currencyUnits[3]},
+	currencyUnitsByName:{"NEX":currencyUnits[0], "KEX":currencyUnits[1], "MEX":currencyUnits[2], "sat":currencyUnits[3], "USDT":currencyUnits[4]},
 	baseCurrencyUnit:currencyUnits[3],
 	defaultCurrencyUnit:currencyUnits[0],
 	feeSatoshiPerByteBucketMaxima: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50, 75, 100, 150],
@@ -370,27 +362,12 @@ module.exports = {
 		}
 	],
 	exchangeRateData:{
-		// see https://www.kraken.com/features/api#get-ticker-info for doc on that API
-		// endoint. What we need in "jq" syntax is:
-		// jq ."result"."NEXUSD"."c"[0] and jq ."result"."NEXEUR"."c"[0]
-		// the above will return back the last trade closed at the time the url
-		// has been fetched
-		jsonUrl:"https://api.kraken.com/0/public/Ticker?pair=NEXUSD,NEXEUR",
+		jsonUrl:"https://www.exbitron.com/api/v2/peatio/public/markets/nexausdt/tickers",
 		responseBodySelectorFunction:function(responseBody) {
-			//console.log("Exchange Rate Response: " + JSON.stringify(responseBody));
 
-			var exchangedCurrencies = ["NEXUSD", "NEXEUR"];
-
-			if (responseBody.result) {
+			if (responseBody.ticker) {
 				var exchangeRates = {};
-
-				for (var i = 0; i < exchangedCurrencies.length; i++) {
-					if (responseBody.result[exchangedCurrencies[i]]) {
-						var key = exchangedCurrencies[i].replace("NEX", "");
-						exchangeRates[key.toLowerCase()] = responseBody.result[exchangedCurrencies[i]]["c"][0];
-					}
-				}
-
+				exchangeRates["usdt"] = responseBody.ticker["last"];
 				return exchangeRates;
 			}
 
