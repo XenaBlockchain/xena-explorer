@@ -186,12 +186,12 @@ div.row.index-summary
 									span Market Cap
 								td.text-right.text-monospace
 									if (utxoSetSummary)
-										- var activeCurrency = global.currencyFormatType.length > 0 ? global.currencyFormatType : "usd";
+										- var activeCurrency = global.currencyFormatType.length > 0 ? global.currencyFormatType : "usdt";
 										if (activeCurrency == "eur")
 											- var xxx = utils.formatLargeNumber(parseFloat(utxoSetSummary.total_amount) * exchangeRates[activeCurrency], 1);
 											span €
 										else
-											- var xxx = utils.formatLargeNumber(parseFloat(utxoSetSummary.total_amount) * exchangeRates["usd"], 1);
+											- var xxx = utils.formatLargeNumber(parseFloat(utxoSetSummary.total_amount) * exchangeRates["usdt"], 1);
 											span $
 
 										span #{xxx[0]}
