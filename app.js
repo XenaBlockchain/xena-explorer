@@ -253,7 +253,7 @@ function onRpcConnectionVerified(getnetworkinfo, getblockchaininfo) {
 	// load historical/fun items for this chain
 	loadHistoricalDataForChain(global.activeBlockchain);
 
-	if (global.activeBlockchain == "main") {
+	if (global.activeBlockchain == "nexa") {
 		if (global.exchangeRates == null) {
 			utils.refreshExchangeRates();
 		}
