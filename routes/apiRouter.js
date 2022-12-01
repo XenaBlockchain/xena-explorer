@@ -30,6 +30,14 @@ const limiter = rateLimit({
 
 router.use(limiter);
 
+
+router.get("/utxo-summary", function(req, res, next) {
+	coreApi.getUtxoSetSummary().then(function(info) {
+		res.json(info);
+		utils.perfMeasure(req);
+	});
+});
+
 router.get("/decode-script/:scriptHex", function(req, res, next) {
 	var hex = req.params.scriptHex;
 	var promises = [];
