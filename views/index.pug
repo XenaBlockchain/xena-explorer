@@ -141,11 +141,5 @@ block content
 
 
 block endOfBody
-	script.
-		if (typeof blockChainInfo !== 'undefined') {
-			console.log(blockChainInfo);
-			var reloadPollUrl = `/api/check-for-new-block/${blockChainInfo.blocks}`;
-		} else {
-			var reloadPollUrl = "/api/check-for-new-block/0";
-		}
+	- var reloadPollUrl = `/api/check-for-new-block/${blockChainInfo.blocks}`;
 	include includes/reload-poll.pug
