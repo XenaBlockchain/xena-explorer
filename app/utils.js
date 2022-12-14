@@ -471,6 +471,27 @@ function getTxTotalInputOutputValues(tx, txInputs, blockHeight) {
 	return {input:totalInputValue, output:totalOutputValue};
 }
 
+// returns the amount of minted satoshis for a given height
+function getCoinsMinted(nHeight = -1) {
+	let totalMinted = 0;
+	const nSubsidyHalvingInterval = 1050000;
+	const halvings = Math.floor(nHeight / nSubsidyHalvingInterval);
+	let nSubsidy = 10 * 1000000 * 100; // 10 mil nex in satoshis
+	let trackedHeight = nHeight;
+
+	for (let i = 0; i <= halvings; ++i) {
+		if (trackedHeight >= nSubsidyHalvingInterval) {
+			totalMinted += nSubsidy * nSubsidyHalvingInterval;
+			trackedHeight -= nSubsidyHalvingInterval;
+		} else {
+			totalMinted += nSubsidy * trackedHeight;
+		}
+		nSubsidy = Math.floor(nSubsidy / 2);
+	}
+	return totalMinted;
+}
+
+
 function getBlockTotalFeesFromCoinbaseTxAndBlockHeight(coinbaseTx, blockHeight) {
 	if (coinbaseTx == null) {
 		return 0;
@@ -886,6 +907,7 @@ module.exports = {
 	getMinerFromCoinbaseTx: getMinerFromCoinbaseTx,
 	getMinerCustomData: getMinerCustomData,
 	getBlockTotalFeesFromCoinbaseTxAndBlockHeight: getBlockTotalFeesFromCoinbaseTxAndBlockHeight,
+	getCoinsMinted: getCoinsMinted,
 	refreshExchangeRates: refreshExchangeRates,
 	parseExponentStringDouble: parseExponentStringDouble,
 	findBestCommonExponentScaleIndex: findBestCommonExponentScaleIndex,
