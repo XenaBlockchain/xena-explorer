@@ -25,6 +25,9 @@ var rpcQueue = async.queue(function(task, callback) {
 global.rpcStats = {};
 
 
+function getBlockCount() {
+	return getRpcData("getblockcount");
+}
 
 function getBlockchainInfo() {
 	return getRpcData("getblockchaininfo");
@@ -428,6 +431,7 @@ module.exports = {
 	getMiningInfo: getMiningInfo,
 	getBlockHash: getBlockHash,
 	getBlock: getBlock,
+	getBlockCount: getBlockCount,
 	getBlockTemplate: getBlockTemplate,
 	getRawTransaction: getRawTransaction,
 	getUtxo: getUtxo,

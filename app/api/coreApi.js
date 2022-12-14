@@ -208,6 +208,9 @@ function shouldCacheTransaction(tx) {
 }
 
 
+function getBlockCount() {
+	return tryCacheThenRpcApi(miscCache, "getBlockCount", 10 * ONE_SEC, rpcApi.getBlockCount);
+}
 
 function getBlockchainInfo() {
 	return tryCacheThenRpcApi(miscCache, "getBlockchainInfo", 10 * ONE_SEC, rpcApi.getBlockchainInfo);
@@ -1119,6 +1122,7 @@ module.exports = {
 	getUtxoSetSummary: getUtxoSetSummary,
 	getNetworkHashrate: getNetworkHashrate,
 	getBlockStats: getBlockStats,
+	getBlockCount: getBlockCount,
 	getBlocksStats: getBlocksStats,
 	getBlocksStatsByHeight: getBlocksStatsByHeight,
 	buildBlockAnalysisData: buildBlockAnalysisData,
