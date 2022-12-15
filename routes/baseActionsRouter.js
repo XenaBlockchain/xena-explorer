@@ -68,7 +68,7 @@ router.get("/", function(req, res, next) {
 
 		res.locals.difficultyPeriod = parseInt(Math.floor(data.blockChainInfo.blocks / coinConfig.difficultyAdjustmentBlockCount));
 
-		// promiseResults[5]
+		// promiseResults[4]
 		promises.push(new Promise(function(resolve, reject) {
 			coreApi.getBlockTemplate().then(function(bt) {
 				resolve(bt);
@@ -77,7 +77,7 @@ router.get("/", function(req, res, next) {
 			});
 		}));
 
-		// promiseResults[6]
+		// promiseResults[5]
 		promises.push(new Promise(function(resolve, reject) {
 			coreApi.getBlockHeaderByHeight(coinConfig.difficultyAdjustmentBlockCount * res.locals.difficultyPeriod).then(function(difficultyPeriodFirstBlockHeader) {
 				resolve(difficultyPeriodFirstBlockHeader);
@@ -88,7 +88,7 @@ router.get("/", function(req, res, next) {
 		if (data.blockChainInfo.chain !== 'regtest') {
 			var targetBlocksPerDay = 24 * 60 * 60 / global.coinConfig.targetBlockTimeSeconds;
 
-			// promiseResults[7] (if not regtest)
+			// promiseResults[6] (if not regtest)
 			promises.push(coreApi.getTxCountStats(targetBlocksPerDay / 4, -targetBlocksPerDay, "latest"));
 
 			var chainTxStatsIntervals = [ targetBlocksPerDay / 24, targetBlocksPerDay, targetBlocksPerDay * 7]
@@ -98,7 +98,7 @@ router.get("/", function(req, res, next) {
 				.slice(0, chainTxStatsIntervals.length)
 				.concat("All time");
 
-			// promiseResults[8-X] (if not regtest)
+			// promiseResults[7-X] (if not regtest)
 			for (var i = 0; i < chainTxStatsIntervals.length; i++) {
 				promises.push(coreApi.getChainTxStats(chainTxStatsIntervals[i]));
 			}
