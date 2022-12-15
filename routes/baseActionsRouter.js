@@ -22,8 +22,6 @@ var coreApi = require("./../app/api/coreApi.js");
 var addressApi = require("./../app/api/addressApi.js");
 var rpcApi = require("./../app/api/rpcApi.js");
 
-const nex = require('bindings')('nex');
-
 const v8 = require('v8');
 
 const forceCsrf = csurf({ ignoreMethods: [] });
@@ -118,7 +116,7 @@ router.get("/", function(req, res, next) {
 
 			if (promiseResults[4]) {
 				res.locals.blockTemplate = promiseResults[4];
-				res.locals.realDifficulty = nex.GetDifficulty(parseInt(promiseResults[4].bits, 16));
+				res.locals.realDifficulty = utils.getDifficulty(parseInt(promiseResults[4].bits, 16));
 			}
 
 			res.locals.difficultyPeriodFirstBlockHeader = promiseResults[5];

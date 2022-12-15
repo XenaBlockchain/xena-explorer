@@ -491,6 +491,24 @@ function getCoinsMinted(nHeight = -1) {
 	return totalMinted;
 }
 
+// translate bits to diffigulty (target)
+
+function getDifficulty(nBits) {
+	let nShift = (nBits >> 24) & 0xff;
+
+	let dDiff = 0x0000ffff / (nBits & 0x00ffffff);
+
+	while (nShift < 29) {
+		dDiff *= 256.0;
+		nShift++;
+	}
+	while (nShift > 29) {
+		dDiff /= 256.0;
+		nShift--;
+	}
+
+	return dDiff;
+}
 
 function getBlockTotalFeesFromCoinbaseTxAndBlockHeight(coinbaseTx, blockHeight) {
 	if (coinbaseTx == null) {
@@ -908,6 +926,7 @@ module.exports = {
 	getMinerCustomData: getMinerCustomData,
 	getBlockTotalFeesFromCoinbaseTxAndBlockHeight: getBlockTotalFeesFromCoinbaseTxAndBlockHeight,
 	getCoinsMinted: getCoinsMinted,
+	getDifficulty: getDifficulty,
 	refreshExchangeRates: refreshExchangeRates,
 	parseExponentStringDouble: parseExponentStringDouble,
 	findBestCommonExponentScaleIndex: findBestCommonExponentScaleIndex,
