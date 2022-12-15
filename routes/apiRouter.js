@@ -237,6 +237,16 @@ router.get("/block-tx-summaries/:blockHeight/:txids", function(req, res, next) {
 	});
 });
 
+// returns the amount of satoshis minted at the current
+// tip height
+router.get("/coinsupply", function(req, res, next) {
+	coreApi.getBlockCount().then(function(blocks) {
+		data = utils.getCoinsMinted(parseInt(blocks));
+		res.json(data);
+		utils.perfMeasure(req);
+	});
+});
+
 router.get("/utils/:func/:params", function(req, res, next) {
 	var func = req.params.func;
 	var params = req.params.params;
