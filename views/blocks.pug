@@ -10,7 +10,7 @@ block content
 	if (blockList)
 		nav(aria-label="Page navigation")
 			ul.pagination.justify-content-center
-				
+
 				li.page-item(class=(blockListArgs.sort == "desc" ? "active" : false))
 					a.page-link(href=(blockListArgs.sort == "desc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=desc"))
 						span(aria-hidden="true") Newest blocks first
@@ -32,7 +32,7 @@ block content
 					- var paginationUrlFunction = function(x) {
 						- return paginationBaseUrl + "?limit=" + blockListArgs.limit + "&offset=" + ((x - 1) * blockListArgs.limit + "&sort=" + blockListArgs.sort);
 					- }
-					
+
 					div.pt-5
 						include includes/pagination.pug
 	else
