@@ -46,17 +46,15 @@ div.table-responsive
 								i.fas.fa-certificate.text-primary.mr-1
 
 						a(href=("/block-height/" + block.height)) #{block.height.toLocaleString()}
-					
 
 					- var timeAgoTime = moment.utc(new Date()).diff(moment.utc(new Date(parseInt(block.time) * 1000)));
 					- var timeAgo = moment.duration(timeAgoTime);
 					- var timeDiff = block.timeDiff ? moment.duration(block.timeDiff * 1000) : null;
-					
+
 					if (!hideTimestampColumn)
 						td.data-cell.text-monospace.text-right
 							- var timestampHuman = block.time;
 							include timestamp-human.pug
-							
 
 					td.data-cell.text-monospace.text-right
 						if (blockListArgs.sort != "asc" && blockIndex == 0 && blockListArgs.offset == 0 && timeAgoTime > (15 * 60 * 1000))
