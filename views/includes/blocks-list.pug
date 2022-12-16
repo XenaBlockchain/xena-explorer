@@ -46,22 +46,20 @@ div.table-responsive
 								i.fas.fa-certificate.text-primary.mr-1
 
 						a(href=("/block-height/" + block.height)) #{block.height.toLocaleString()}
-					
 
 					- var timeAgoTime = moment.utc(new Date()).diff(moment.utc(new Date(parseInt(block.time) * 1000)));
 					- var timeAgo = moment.duration(timeAgoTime);
 					- var timeDiff = block.timeDiff ? moment.duration(block.timeDiff * 1000) : null;
-					
+
 					if (!hideTimestampColumn)
 						td.data-cell.text-monospace.text-right
 							- var timestampHuman = block.time;
 							include timestamp-human.pug
-							
 
 					td.data-cell.text-monospace.text-right
-						if (blockListArgs.sort != "asc" && blockIndex == 0 && blockListArgs.offset == 0 && timeAgoTime > (15 * 60 * 1000))
+						if (blockListArgs.sort != "asc" && blockIndex == 0 && blockListArgs.offset == 0 && timeAgoTime > (3 * 60 * 1000))
 							- var timeAgoTime = block.time;
-							span.text-danger.border-dotted(title="It's been > 15 min since this latest block.", data-toggle="tooltip")
+							span.text-danger.border-dotted(title="It's been > 3 mins since this latest block.", data-toggle="tooltip")
 								include ./time-ago-text.pug
 						else
 							- var timeAgoTime = block.time;
@@ -97,7 +95,7 @@ div.table-responsive
 							include ./value-display.pug
 
 					td.data-cell.text-monospace.text-right
-						- var currencyValue = new Decimal(block.totalFees).dividedBy(block.size);
+						- var currencyValue = new Decimal(block.stats.avgfeerate);
 						- var currencyValueDecimals = 2;
 						- currencyFormatTypeOverride = "sat";
 						- currencyUnitSuffix = "/B"
