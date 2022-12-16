@@ -95,7 +95,7 @@ div.table-responsive
 							include ./value-display.pug
 
 					td.data-cell.text-monospace.text-right
-						- var currencyValue = new Decimal(block.totalFees).dividedBy(block.size);
+						- var currencyValue = new Decimal(block.stats.avgfeerate);
 						- var currencyValueDecimals = 2;
 						- currencyFormatTypeOverride = "sat";
 						- currencyUnitSuffix = "/B"
