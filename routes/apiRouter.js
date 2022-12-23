@@ -86,6 +86,19 @@ router.get("/txpoolinfo", function(req, res, next) {
 	});
 });
 
+router.get("/getrecentblocks", function(req, res, next) {
+	var count = 10;
+	coreApi.getRecentBlocksMinimalData(count).then(function(data) {
+		res.json(data);
+
+		utils.perfMeasure(req);
+	}).catch(function(err) {
+		res.json({success:false, error:err});
+
+		next();
+	});
+});
+
 router.get("/blocks", function(req, res, next) {
 	var args = {}
 	if (req.query.limit)
