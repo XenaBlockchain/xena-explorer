@@ -889,6 +889,36 @@ function getBlockByHashWithTransactions(blockHash, txLimit, txOffset) {
 	});
 }
 
+function getRecentBlocksMinimalData(count) {
+	return new Promise(function(resolve, reject) {
+		getBlockchainInfo().then(function(getblockchaininfo) {
+			// Get all the block heights we will display
+			var blockHeights = Array.from({length: 10})
+				.map((_, i) => getblockchaininfo.blocks - i)
+				.filter(h => h >= 0 && h <= getblockchaininfo.blocks);
+
+			var promises = [];
+			promises.push(getBlocksByHeight(blockHeights));
+
+			Promise.all(promises).then(function(promiseResults) {
+				var blocks = promiseResults[0];
+				var data = blockHeights.map((h, i) => {
+					var minimalData = [blocks[i].height, blocks[i].time, blocks[i].hash];
+					return minimalData;
+				});
+
+				resolve({"blocks": data});
+			}).catch(function(err) {
+				debugLog(err);
+				reject(err);
+			});
+		}).catch(function(err) {
+			debugLog(err);
+			reject(err);
+		});
+	});
+}
+
 const getBlockListDefaultArgs = {
 	limit: config.site.browseBlocksPageSize,
 	offset: 0,
@@ -1108,6 +1138,7 @@ module.exports = {
 	getRawTransaction: getRawTransaction,
 	getRawTransactions: getRawTransactions,
 	getRawTransactionsWithInputs: getRawTransactionsWithInputs,
+	getRecentBlocksMinimalData: getRecentBlocksMinimalData,
 	getTxUtxos: getTxUtxos,
 	getTxpoolTxDetails: getTxpoolTxDetails,
 	getUptimeSeconds: getUptimeSeconds,
