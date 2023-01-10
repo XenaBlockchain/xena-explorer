@@ -953,7 +953,8 @@ function getBlockList(args)
 				hasExtraElement = true;
 			}
 
-			Promise.all(blockHeights.map(h => rpcApi.getBlockHash(h))).then(function(blockHashes) {
+			//FIXME: remove map since we just need to iterate over the array of heights
+			Promise.all(blockHeights.map(h => h)).then(function(blockHashes) {
 				var promises = [];
 				promises.push(getBlocks(blockHashes));
 				promises.push(getBlocksStats(blockHashes));
