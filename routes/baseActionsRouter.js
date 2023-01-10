@@ -66,14 +66,19 @@ router.get("/", function(req, res, next) {
 
 		res.locals.difficultyPeriod = parseInt(Math.floor(data.blockChainInfo.blocks / coinConfig.difficultyAdjustmentBlockCount));
 
-		// promiseResults[4]
-		promises.push(new Promise(function(resolve, reject) {
-			coreApi.getMiningCandidate().then(function(bt) {
-				resolve(bt);
-			}).catch(function(err) {
-				resolve(null); // ignore being unable to get block template
-			});
-		}));
+		if (config.showNextDiff) {
+			promises.push(new Promise(function(resolve, reject) {
+				coreApi.getMiningCandidate().then(function(bt) {
+					resolve(bt);
+				}).catch(function(err) {
+					resolve(null); // ignore being unable to get block template
+				});
+			}));
+		} else {// promiseResults[4]
+			promises.push(new Promise(function(resolve, reject) {
+				resolve(null);
+			}));
+		}
 
 		// promiseResults[5]
 		promises.push(new Promise(function(resolve, reject) {
