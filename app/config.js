@@ -33,7 +33,7 @@ for (var i = 0; i < electrumXServerUriStrings.length; i++) {
   electrumXServers.push({protocol:uri.protocol.substring(0, uri.protocol.length - 1), host:uri.hostname, port:parseInt(uri.port)});
 }
 
-["NEXEXP_DEMO", "NEXEXP_PRIVACY_MODE", "NEXEXP_NO_INMEMORY_RPC_CACHE", "NEXEXP_UI_SHOW_RPC", "NEXEXP_HEADER_BY_HEIGHT_SUPPORT", "NEXEXP_BLOCK_BY_HEIGHT_SUPPORT"].forEach(function(item) {
+["NEXEXP_DEMO", "NEXEXP_PRIVACY_MODE", "NEXEXP_NO_INMEMORY_RPC_CACHE", "NEXEXP_UI_SHOW_RPC", "NEXEXP_HEADER_BY_HEIGHT_SUPPORT", "NEXEXP_BLOCK_BY_HEIGHT_SUPPORT", "NEXEXP_SHOW_NEXTDIFF"].forEach(function(item) {
   if (process.env[item] === undefined) {
     process.env[item] = "false";
   }
@@ -79,6 +79,7 @@ module.exports = {
   noInmemoryRpcCache: (process.env.NEXEXP_NO_INMEMORY_RPC_CACHE.toLowerCase() == "true"),
   blockByHeightSupport: (process.env.NEXEXP_BLOCK_BY_HEIGHT_SUPPORT.toLowerCase() == "true"),
   hideIp: (process.env.NEXEXP_HIDE_IP.toLowerCase() == "true"),
+  showNextDiff: (process.env.NEXEXP_SHOW_NEXTDIFF.toLowerCase() == "true"),
 
   rpcConcurrency: (process.env.NEXEXP_RPC_CONCURRENCY || 10),
 
