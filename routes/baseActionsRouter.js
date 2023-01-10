@@ -68,7 +68,7 @@ router.get("/", function(req, res, next) {
 
 		// promiseResults[4]
 		promises.push(new Promise(function(resolve, reject) {
-			coreApi.getBlockTemplate().then(function(bt) {
+			coreApi.getMiningCandidate().then(function(bt) {
 				resolve(bt);
 			}).catch(function(err) {
 				resolve(null); // ignore being unable to get block template
@@ -116,7 +116,7 @@ router.get("/", function(req, res, next) {
 
 			if (promiseResults[4]) {
 				res.locals.blockTemplate = promiseResults[4];
-				res.locals.realDifficulty = utils.getDifficulty(parseInt(promiseResults[4].bits, 16));
+				res.locals.realDifficulty = utils.getDifficulty(parseInt(promiseResults[4].nBits, 16));
 			}
 
 			res.locals.difficultyPeriodFirstBlockHeader = promiseResults[5];
