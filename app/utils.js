@@ -471,7 +471,7 @@ function getTxTotalInputOutputValues(tx, txInputs, blockHeight) {
 	return {input:totalInputValue, output:totalOutputValue};
 }
 
-// returns the amount of minted satoshis for a given height
+// returns the amount of minted NEX (100 satoshis) for a given height
 function getCoinsMinted(nHeight = -1) {
 	let totalMinted = 0;
 	const nSubsidyHalvingInterval = 1050000;
@@ -488,7 +488,8 @@ function getCoinsMinted(nHeight = -1) {
 		}
 		nSubsidy = Math.floor(nSubsidy / 2);
 	}
-	return totalMinted;
+	var to_return = totalMinted / 100;
+	return to_return.toFixed(2);
 }
 
 // translate bits to diffigulty (target)
