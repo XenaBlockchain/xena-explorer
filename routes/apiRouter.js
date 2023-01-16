@@ -255,7 +255,9 @@ router.get("/block-tx-summaries/:blockHeight/:txids", function(req, res, next) {
 router.get("/coinsupply", function(req, res, next) {
 	coreApi.getBlockCount().then(function(blocks) {
 		data = utils.getCoinsMinted(parseInt(blocks));
-		res.json(data);
+		res.set('Content-Type', 'text/json')
+		res.send(data)
+		//res.json(new Number(data).toFixed(2));
 		utils.perfMeasure(req);
 	});
 });
