@@ -362,12 +362,11 @@ module.exports = {
 		}
 	],
 	exchangeRateData:{
-		jsonUrl:"https://www.exbitron.com/api/v2/peatio/public/markets/nexausdt/tickers",
+		jsonUrl:"https://api.txbit.io/api/public/getticker?market=NEXA/USDT",
 		responseBodySelectorFunction:function(responseBody) {
-
-			if (responseBody.ticker) {
+			if (responseBody.success) {
 				var exchangeRates = {};
-				exchangeRates["usdt"] = responseBody.ticker["last"];
+				exchangeRates["usdt"] = responseBody.result["Last"];
 				return exchangeRates;
 			}
 
