@@ -171,7 +171,7 @@ block content
 
 						else
 
-							- var feePaid = new Decimal(totalInputValue).minus(totalOutputValue);
+							- var feePaid = new Decimal(result.getrawtransaction.fee)
 
 							div.row
 								div.summary-table-label Fee Paid
@@ -179,17 +179,11 @@ block content
 									- var currencyValue = feePaid;
 									include includes/value-display.pug
 
-									if (feePaid > 0)
-										- var item1 = utils.formatCurrencyAmount(totalInputValue, currencyFormatType);
-										- var item2 = utils.formatCurrencyAmount(totalOutputValue, currencyFormatType);
-										span.ml-2(title=(item1.simpleVal + " - " + item2.simpleVal), data-toggle="tooltip")
-											i.fas.fa-ellipsis-h
-
 							if (feePaid > 0)
 								div.row
 									div.summary-table-label Fee Rate
 									div.summary-table-content.text-monospace
-										- var currencyValue = new DecimalRounded(totalInputValue).minus(totalOutputValue).dividedBy(result.getrawtransaction.size);
+										- var currencyValue = new DecimalRounded(result.getrawtransaction.fee).dividedBy(result.getrawtransaction.size);
 										- var currencyValueDecimals = 2;
 										- currencyFormatTypeOverride = "sat";
 										- currencyUnitSuffix = "/B"
