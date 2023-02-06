@@ -198,10 +198,10 @@ module.exports = {
 
   donations:{
     addresses:{
-      coins:["BCH"],
-      sites:{"BCH":"https://bitcoinunlimited.info"},
+      coins:["NEXA"],
+      sites:{"NEXA":"https://explorer.nexa.org"},
 
-      "BCH":{address:"bitcoincash:pq6snv5fcx2fp6dlzg7s0m9zs8yqh74335tzvvfcmq"}
+      "NEXA":{address:"nexa:nqtsq5g5wtkt44pfqusjj3wulk2n2pd27lhpzg0m326kcnsj"}
     }
   }
 
