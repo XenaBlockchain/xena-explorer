@@ -964,7 +964,11 @@ router.get("/tx/:transactionId", function(req, res, next) {
 
 		promises.push(new Promise(function(resolve, reject) {
 			coreApi.getTxUtxos(tx).then(function(utxos) {
-				res.locals.utxos = utxos;
+				if (utxos.every(element => element === null)) {
+					res.locals.utxos = null;
+				} else {
+					res.locals.utxos = utxos;
+				}
 
 				resolve();
 

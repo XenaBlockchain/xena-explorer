@@ -388,19 +388,20 @@ block content
 							pre
 								code.json.bg-light(data-lang="json") #{JSON.stringify(result.getrawtransaction, null, 4)}
 
-				div.card.shadow-sm.mb-3
-					div.card-body
-						h3.h6.mb-0 UTXOs
-						hr
+				if (utxos)
+					div.card.shadow-sm.mb-3
+						div.card-body
+							h3.h6.mb-0 UTXOs
+							hr
 
+							div.highlight
+								pre
+									code.json.bg-light(data-lang="json") #{JSON.stringify(utxos, null, 4)}
+
+					if (txpoolDetails)
+						h3.h5 Txpool Details
 						div.highlight
 							pre
-								code.json.bg-light(data-lang="json") #{JSON.stringify(utxos, null, 4)}
-
-				if (txpoolDetails)
-					h3.h5 Txpool Details
-					div.highlight
-						pre
-							code.json.bg-light(data-lang="json") #{JSON.stringify(txpoolDetails, null, 4)}
+								code.json.bg-light(data-lang="json") #{JSON.stringify(txpoolDetails, null, 4)}
 
 				//pre #{JSON.stringify(result.txInputs, null, 4)}
