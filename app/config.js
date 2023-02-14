@@ -182,7 +182,7 @@ module.exports = {
         {
           title:"Choose your network",
           links:[
-            {name: "Testnet", url:"https://testnet-nexa-explorer.bitcoinunlimited.info", imgUrl:"/img/logo/nex.svg"},
+            {name: "Testnet", url:"https://testnet-explorer.nexa.org", imgUrl:"/img/logo/nex.svg"},
             {name: "Nexa", url:"https://explorer.nexa.org", imgUrl:"/img/logo/nex.svg"},
           ]
         }
