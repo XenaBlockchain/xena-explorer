@@ -1,0 +1,76 @@
+extends layout
+
+block headContent
+	+title('Rich List')
+
+block content
+	h1.h3 Addresses Rich List
+	hr
+
+	div.row
+		div.col-lg-8
+			div.card.shadow-sm.mb-3
+				div.card-body
+					div.table-responsive
+						table.table.table-striped.mb-0
+							thead
+								tr
+									th.data-header.text-left Top 100 - Current Balance
+
+							tbody
+
+								tr
+									td.data-header.text-right
+										span.font-weight-bold Rank
+									td.data-header.text-left
+										span.font-weight-bold Address
+									td.data-header.text-right
+										span.font-weight-bold Last height
+									td.data-header.text-right
+										span.font-weight-bold Balance
+									td.data-header.text-right
+										span.font-weight-bold %
+
+								each address in richList[0]
+									tr
+										td.data-cell.text-monospace.text-right
+											span #{address.rank}
+										td.data-cell.text-monospace.text-left
+											a(href=("/address/" + address.address)) #{address.address}
+										td.data-cell.text-monospace.text-right
+											a(href=("/block/"+ address.height)) #{address.height.toLocaleString()}
+										td.data-cell.text-monospace.text-right
+											- var currencyValue = new Decimal(address.balance/100);
+											- var currencyValueDecimals = 1;
+											include includes/value-display.pug
+										td.data-cell.text-monospace.text-right
+											span #{address.percent.toFixed(2)}
+
+		div.col-lg-4
+			div.card.shadow-sm.mb-3
+				div.card-body
+					div.table-responsive
+						table.table.table-striped.mb-0
+							thead
+								tr
+									th Wealth Distribution
+
+							tbody
+								tr
+									th.data-header.text-right
+										span.font-weight-bold  
+									th.data-header.text-right
+										span.font-weight-bold Amount
+									th.data-header.text-right
+										span.font-weight-bold %
+
+								each coinsDistr in richList[1]
+									tr
+										td.data-cell.text-monospace.text-right
+											span #{coinsDistr[0].toLocaleString()}
+										td.data-cell.text-monospace.text-right
+											- var currencyValue = new Decimal(coinsDistr[1]/100);
+											- var currencyValueDecimals = 2;
+											include includes/value-display.pug
+										td.data-cell.text-monospace.text-right
+											span #{coinsDistr[2].toFixed(2)}
