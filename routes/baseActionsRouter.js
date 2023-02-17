@@ -211,6 +211,12 @@ router.get("/txpool-summary", function(req, res, next) {
 	});
 });
 
+router.get("/rich-list", function(req, res, next) {
+	res.locals.richList = utils.readRichList();
+	res.render("rich-list");
+	utils.perfMeasure(req);
+});
+
 router.get("/peers", function(req, res, next) {
 	coreApi.getPeerSummary().then(function(peerSummary) {
 		res.locals.peerSummary = peerSummary;
@@ -320,7 +326,6 @@ router.get("/blocks", function(req, res, next) {
 
 	coreApi.getBlockList(args).then(function(data) {
 		Object.assign(res.locals, data);
-
 		res.render("blocks");
 
 		utils.perfMeasure(req);

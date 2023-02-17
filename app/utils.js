@@ -9,6 +9,8 @@ var Decimal = require("decimal.js");
 var axios = require("axios");
 var qrcode = require("qrcode");
 var textdecoding = require("text-decoding");
+const fs = require('fs');
+const path = require('path');
 
 var config = require("./config.js");
 var coins = require("./coins.js");
@@ -903,7 +905,35 @@ function getTransactionDatetime(utcEpochTime) {
 	return formatted_date;
 }
 
+function readRichList () {
+	let data = fs.readFileSync(path.resolve(config.richListPath), {encoding:'utf8', flag:'r'});
+	let lines = data.split(/\r?\n/);
+	lines.pop();
+	let parsedLines = [];
+	let parsedLine;
+	let i = 0;
+	let coinsDistr = [["Top 25",0,0],["Top 26-50",0,0],["Top 51-75",0,0],["Top 76-100",0,0],["Total",0,0]];
+	lines.forEach(function(line) {
+		let lineArray = line.split(',');
+		parsedLine = {
+			rank: Number(lineArray[0]),
+			balance: Number(lineArray[1]),
+			height: Number(lineArray[2]),
+			address: lineArray[3],
+			percent: Number(lineArray[4])
+		};
+		parsedLines.push(parsedLine);
+		coinsDistr[4][1] += parsedLine.balance;
+		coinsDistr[4][2] += parsedLine.percent;
+		coinsDistr[Math.floor(i/25)][1] += parsedLine.balance;
+		coinsDistr[Math.floor(i/25)][2] += parsedLine.percent;
+		i++;
+	});
+	return [parsedLines, coinsDistr];
+}
+
 module.exports = {
+	readRichList: readRichList,
 	reflectPromise: reflectPromise,
 	redirectToConnectPageIfNeeded: redirectToConnectPageIfNeeded,
 	hex2ascii: hex2ascii,

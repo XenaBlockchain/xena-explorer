@@ -6,6 +6,7 @@ var coins = require("./coins.js");
 var credentials = require("./credentials.js");
 
 var currentCoin = process.env.NEXEXP_COIN || "NEX";
+var richListPath = process.env.NEXEXP_RICHLIST_PATH || "/tmp/rich_list.csv";
 
 var rpcCred = credentials.rpc;
 
@@ -57,6 +58,7 @@ var siteToolsJSON = [
   { "name": "Block Stats", "url": "/block-stats", "desc": "Summary data for blocks in configurable range.", "fontawesome": "fas fa-layer-group" },
   { "name": "Block Analysis", "url": "/block-analysis", "desc": "Summary analysis for all transactions in a block.", "fontawesome": "fas fa-angle-double-down" },
   { "name": "Difficulty History", "url": "/difficulty-history", "desc": "Graph of difficulty changes over time.", "fontawesome": "fas fa-chart-line" },
+  { "name": "Rich List", "url": "/rich-list", "desc": "Top 100 balance addresses", "fontawesome": "fas fa-money-bill-wave" },
   { "name": "Decoder", "url": "/decoder", "desc": "Transaction/script decoder.", "fontawesome": "fas fa-flask" }
 ];
 
@@ -69,6 +71,7 @@ module.exports = {
   coin: currentCoin,
 
   cookieSecret: cookieSecret,
+  richListPath: richListPath,
   renderPugError: (process.env.NEXEXP_SHOW_PUG_RENDER_STACKTRACE == "true"),
 
   privacyMode: (process.env.NEXEXP_PRIVACY_MODE.toLowerCase() == "true"),
