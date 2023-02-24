@@ -41,7 +41,7 @@ block content
 											a(href=("/block/"+ address.height)) #{address.height.toLocaleString()}
 										td.data-cell.text-monospace.text-right
 											- var currencyValue = new Decimal(address.balance/100);
-											- var currencyValueDecimals = 1;
+											- var currencyValueDecimals = 2;
 											include includes/value-display.pug
 										td.data-cell.text-monospace.text-right
 											span #{address.percent.toFixed(2)}
