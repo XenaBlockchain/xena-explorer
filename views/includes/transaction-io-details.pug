@@ -204,7 +204,9 @@ div.row.text-monospace
 										div
 											small.font-weight-bold data
 											small (utf-8) - 
-											small #{utils.hex2string(vout.scriptPubKey.asm.substring("OP_RETURN ".length))}
+											// in hex encoding OP_RETURN is 2 bytes long (0x6a)
+											// so we are going to remove the first 2 bytes from the hex value
+											small #{utils.hex2string(vout.scriptPubKey.hex.substring(2))}
 											br
 											small
 												a(href="javascript:void(0)" onclick=`$('#op-return-hex-${tx.txid}-${vout.n}').show(); $(this).hide(); return false;`) show raw
