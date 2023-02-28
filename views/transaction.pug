@@ -376,7 +376,7 @@ block content
 												span #{vout.scriptPubKey.asm}
 												if (vout.scriptPubKey.asm.startsWith("OP_RETURN"))
 													br
-													span.text-muted (decoded) #{utils.hex2string(vout.scriptPubKey.asm)}
+													span.text-muted (decoded) #{utils.hex2string(vout.scriptPubKey.hex)}
 
 			div.tab-pane(id="tab-json", role="tabpanel")
 				div.card.shadow-sm.mb-3
