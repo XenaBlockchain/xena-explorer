@@ -598,8 +598,8 @@ function getRawTransaction(txid) {
 }
 
 /*
-	This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
-*/
+ *This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
+ */
 function getSummarizedTransactionOutput(outpoint, txid) {
 	var rpcApiFunction = function() {
 		return new Promise(function(resolve, reject) {
