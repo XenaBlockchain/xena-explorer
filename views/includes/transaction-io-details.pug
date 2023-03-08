@@ -77,7 +77,7 @@ div.row.text-monospace
 														i.fas.fa-certificate.text-primary
 
 
-											a(href=("/tx/" + txInput.txid + "#output-" + txVin.vout)) #{utils.ellipsize(txInput.txid, 26)}
+											a(href=("/tx/" + txInput.txid + "#outpoint-" + txVin.outpoint)) #{utils.ellipsize(txInput.txid, 26)}
 												span  ##{txVin.vout}
 
 										if (vout && vout.scriptPubKey && vout.scriptPubKey.addresses)
@@ -185,7 +185,7 @@ div.row.text-monospace
 												span(title=`Output Type: ${utils.outputTypeName(vout.scriptPubKey.type)}`, data-toggle="tooltip") #{utils.outputTypeAbbreviation(vout.scriptPubKey.type)}
 
 										each addr in vout.scriptPubKey.addresses
-											a(id=("output-" + voutIndex), href=("/address/" + addr))
+											a(id=("outpoint-" + vout.outpoint), href=("/address/" + addr))
 												span.text-monospace.word-wrap(class=(highlightRow ? "font-weight-bold" : "")) #{addr}
 
 											if (global.specialAddresses[addr])
