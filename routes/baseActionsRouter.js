@@ -918,31 +918,6 @@ function getInputPayloadContractPayload(tx) {
 	}
 }
 
-function calcFee(tx, inputTxs) {
-  let inputAmount = new Decimal(0);
-  let outputAmount = new Decimal(0);
-  try {
-    for (var key in inputTxs) {
-      inputAmount = inputAmount.plus(inputTxs[key].value);
-    }
-
-    for(let o = 0; o < tx.vout.length; o++) {
-      outputAmount = outputAmount.plus(tx.vout[0].value);
-    }
-    const fee = inputAmount.minus(outputAmount);
-    // in Nexa a NEX is 100 satoshis not 10^8
-    const feeSatoshis = fee.times(100);
-    if (feeSatoshis.isZero()) {
-      return 0;
-    }
-    return feeSatoshis.div(new Decimal(tx.size)).toNumber();
-  }
-  catch (e) {
-    console.log(e);
-    return -1;
-  }
-}
-
 router.get("/tx/:transactionId", function(req, res, next) {
 	var txid = req.params.transactionId;
 
@@ -961,7 +936,7 @@ router.get("/tx/:transactionId", function(req, res, next) {
 		res.locals.result.ballot = parseTwoOptionVote(tx);
 		res.locals.result.getrawtransaction = tx;
 		res.locals.result.txInputs = rawTxResult.txInputsByTransaction[txid]
-		const fee = calcFee(tx, rawTxResult.txInputsByTransaction[txid]);
+		const fee = tx.fee;
 		res.locals.result.isflipstarter = isFlipstarter(tx, fee);
 		res.locals.result.inputPayloadContract = getInputPayloadContractPayload(tx);
 
