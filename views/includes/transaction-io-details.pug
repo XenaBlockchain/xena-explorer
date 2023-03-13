@@ -16,32 +16,33 @@ script.
 div.row.text-monospace
 	div.col-lg-6
 		if (txInputs)
-			// first we need to special case coinbase transactions cause they have no inputs 
-			div.clearfix
-				div.tx-io-label
-					a(data-toggle="tooltip", title=("No input"), style="white-space: nowrap;")
-						span.font-weight-bold &gt; 
-						small.d-inline.d-md-none Input 
-							small.d-inline.d-md-none.font-weight-light.text-muted  / "0" 
+			// first we need to special case coinbase transactions cause they have no inputs
+			if (tx.vin.length == 0)
+				div.clearfix
+					div.tx-io-label
+						a(data-toggle="tooltip", title=("No input"), style="white-space: nowrap;")
+							span.font-weight-bold &gt; 
+							small.d-inline.d-md-none Input 
+								small.d-inline.d-md-none.font-weight-light.text-muted  / "0" 
 
-				div.tx-io-content
-					div.clearfix
-						div.tx-io-desc
-							small.data-tag.bg-success.mr-2(title="Coinbase transactions are special transactions created by the miner of a block. They distribute the block reward (subsidy) as the miner chooses, along with all of the fees paid by transactions included in the block.", data-toggle="tooltip") coinbase
+					div.tx-io-content
+						div.clearfix
+							div.tx-io-desc
+								small.data-tag.bg-success.mr-2(title="Coinbase transactions are special transactions created by the miner of a block. They distribute the block reward (subsidy) as the miner chooses, along with all of the fees paid by transactions included in the block.", data-toggle="tooltip") coinbase
 
-							div.pt-1
-								- var findex = tx.vout.length -1
-								small.font-weight-bold(tistle="UTF-8 encoded", data-toggle="tooltip") data
-								small (utf-8) - 
-								small #{utils.hex2string(tx.vout[findex].scriptPubKey.hex)}
-								br
-								small
-									a(href="javascript:void(0)" onclick="$('#coinbase-data-hex').show(); $(this).hide(); return false;") show raw
+								div.pt-1
+									- var findex = tx.vout.length -1
+									small.font-weight-bold(tistle="UTF-8 encoded", data-toggle="tooltip") data
+									small (utf-8) - 
+									small #{utils.hex2string(tx.vout[findex].scriptPubKey.hex)}
+									br
+									small
+										a(href="javascript:void(0)" onclick="$('#coinbase-data-hex').show(); $(this).hide(); return false;") show raw
 
-							div(id="coinbase-data-hex", style="display: none;")
-								small.font-weight-bold data
-								small (hex) - 
-								small.word-wrap #{tx.vout[findex].scriptPubKey.hex}
+								div(id="coinbase-data-hex", style="display: none;")
+									small.font-weight-bold data
+									small (hex) - 
+									small.word-wrap #{tx.vout[findex].scriptPubKey.hex}
 
 
 			- var extraInputCount = 0;
