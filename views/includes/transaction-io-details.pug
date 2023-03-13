@@ -16,6 +16,34 @@ script.
 div.row.text-monospace
 	div.col-lg-6
 		if (txInputs)
+			// first we need to special case coinbase transactions cause they have no inputs 
+			div.clearfix
+				div.tx-io-label
+					a(data-toggle="tooltip", title=("No input"), style="white-space: nowrap;")
+						span.font-weight-bold &gt; 
+						small.d-inline.d-md-none Input 
+							small.d-inline.d-md-none.font-weight-light.text-muted  / "0" 
+
+				div.tx-io-content
+					div.clearfix
+						div.tx-io-desc
+							small.data-tag.bg-success.mr-2(title="Coinbase transactions are special transactions created by the miner of a block. They distribute the block reward (subsidy) as the miner chooses, along with all of the fees paid by transactions included in the block.", data-toggle="tooltip") coinbase
+
+							div.pt-1
+								- var findex = tx.vout.length -1
+								small.font-weight-bold(tistle="UTF-8 encoded", data-toggle="tooltip") data
+								small (utf-8) - 
+								small #{utils.hex2string(tx.vout[findex].scriptPubKey.hex)}
+								br
+								small
+									a(href="javascript:void(0)" onclick="$('#coinbase-data-hex').show(); $(this).hide(); return false;") show raw
+
+							div(id="coinbase-data-hex", style="display: none;")
+								small.font-weight-bold data
+								small (hex) - 
+								small.word-wrap #{tx.vout[findex].scriptPubKey.hex}
+
+
 			- var extraInputCount = 0;
 			each txVin, txVinIndex in tx.vin
 				if (tx.vin.length > 0)
@@ -24,7 +52,7 @@ div.row.text-monospace
 						- var txInput = txInputs[txVinIndex];
 						- var vout = txInput;
 
-				if (tx.vin.length == 0 || vout)
+				if (vout)
 					div.clearfix
 						div.tx-io-label
 							a(data-toggle="tooltip", title=("Input #" + txVinIndex.toLocaleString()), style="white-space: nowrap;")
@@ -36,64 +64,45 @@ div.row.text-monospace
 								else
 									span ##{txVinIndex.toLocaleString()}
 
-								if (tx.vin.length > 0)
-									small.d-inline.d-md-none.font-weight-light.text-muted  / #{(tx.vin.length - 1).toLocaleString()}
+								small.d-inline.d-md-none.font-weight-light.text-muted  / #{(tx.vin.length - 1).toLocaleString()}
 
 						div.tx-io-content
 							div.clearfix
 								div.tx-io-desc
-									if (tx.vin.length == 0)
-										small.data-tag.bg-success.mr-2(title="Coinbase transactions are special transactions created by the miner of a block. They distribute the block reward (subsidy) as the miner chooses, along with all of the fees paid by transactions included in the block.", data-toggle="tooltip") coinbase
+									div.word-wrap
+										small.data-tag.bg-dark.mr-2
+											span(title=`Input Type: ${utils.outputTypeName(vout.scriptPubKey.type)}`, data-toggle="tooltip") #{utils.outputTypeAbbreviation(vout.scriptPubKey.type)}
 
-										div.pt-1
-											small.font-weight-bold(tistle="UTF-8 encoded", data-toggle="tooltip") data
-											small (utf-8) - 
-											small #{utils.hex2string(txVin.coinbase)}
-											br
-											small
-												a(href="javascript:void(0)" onclick="$('#coinbase-data-hex').show(); $(this).hide(); return false;") show raw
+										if (vout.coinbaseSpend)
+											small.data-tag.bg-success.mr-2
+												span(title=`This input spends a coinbase output (mining reward).`, data-toggle="tooltip") coinbase-spend
 
-										div(id="coinbase-data-hex", style="display: none;")
-											small.font-weight-bold data
-											small (hex) - 
-											small.word-wrap #{txVin.coinbase}
+										if (vout.utxoTime)
+											- var deltaT = tx.time - vout.utxoTime
+											- var deltaTYears = deltaT / 60 / 60 / 24 / 365
+
+											if (deltaTYears > 5)
+												span.mr-2(title=`This UTXO was very old! It existed for ${parseInt(deltaTYears)}+ years - from ${moment.utc(new Date(vout.utxoTime * 1000)).format('MMM D, Y')} until ${moment.utc(new Date(tx.time * 1000)).format('MMM D, Y')} - before being spent (destroyed) in this transaction!`, data-toggle="tooltip")
+													i.fas.fa-certificate.text-primary
 
 
-									else
+										a(href=("/tx/" + txInput.txid + "#outpoint-" + txVin.outpoint)) #{utils.ellipsize(txInput.txid, 26)}
+											span  ##{txVin.vout}
+
+									if (vout && vout.scriptPubKey && vout.scriptPubKey.addresses)
 										div.word-wrap
-											small.data-tag.bg-dark.mr-2
-												span(title=`Input Type: ${utils.outputTypeName(vout.scriptPubKey.type)}`, data-toggle="tooltip") #{utils.outputTypeAbbreviation(vout.scriptPubKey.type)}
+											small.text-muted
+												span.mr-1 (addr:
+												a(href=("/address/" + vout.scriptPubKey.addresses[0]), class=(txIOHighlightAddress == vout.scriptPubKey.addresses[0] ? "font-weight-bold" : null)) #{vout.scriptPubKey.addresses[0]}
 
-											if (vout.coinbaseSpend)
-												small.data-tag.bg-success.mr-2
-													span(title=`This input spends a coinbase output (mining reward).`, data-toggle="tooltip") coinbase-spend
+												if (global.specialAddresses[vout.scriptPubKey.addresses[0]])
+													- var specialAddressInfo = global.specialAddresses[vout.scriptPubKey.addresses[0]];
+													if (specialAddressInfo.type == "minerPayout")
+														span  
+														a(data-toggle="tooltip", title=("Miner payout address: " + specialAddressInfo.minerInfo.name))
+															i.fas.fa-certificate.text-primary
 
-											if (vout.utxoTime)
-												- var deltaT = tx.time - vout.utxoTime
-												- var deltaTYears = deltaT / 60 / 60 / 24 / 365
-
-												if (deltaTYears > 5)
-													span.mr-2(title=`This UTXO was very old! It existed for ${parseInt(deltaTYears)}+ years - from ${moment.utc(new Date(vout.utxoTime * 1000)).format('MMM D, Y')} until ${moment.utc(new Date(tx.time * 1000)).format('MMM D, Y')} - before being spent (destroyed) in this transaction!`, data-toggle="tooltip")
-														i.fas.fa-certificate.text-primary
-
-
-											a(href=("/tx/" + txInput.txid + "#output-" + txVin.vout)) #{utils.ellipsize(txInput.txid, 26)}
-												span  ##{txVin.vout}
-
-										if (vout && vout.scriptPubKey && vout.scriptPubKey.addresses)
-											div.word-wrap
-												small.text-muted
-													span.mr-1 (addr:
-													a(href=("/address/" + vout.scriptPubKey.addresses[0]), class=(txIOHighlightAddress == vout.scriptPubKey.addresses[0] ? "font-weight-bold" : null)) #{vout.scriptPubKey.addresses[0]}
-
-													if (global.specialAddresses[vout.scriptPubKey.addresses[0]])
-														- var specialAddressInfo = global.specialAddresses[vout.scriptPubKey.addresses[0]];
-														if (specialAddressInfo.type == "minerPayout")
-															span  
-															a(data-toggle="tooltip", title=("Miner payout address: " + specialAddressInfo.minerInfo.name))
-																i.fas.fa-certificate.text-primary
-
-													span )
+												span )
 
 								div.tx-io-value
 									if (txVin.coinbase)
@@ -133,12 +142,13 @@ div.row.text-monospace
 								include ./value-display.pug
 				hr
 
-			div.row.mb-5.mb-lg-0
-				div.col
-					div.font-weight-bold.text-left.text-md-right
-						span.d-block.d-md-none Total Input: 
-						- var currencyValue = totalIOValues.input;
-						include ./value-display.pug
+			if (tx.vin.length > 0)
+				div.row.mb-5.mb-lg-0
+					div.col
+						div.font-weight-bold.text-left.text-md-right
+							span.d-block.d-md-none Total Input: 
+							- var currencyValue = totalIOValues.input;
+							include ./value-display.pug
 
 
 
@@ -185,7 +195,7 @@ div.row.text-monospace
 												span(title=`Output Type: ${utils.outputTypeName(vout.scriptPubKey.type)}`, data-toggle="tooltip") #{utils.outputTypeAbbreviation(vout.scriptPubKey.type)}
 
 										each addr in vout.scriptPubKey.addresses
-											a(id=("output-" + voutIndex), href=("/address/" + addr))
+											a(id=("outpoint-" + vout.outpoint), href=("/address/" + addr))
 												span.text-monospace.word-wrap(class=(highlightRow ? "font-weight-bold" : "")) #{addr}
 
 											if (global.specialAddresses[addr])

@@ -99,7 +99,7 @@ div.tab-content
 											span #{result.blockstats.ins.toLocaleString()}
 										else
 											span 0
-										
+
 										span.text-muted.mx-1 /
 
 										if (result.blockstats.total_out)
@@ -240,7 +240,7 @@ div.tab-content
 												span.border-dotted(title="These are the fee rates (fee per tx size) for transactions in this block - min, avg, and max.", data-toggle="tooltip") Fee Rates
 												br
 												small (min, avg, max)
-												
+
 											div.summary-split-table-content.text-monospace
 												if (result.blockstats.minfeerate !== undefined)
 													span #{(result.blockstats.minfeerate * satsMultiplier).toLocaleString()}
@@ -282,7 +282,7 @@ div.tab-content
 													small.ml-1 #{coinConfig.baseCurrencyUnit.name}
 												else
 													span 0
-												
+
 												br
 
 												if (result.blockstats.maxfee !== undefined)

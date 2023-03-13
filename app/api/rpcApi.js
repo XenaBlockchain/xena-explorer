@@ -200,8 +200,6 @@ function getRawTransaction(txid) {
 }
 
 function getUtxo(txid, outputIndex) {
-	debugLog("getUtxo: %s (%d)", txid, outputIndex);
-
 	return new Promise(function(resolve, reject) {
 		getRpcDataWithParams({method:"gettxout", parameters:[txid, outputIndex]}).then(function(result) {
 			if (result == null) {
