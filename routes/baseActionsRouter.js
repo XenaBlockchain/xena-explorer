@@ -931,7 +931,9 @@ router.get("/tx/:transactionId", function(req, res, next) {
 
 	res.locals.result = {};
 
-	coreApi.getRawTransactionsWithInputs([txid]).then(function(rawTxResult) {
+	// 5 minutes cache span should be short enough
+	FIVE_MIN = 1000 * 60 * 5
+	coreApi.getRawTransactionsWithInputs([txid], -1, FIVE_MIN).then(function(rawTxResult) {
 		var tx = rawTxResult.transactions[0];
 		res.locals.result.ballot = parseTwoOptionVote(tx);
 		res.locals.result.getrawtransaction = tx;
