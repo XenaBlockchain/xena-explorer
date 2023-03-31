@@ -589,21 +589,21 @@ function getMiningCandidate(args = {}) {
 	});
 }
 
-function getRawTransaction(txid) {
+function getRawTransaction(txid, cacheSpan=ONE_HR) {
 	var rpcApiFunction = function() {
 		return rpcApi.getRawTransaction(txid);
 	};
 
-	return tryCacheThenRpcApi(txCache, "getRawTransaction-" + txid, ONE_HR, rpcApiFunction, shouldCacheTransaction);
+	return tryCacheThenRpcApi(txCache, "getRawTransaction-" + txid, cacheSpan, rpcApiFunction, shouldCacheTransaction);
 }
 
 /*
  *This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
  */
-function getSummarizedTransactionOutput(outpoint, txid) {
+function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
 	var rpcApiFunction = function() {
 		return new Promise(function(resolve, reject) {
-			rpcApi.getRawTransaction(outpoint).then(function(rawTx) {
+			rpcApi.getRawTransaction(outpoint, cacheSpan).then(function(rawTx) {
 				var vout = {};
 				for (const v of rawTx.vout) {
 					if (v.outpoint == outpoint) {vout = v}
@@ -634,7 +634,7 @@ function getSummarizedTransactionOutput(outpoint, txid) {
 		});
 	};
 
-	return tryCacheThenRpcApi(txCache, `txoSummary-${txid}-${outpoint}`, ONE_HR, rpcApiFunction, function() { return true; });
+	return tryCacheThenRpcApi(txCache, `txoSummary-${txid}-${outpoint}`, cacheSpan, rpcApiFunction, function() { return true; });
 }
 
 function getTxUtxos(tx) {
@@ -687,11 +687,11 @@ function getAddress(address) {
 	});
 }
 
-function getRawTransactions(txids) {
+function getRawTransactions(txids, cacheSpan=ONE_HR) {
 	return new Promise(function(resolve, reject) {
 		var promises = [];
 		for (var i = 0; i < txids.length; i++) {
-			promises.push(getRawTransaction(txids[i]));
+			promises.push(getRawTransaction(txids[i], cacheSpan));
 		}
 
 		Promise.all(promises).then(function(results) {
@@ -786,9 +786,9 @@ function summarizeBlockAnalysisData(blockHeight, tx, inputs) {
 	return txSummary;
 }
 
-function getRawTransactionsWithInputs(txids, maxInputs=-1) {
+function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 	return new Promise(function(resolve, reject) {
-		getRawTransactions(txids).then(function(transactions) {
+		getRawTransactions(txids, cacheSpan).then(function(transactions) {
 			var maxInputsTracked = config.site.txMaxInput;
 
 			// FIXME need top make this magic number a parameter
@@ -823,7 +823,7 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1) {
 			for (var i = 0; i < vinIds.length; i++) {
 				var vinId = vinIds[i];
 
-				promises.push(getSummarizedTransactionOutput(vinId.outpoint, vinId.txid));
+				promises.push(getSummarizedTransactionOutput(vinId.outpoint, vinId.txid, cacheSpan));
 			}
 
 			Promise.all(promises).then(function(promiseResults) {
