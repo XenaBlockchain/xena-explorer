@@ -26,9 +26,7 @@ div.table-responsive
 
 				th.data-header.text-right Σ Fee
 
-				//-
-					th.data-header.text-right % Full
-				//
+				th.data-header.text-right % Full
 
 		tbody
 
@@ -108,22 +106,22 @@ div.table-responsive
 						- var currencyValueDecimals = 2;
 						include ./value-display.pug
 
-					//-
-						td.data-cell.text-monospace.text-right
-							- var data = utils.formatLargeNumber(block.size, 1);
-							- var fullRatio = block.size / coinConfig.maxBlockSizeByNetwork[activeBlockchain];
-							- var full = new Decimal(100 * fullRatio).toDecimalPlaces(1);
-							- var abbr = data[1].abbreviation || "";
-							- var toolTip = `${data[0]} ${abbr}B`;
+					td.data-cell.text-monospace.text-right
+						- var data = utils.formatLargeNumber(block.size, 1);
+						- var fullRatio = block.size / coinConfig.maxBlockSizeByNetwork[activeBlockchain];
+						- var full = new Decimal(100 * fullRatio).toDecimalPlaces(1);
+						- var abbr = data[1].abbreviation || "";
+						- var toolTip = `${data[0]} ${abbr}B`;
+						//script
+						//	| console.log(!{JSON.stringify(utils.formatLargeNumber(block.size, 1))});
 
-								span.border-dotted(title=toolTip, data-toggle="tooltip") #{full}%
-								span
-								if (full > 90)
-									img(src="/img/block-fullness-3.png", style="width: 18px; height: 18px;")
-								else if (full > 50)
-									img(src="/img/block-fullness-2.png", style="width: 18px; height: 18px;")
-								else if (full > 25)
-									img(src="/img/block-fullness-1.png", style="width: 18px; height: 18px;")
-								else
-									img(src="/img/block-fullness-0.png", style="width: 18px; height: 18px;")
-					//
+						span.border-dotted(title=toolTip, data-toggle="tooltip") #{full}%
+						span
+						if (full > 90)
+							img(src="/img/block-fullness-3.png", style="width: 18px; height: 18px;")
+						else if (full > 50)
+							img(src="/img/block-fullness-2.png", style="width: 18px; height: 18px;")
+						else if (full > 25)
+							img(src="/img/block-fullness-1.png", style="width: 18px; height: 18px;")
+						else
+							img(src="/img/block-fullness-0.png", style="width: 18px; height: 18px;")
