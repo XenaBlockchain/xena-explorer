@@ -108,7 +108,7 @@ div.table-responsive
 
 					td.data-cell.text-monospace.text-right
 						- var data = utils.formatLargeNumber(block.size, 1);
-						- var fullRatio = block.size / coinConfig.maxBlockSizeByNetwork[activeBlockchain];
+						- var fullRatio = block.size / miningInfo.currentmaxblocksize;
 						- var full = new Decimal(100 * fullRatio).toDecimalPlaces(1);
 						- var abbr = data[1].abbreviation || "";
 						- var toolTip = `${data[0]} ${abbr}B`;
