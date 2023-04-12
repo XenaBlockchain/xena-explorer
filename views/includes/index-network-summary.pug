@@ -24,11 +24,13 @@ div.row.index-summary
 						- var esi = utils.findBestCommonExponentScaleIndex([hashrate7d, hashrate30d]);
 						- var hashrate7dayData = utils.formatLargeNumber(hashrate7d, 0, esi);
 						- var hashrate30dayData = utils.formatLargeNumber(hashrate30d, 0, esi);
-						- var hashrateRatio = Math.round ((hashrate7dayData[0] / hashrate30dayData[0]) * 100);
+						- var hashDelta = Math.round (((hashrate7dayData[0] / hashrate30dayData[0]) - 1) * 100);
+						- var deltaSign;
+						- hashDelta < 0 ? (deltaSign = "-") : (deltaSign = "+");
 						span.border-dotted(title="Average network hashrate for the last 7 days", data-toggle="tooltip") #{hashrate7dayData[0]} 
 						span.border-dotted(title=`${hashrate7dayData[1].abbreviation}H = ${hashrate7dayData[1].name}-hash (x10^${hashrate7dayData[1].exponent})`, data-toggle="tooltip") #{hashrate7dayData[1].abbreviation}H/s
 						small.text-muted  
-						small.border-dotted(title="7 to 30 days hashrate ratio", data-toggle="tooltip") (#{hashrateRatio})%
+						small.border-dotted(title="7 over 30 days hashrate variation", data-toggle="tooltip") (#{deltaSign.toLocaleString()}#{hashDelta}%)
 
 				tr
 					th.px-2.px-lg-0.px-xl-2
