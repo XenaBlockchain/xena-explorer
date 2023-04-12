@@ -62,10 +62,6 @@ module.exports = {
 	nodeUrl:"https://nexa.org/download",
 	demoSiteUrl: "https://explorer.nexa.org",
 	miningPoolsConfigUrls:["https://nexa.org"],
-	maxBlockSizeByNetwork: {
-		"nexa":   100000, //FIXME:" nexa as an adptive blocksize maximum
-		"test":   100000,
-	},
 	difficultyAdjustmentBlockOffset: 20160,
 	difficultyAdjustmentBlockCount: 4,
 	maxSupplyByNetwork: {
