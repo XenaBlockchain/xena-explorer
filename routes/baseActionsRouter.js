@@ -323,12 +323,18 @@ router.get("/blocks", function(req, res, next) {
 		args.sort = req.query.sort;
 
 	res.locals.paginationBaseUrl = "/blocks";
+	var promises = [];
+
+	promises.push(coreApi.getMiningInfo());
 
 	coreApi.getBlockList(args).then(function(data) {
 		Object.assign(res.locals, data);
-		res.render("blocks");
 
+		Promise.all(promises).then(function(promiseResults) {
+			res.locals.miningInfo = promiseResults[0];
+			res.render("blocks");
 		utils.perfMeasure(req);
+		});
 	}).catch(function(err) {
 		res.locals.userMessage = "Error: " + err;
 
