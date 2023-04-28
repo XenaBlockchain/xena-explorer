@@ -53,7 +53,7 @@ block content
 					span(id="block-progress-text")
 				div.progress.mt-2(id="progress-bar", style="height: 7px;")
 					div.progress-bar(id="data-progress", role="progressbar", aria-valuenow="0", aria-valuemin="0" ,aria-valuemax="100")
-	
+
 	div.card.shadow-sm.mb-3(id="summary-table", style="display: none;")
 		div.card-body
 			div.table-responsive
@@ -65,7 +65,7 @@ block content
 							th.data-header.text-right Transactions
 							th.data-header.text-right Block Rewards
 							th.data-header.text-right Fees Collected
-							
+
 					tbody(id="summary-table-body")
 						tr(id="miner-summary-prototype", style="display: none;")
 							td.data-cell.text-monospace.miner-name
@@ -92,8 +92,10 @@ block content
 								small.text-muted.miner-tx-percent.ml-2 (100%)
 							th.data-cell.text-monospace.text-right
 								span.miner-subsidy
+								small.text-muted.miner-subsidy-percent.ml-2 (100%)
 							th.data-cell.text-monospace.text-right
 								span.miner-fees
+								small.text-muted.miner-fees-percent.ml-2 (100%)
 
 block endOfBody
 	script(src='/js/decimal.min.js', integrity="sha384-zcNJYsoavmOdYj5MgXBBIO8scbka8MlR5mSGt0GKjdqbm26j4w0yVyOb9s5rY7Jh")
@@ -211,12 +213,12 @@ block endOfBody
 					if (!minerName) {minerName = "Not Known";}
 					row.attr("id", minerName);
 					row.addClass("miner-summary-row");
-					
+
 					row.find(".miner-name").text(minerName);
-					
+
 					row.find(".miner-block-count").text(minerSummary.blockCount.toLocaleString());
 					row.find(".miner-block-percent").text(`(${new Decimal(minerSummary.blockCount).dividedBy(summary.overallSummary.blockCount).times(100).toDecimalPlaces(1)}%)`);
-					
+
 					row.find(".miner-tx-count").text(minerSummary.transactionCount.toLocaleString());
 					row.find(".miner-tx-percent").text(`(${new Decimal(minerSummary.transactionCount).dividedBy(summary.overallSummary.transactionCount).times(100).toDecimalPlaces(1)}%)`);
 
@@ -232,7 +234,6 @@ block endOfBody
 
 					updateCurrencyValue(row.find(".miner-subsidy"), minerSummary.totalSubsidiesCollected);
 					updateCurrencyValue(row.find(".miner-fees"), minerSummary.totalFeesCollected);
-					
 
 					row.show();
 
@@ -245,6 +246,8 @@ block endOfBody
 				totalsRow.find(".miner-tx-count").text(summary.overallSummary.transactionCount.toLocaleString());
 				totalsRow.find(".miner-subsidy").text(summary.overallSummary.totalSubsidiesCollected.toLocaleString());
 				totalsRow.find(".miner-fees").text(summary.overallSummary.totalFeesCollected.toLocaleString());
+				updateCurrencyValue(totalsRow.find(".miner-subsidy"), summary.overallSummary.totalSubsidiesCollected);
+				updateCurrencyValue(totalsRow.find(".miner-fees"), summary.overallSummary.totalFeesCollected);
 
 				var parent = totalsRow.parent();
 				parent.remove(totalsRow);
@@ -285,7 +288,7 @@ block endOfBody
 		function summarizeBlockData(blocks) {
 			var summariesByMiner = {};
 			var minerNamesSortedByBlockCount = [];
-			
+
 			var overallSummary = {};
 			overallSummary.blockCount = 0;
 			overallSummary.transactionCount = 0;
