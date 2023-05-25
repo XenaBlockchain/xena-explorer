@@ -8,13 +8,13 @@ block content
 	hr
 
 	div(class="mb-5")
-	form.form.form-inline(method="post", action="/decoder", class="form")
+	form.form(method="post", action="/decoder", class="form")
 		input(type="hidden", name="_csrf", value=csrfToken)
 		div(class="input-group input-group-lg")
 			textarea(class="form-control form-control-sm", name="query", placeholder="hex data", rows="6", value=(query), style="width: 90%;")
 
-			div.input-group
-				button(type="submit", class="btn btn-primary") Decode
+		div.input-group
+			button(type="submit", class="btn btn-primary") Decode
 
 	hr
 	ul.nav.nav-tabs.mb-3
