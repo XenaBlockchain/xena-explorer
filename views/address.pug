@@ -8,12 +8,12 @@ block content
 		if (!result.validateaddress.isvalid)
 			div.alert.alert-danger.mb-huge
 				h1.h6.font-weight-bold Invalid Address
-				span.text-monospace #{address}
+				span.text-monospace.word-wrap  #{address}
 
 		else
 			h1.h3 Address
 				br
-				small.text-monospace #{address}
+				small.text-monospace.word-wrap  #{address}
 
 			hr
 
