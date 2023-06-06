@@ -24,9 +24,12 @@ block content
 					div.card.shadow-sm.mb-3
 						div.card-header.text-monospace
 							if (tx && tx.txid)
-								span ##{(txIndex + offset).toLocaleString()}
+								span ##{(txIndex + offset).toLocaleString()} 
 								span &ndash; 
-								a(href=("/tx/" + tx.txid)) #{tx.txid}
+								a(href=("/tx/" + tx.txid)) #{tx.txid} 
+								span &ndash; 
+									- var timestampHuman = tx.time;
+									include includes/timestamp-human.pug
 
 						div.card-body
 							- var txInputs = txpoolDetails.txInputsByTransaction[tx.txid];
