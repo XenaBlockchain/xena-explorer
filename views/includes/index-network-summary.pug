@@ -78,7 +78,8 @@ div.row.index-summary
 				tr
 					th.px-2.px-lg-0.px-xl-2
 						i.fas.fa-unlock.mr-1.summary-icon
-						span Unconfirmed Txns
+						a(href="/unconfirmed-tx/", style=("color: white"))
+							span(style=("color: white")) Unconfirmed Txns
 					td.text-right.text-monospace
 						- var colorClass = "text-success";
 						if (txpoolInfo.size > 7000)
@@ -86,7 +87,8 @@ div.row.index-summary
 						if (txpoolInfo.size > 11000)
 							- colorClass = "text-danger";
 
-						span(class=colorClass) #{txpoolInfo.size.toLocaleString()}
+						a(href="/unconfirmed-tx/", style=("color: white"))
+							span(class=colorClass) #{txpoolInfo.size.toLocaleString()}
 
 	div(class=colClass)
 		h5.h6 Blockchain
