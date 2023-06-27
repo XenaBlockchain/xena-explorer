@@ -506,7 +506,7 @@ router.get("/search", function(req, res, next) {
 
 router.post("/search", function(req, res, next) {
 	if (!req.body.query) {
-		req.session.userMessage = "Enter a block height, block hashi, transaction id or idem.";
+		req.session.userMessage = "Enter a block height, block hash, transaction id or idem or outpoint.";
 
 		res.redirect("/");
 
@@ -519,10 +519,13 @@ router.post("/search", function(req, res, next) {
 	req.session.query = req.body.query;
 
 	if (query.length == 64) {
+		// this could be a successful retrieve produced
+		// by a seach vy txid, txidem or outpoint
 		coreApi.getRawTransaction(query).then(function(tx) {
 			if (tx) {
+				// always use txidem as query param independently
+				// by which mean we searched in the first place
 				res.redirect("/tx/" + query);
-
 				return;
 			}
 
@@ -924,26 +927,29 @@ function getInputPayloadContractPayload(tx) {
 	}
 }
 
-router.get("/tx/:transactionId", function(req, res, next) {
-	var txid = req.params.transactionId;
+// the rendering of a transaction is going to work even if
+// transactionIdem or utxo outpoints are used.
+router.get("/tx/:transactionIdentifier", function(req, res, next) {
+	var txIdentifier = req.params.transactionIdentifier;
 
 	var output = -1;
 	if (req.query.output) {
 		output = parseInt(req.query.output);
 	}
 
-	res.locals.txid = txid;
+	res.locals.txIdentifier = txIdentifier;
 	res.locals.output = output;
 
 	res.locals.result = {};
 
 	// 5 minutes cache span should be short enough
 	FIVE_MIN = 1000 * 60 * 5
-	coreApi.getRawTransactionsWithInputs([txid], -1, FIVE_MIN).then(function(rawTxResult) {
+	coreApi.getRawTransactionsWithInputs([txIdentifier], -1, FIVE_MIN).then(function(rawTxResult) {
 		var tx = rawTxResult.transactions[0];
 		res.locals.result.ballot = parseTwoOptionVote(tx);
 		res.locals.result.getrawtransaction = tx;
-		res.locals.result.txInputs = rawTxResult.txInputsByTransaction[txid]
+		res.locals.result.txInputs = rawTxResult.txInputsByTransaction[tx.txid]
+		res.locals.txid = tx.txid
 		const fee = tx.fee;
 		res.locals.result.isflipstarter = isFlipstarter(tx, fee);
 		res.locals.result.inputPayloadContract = getInputPayloadContractPayload(tx);
@@ -969,7 +975,7 @@ router.get("/tx/:transactionId", function(req, res, next) {
 		if (tx.confirmations == 0) {
 
 			promises.push(new Promise(function(resolve, reject) {
-				coreApi.getTxpoolTxDetails(txid).then(function(txpoolDetails) {
+				coreApi.getTxpoolTxDetails(tx.txid).then(function(txpoolDetails) {
 					res.locals.txpoolDetails = txpoolDetails;
 
 					resolve();
