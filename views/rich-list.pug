@@ -36,7 +36,7 @@ block content
 										td.data-cell.text-monospace.text-right
 											span #{address.rank}
 										td.data-cell.text-monospace.text-left
-											a(href=("/address/" + address.address)) #{address.address}
+											a(href=("/address/" + address.address)) #{address.formatAddress}
 										td.data-cell.text-monospace.text-right
 											a(href=("/block/"+ address.height)) #{address.height.toLocaleString()}
 										td.data-cell.text-monospace.text-right
