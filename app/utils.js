@@ -915,11 +915,20 @@ function readRichList () {
 	let coinsDistr = [["Top 25",0,0],["Top 26-50",0,0],["Top 51-75",0,0],["Top 76-100",0,0],["Total",0,0]];
 	lines.forEach(function(line) {
 		let lineArray = line.split(',');
+		let displayedAddress = "";
+		if (lineArray[3].length > 54) {
+			displayedAddress = lineArray[3].substring(0,21) + " ... " + lineArray[3].substring((lineArray[3].length - 21))
+			console.log("Dispalyed address: " + displayedAddress);
+			console.log("Dispalyed address: " + lineArray[3]);
+		} else {
+			displayedAddress = lineArray[3];
+		}
 		parsedLine = {
 			rank: Number(lineArray[0]),
 			balance: Number(lineArray[1]),
 			height: Number(lineArray[2]),
 			address: lineArray[3],
+			formatAddress : displayedAddress,
 			percent: Number(lineArray[4])
 		};
 		parsedLines.push(parsedLine);
