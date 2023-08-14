@@ -358,11 +358,11 @@ module.exports = {
 		}
 	],
 	exchangeRateData:{
-		jsonUrl:"https://api.txbit.io/api/public/getticker?market=NEXA/USDT",
+		jsonUrl:"https://api.mexc.com/api/v3/ticker/price?symbol=NEXAUSDT",
 		responseBodySelectorFunction:function(responseBody) {
-			if (responseBody.success) {
+			if (responseBody.price) {
 				var exchangeRates = {};
-				exchangeRates["usdt"] = responseBody.result["Last"];
+				exchangeRates["usdt"] = responseBody.price;
 				return exchangeRates;
 			}
 
