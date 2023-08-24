@@ -931,91 +931,98 @@ function getInputPayloadContractPayload(tx) {
 // transactionIdem or utxo outpoints are used.
 router.get("/tx/:transactionIdentifier", function(req, res, next) {
 	var txIdentifier = req.params.transactionIdentifier;
+	if (txIdentifier.length != 64) {
+		res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${transactionIdentifier}** txid/txidem/outpoint lenght != 64`;
+		res.locals.pageErrors.push(utils.logError("2237y4ewssgt", err));
 
-	var output = -1;
-	if (req.query.output) {
-		output = parseInt(req.query.output);
-	}
+		res.render("transaction");
+	} else {
 
-	res.locals.txIdentifier = txIdentifier;
-	res.locals.output = output;
+		var output = -1;
+		if (req.query.output) {
+			output = parseInt(req.query.output);
+		}
 
-	res.locals.result = {};
+		res.locals.txIdentifier = txIdentifier;
+		res.locals.output = output;
 
-	// 5 minutes cache span should be short enough
-	FIVE_MIN = 1000 * 60 * 5
-	coreApi.getRawTransactionsWithInputs([txIdentifier], -1, FIVE_MIN).then(function(rawTxResult) {
-		var tx = rawTxResult.transactions[0];
-		res.locals.result.ballot = parseTwoOptionVote(tx);
-		res.locals.result.getrawtransaction = tx;
-		res.locals.result.txInputs = rawTxResult.txInputsByTransaction[tx.txid]
-		res.locals.txid = tx.txid
-		const fee = tx.fee;
-		res.locals.result.isflipstarter = isFlipstarter(tx, fee);
-		res.locals.result.inputPayloadContract = getInputPayloadContractPayload(tx);
+		res.locals.result = {};
 
-		var promises = [];
+		// 5 minutes cache span should be short enough
+		FIVE_MIN = 1000 * 60 * 5
+		coreApi.getRawTransactionsWithInputs([txIdentifier], -1, FIVE_MIN).then(function(rawTxResult) {
+			var tx = rawTxResult.transactions[0];
+			res.locals.result.ballot = parseTwoOptionVote(tx);
+			res.locals.result.getrawtransaction = tx;
+			res.locals.result.txInputs = rawTxResult.txInputsByTransaction[tx.txid]
+			res.locals.txid = tx.txid
+			const fee = tx.fee;
+			res.locals.result.isflipstarter = isFlipstarter(tx, fee);
+			res.locals.result.inputPayloadContract = getInputPayloadContractPayload(tx);
 
-		promises.push(new Promise(function(resolve, reject) {
-			coreApi.getTxUtxos(tx).then(function(utxos) {
-				if (utxos.every(element => element === null)) {
-					res.locals.utxos = null;
-				} else {
-					res.locals.utxos = utxos;
-				}
-
-				resolve();
-
-			}).catch(function(err) {
-				res.locals.pageErrors.push(utils.logError("3208yhdsghssr", err));
-
-				reject(err);
-			});
-		}));
-		if (tx.confirmations == 0) {
+			var promises = [];
 
 			promises.push(new Promise(function(resolve, reject) {
-				coreApi.getTxpoolTxDetails(tx.txid).then(function(txpoolDetails) {
-					res.locals.txpoolDetails = txpoolDetails;
+				coreApi.getTxUtxos(tx).then(function(utxos) {
+					if (utxos.every(element => element === null)) {
+						res.locals.utxos = null;
+					} else {
+						res.locals.utxos = utxos;
+					}
 
 					resolve();
 
 				}).catch(function(err) {
-					res.locals.pageErrors.push(utils.logError("0q83hreuwgd", err));
+					res.locals.pageErrors.push(utils.logError("3208yhdsghssr", err));
 
 					reject(err);
 				});
 			}));
-		}
+			if (tx.confirmations == 0) {
 
-		if (tx.blockhash !== undefined) {
-			promises.push(new Promise(function(resolve, reject) {
-				coreApi.getBlockHeader(tx.blockhash).then(function(blockHeader) {
-					res.locals.result.blockHeader = blockHeader;
-					resolve()
-				}).catch(function(err) {
-					res.locals.pageErrors.push(utils.logError("1234abc456efd", err));
+				promises.push(new Promise(function(resolve, reject) {
+					coreApi.getTxpoolTxDetails(tx.txid).then(function(txpoolDetails) {
+						res.locals.txpoolDetails = txpoolDetails;
 
-					reject(err);
-				});
-			}));
-		}
+						resolve();
 
-		Promise.all(promises).then(function() {
-			res.render("transaction");
-			utils.perfMeasure(req);
+					}).catch(function(err) {
+						res.locals.pageErrors.push(utils.logError("0q83hreuwgd", err));
 
+						reject(err);
+					});
+				}));
+			}
+
+			if (tx.blockhash !== undefined) {
+				promises.push(new Promise(function(resolve, reject) {
+					coreApi.getBlockHeader(tx.blockhash).then(function(blockHeader) {
+						res.locals.result.blockHeader = blockHeader;
+						resolve()
+					}).catch(function(err) {
+						res.locals.pageErrors.push(utils.logError("1234abc456efd", err));
+
+						reject(err);
+					});
+				}));
+			}
+
+			Promise.all(promises).then(function() {
+				res.render("transaction");
+				utils.perfMeasure(req);
+
+			}).catch(function(err) {
+				res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
+				res.render("transacition");
+			});
 		}).catch(function(err) {
 			res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
-			res.render("transacition");
+			res.locals.pageErrors.push(utils.logError("1237y4ewssgt", err));
+
+			res.render("transaction");
+
 		});
-	}).catch(function(err) {
-		res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
-		res.locals.pageErrors.push(utils.logError("1237y4ewssgt", err));
-
-		res.render("transaction");
-
-	});
+	}
 });
 
 router.get("/address/:address", function(req, res, next) {
