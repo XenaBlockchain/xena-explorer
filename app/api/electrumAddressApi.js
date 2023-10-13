@@ -8,6 +8,7 @@ var sha256 = require("crypto-js/sha256");
 var hexEnc = require("crypto-js/enc-hex");
 
 var coinConfig = coins[config.coin];
+const lossless = require('lossless-json');
 
 global.net = require('net');
 global.tls = require('tls');
@@ -44,13 +45,13 @@ function connectToServer(host, port, protocol) {
 		debugLog("Connecting to ElectrumX Server: " + host + ":" + port);
 
 		// default protocol is 'tcp' if port is 50001, which is the default unencrypted port for electrumx
-		var defaultProtocol = port === 50001 ? 'tcp' : 'tls';
+		var defaultProtocol = port === 20001 ? 'tcp' : 'tls';
 
 		var electrumConfig = { client:"nexa-rpc-explorer", version:"1.4" };
 		var electrumPersistencePolicy = { retryPeriod: 10000, maxRetry: 1000, callback: null };
 
 		var onConnect = function(client, versionInfo) {
-			debugLog(`Connected to ElectrumX @ ${host}:${port} (${JSON.stringify(versionInfo)})`);
+			debugLog(`Connected to ElectrumX @ ${host}:${port} (${lossless.stringify(versionInfo)})`);
 
 			electrumClients.push(client);
 
@@ -68,7 +69,7 @@ function connectToServer(host, port, protocol) {
 		};
 
 		var onError = function(err) {
-			debugLog(`Electrum error: ${JSON.stringify(err)}`);
+			debugLog(`Electrum error: ${lossless.stringify(err)}`);
 
 			utils.logError("937gf47dsyde", err, {host:host, port:port, protocol:protocol});
 		};
@@ -215,7 +216,7 @@ function getAddressTxids(addrScripthash) {
 			return electrumClient.blockchainScripthash_getHistory(addrScripthash);
 
 		}).then(function(results) {
-			debugLog(`getAddressTxids=${utils.ellipsize(JSON.stringify(results), 200)}`);
+			debugLog(`getAddressTxids=${utils.ellipsize(lossless.stringify(results), 200)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
 				for (var i = 0; i < results.length; i++) {
@@ -249,7 +250,7 @@ function getAddressBalance(addrScripthash) {
 			return electrumClient.blockchainScripthash_getBalance(addrScripthash);
 
 		}).then(function(results) {
-			debugLog(`getAddressBalance=${JSON.stringify(results)}`);
+			debugLog(`getAddressBalance=${lossless.stringify(results)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
 				for (var i = 0; i < results.length; i++) {
