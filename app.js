@@ -17,11 +17,13 @@ global.cacheStats = {};
 
 // debug module is already loaded by the time we do dotenv.config
 // so refresh the status of DEBUG env var
-var debug = require("debug");
+const debug = require("debug");
 debug.enable(process.env.DEBUG || "nexexp:app,nexexp:error");
 
-var debugLog = debug("nexexp:app");
-var debugLogError = debug("nexexp:error");
+const debugLog = debug("nexexp:app");
+const debugLogError = debug("nexexp:error");
+const debugPerfLog = debug("nexexp:actionPerformace");
+const debugAccessLog = debug("nexexp:access");
 
 var express = require('express');
 var favicon = require('serve-favicon');
@@ -50,8 +52,6 @@ var markdown = require("markdown-it")();
 
 var package_json = require('./package.json');
 global.appVersion = package_json.version;
-
-var crawlerBotUserAgentStrings = [ "Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "ia_archiver" ];
 
 var baseActionsRouter = require('./routes/baseActionsRouter.js');
 var apiActionsRouter = require('./routes/apiRouter.js');
@@ -501,11 +501,6 @@ app.use(function(req, res, next) {
 	}
 
 	var userAgent = req.headers['user-agent'];
-	for (var i = 0; i < crawlerBotUserAgentStrings.length; i++) {
-		if (userAgent.indexOf(crawlerBotUserAgentStrings[i]) != -1) {
-			res.locals.crawlerBot = true;
-		}
-	}
 
 	// make a bunch of globals available to templates
 	res.locals.config = global.config;
@@ -620,24 +615,61 @@ app.use('/snippet/', snippetActionsRouter);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
-	var err = new Error('Not Found');
+	var err = new Error(`Not Found: ${req ? req.url : 'unknown url'}`);
 	err.status = 404;
-	next(err);
 
+	next(err);
 });
 
 /// error handlers
 
+
+const sharedErrorHandler = (req, err) => {
+	if (err && err.message && err.message.includes("Not Found")) {
+		const path = err.toString().substring(err.toString().lastIndexOf(" ") + 1);
+		const userAgent = req.headers['user-agent'];
+		const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+		const attributes = { path:path };
+
+		debugLogError(`404 NotFound: path=${path}, ip=${ip}, userAgent=${userAgent}`);
+
+		utils.logError(`NotFound`, err, attributes, false);
+
+	} else {
+		utils.logError("ExpressUncaughtError", err);
+	}
+};
+
 // development error handler
 // will print stacktrace
+if (app.get("env") === "development" || app.get("env") === "local") {
+	app.use(function(err, req, res, next) {
+		if (err) {
+			sharedErrorHandler(req, err);
+		}
+
+		res.status(err.status || 500);
+		res.render('error', {
+			message: err.message,
+			error: err
+		});
+	});
+}
+
+// production error handler
+// no stacktraces leaked to user
 app.use(function(err, req, res, next) {
+	if (err) {
+		sharedErrorHandler(req, err);
+	}
+
 	res.status(err.status || 500);
 	res.render('error', {
 		message: err.message,
-		error: (String(app.get('env')) === 'development') ? err:{}
+		error: {}
 	});
 });
-
 
 app.locals.moment = moment;
 app.locals.Decimal = Decimal;
