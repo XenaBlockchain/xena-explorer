@@ -320,11 +320,11 @@ function getRpcData(cmd) {
 				callback();
 
 			} catch (err) {
-					err.userData = {error:err, request:cmd};
+					err.userData = {request:cmd};
 
-					utils.logError("9u4278t5h7rfhgf", err, {error:err, request:cmd});
+					utils.logError("9u4278t5h7rfhgf", err, {request:cmd});
 
-					reject(eerr);
+					reject(err);
 
 					callback();
 			}
@@ -357,22 +357,22 @@ function getRpcDataWithParams(request) {
 					}
 				}
 
-				if (result.name && result.name == "RpcError") {
+				if (result && result.name && result.name == "RpcError") {
 					logStats(request.method, true, new Date().getTime() - startTime, false);
 
 					throw new Error(`RpcError: type=errorResponse-04`);
 				}
 
-				resolve(result[0]);
+				resolve(result);
 
 				logStats(request.method, true, new Date().getTime() - startTime, true);
 
 				callback();
 
 			} catch (err) {
-				err.userData = {error:err, request:request};
+				err.userData = {request:request};
 
-				utils.logError("283h7ewsede", e, {error:err, request:request});
+				utils.logError("283h7ewsede", err, {request:request});
 				logStats(request.method, true, new Date().getTime() - startTime, false)
 
 				reject(err);
