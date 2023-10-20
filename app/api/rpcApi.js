@@ -8,7 +8,6 @@ var semver = require("semver");
 var utils = require("../utils.js");
 var config = require("../config.js");
 var coins = require("../coins.js");
-const lossless = require('lossless-json');
 
 var activeQueueTasks = 0;
 
@@ -338,7 +337,7 @@ function getRpcDataWithParams(request) {
 	var startTime = new Date().getTime();
 
 	return new Promise(function(resolve, reject) {
-		debugLog(`RPC: ${lossless.stringify(request)}`);
+		debugLog(`RPC: ${JSON.stringify(request)}`);
 
 		let rpcCall = async function(callback) {
 			try {
