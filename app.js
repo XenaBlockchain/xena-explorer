@@ -37,7 +37,6 @@ var simpleGit = require('simple-git');
 var utils = require("./app/utils.js");
 var moment = require("moment");
 var Decimal = require('decimal.js');
-var bitcoinCore = require("bitcoin-core");
 var pug = require("pug");
 var momentDurationFormat = require("moment-duration-format");
 var coreApi = require("./app/api/coreApi.js");
@@ -49,6 +48,7 @@ var electrumAddressApi = require("./app/api/electrumAddressApi.js");
 var coreApi = require("./app/api/coreApi.js");
 var auth = require('./app/auth.js');
 var markdown = require("markdown-it")();
+const jayson = require('jayson/promise');
 
 var package_json = require('./package.json');
 global.appVersion = package_json.version;
@@ -404,8 +404,11 @@ app.onStartup = function() {
 }
 
 app.continueStartup = function() {
-	var rpcCred = config.credentials.rpc;
-	debugLog(`Connecting to RPC node at ${rpcCred.host}:${rpcCred.port}`);
+	let rpcCred = config.credentials.rpc;
+	debugLog(`Connecting to RPC node at [${rpcCred.host}]:${rpcCred.port}`);
+
+	let usernamePassword = `${rpcCred.username}:${rpcCred.password}`;
+	let authorizationHeader = `Basic ${btoa(usernamePassword)}`; // basic auth header format (base64 of "username:password")
 
 	var rpcClientProperties = {
 		host: rpcCred.host,
@@ -415,17 +418,29 @@ app.continueStartup = function() {
 		timeout: rpcCred.timeout
 	};
 
-	global.rpcClient = new bitcoinCore(rpcClientProperties);
+	debugLog(`RPC Connection properties: ${JSON.stringify(utils.obfuscateProperties(rpcClientProperties, ["password"]), null, 4)}`);
 
-	var rpcClientNoTimeoutProperties = {
+	// add after logging to avoid logging base64'd credentials
+	rpcClientProperties.headers = {
+		"Authorization": authorizationHeader
+	};
+
+	// main RPC client
+	global.rpcClient = jayson.Client.http(rpcClientProperties);
+
+	let rpcClientNoTimeoutProperties = {
 		host: rpcCred.host,
 		port: rpcCred.port,
 		username: rpcCred.username,
 		password: rpcCred.password,
-		timeout: 0
+		timeout: 0,
+		headers: {
+			"Authorization": authorizationHeader
+		}
 	};
 
-	global.rpcClientNoTimeout = new bitcoinCore(rpcClientNoTimeoutProperties);
+	// no timeout RPC client, for long-running commands
+	global.rpcClientNoTimeout = jayson.Client.http(rpcClientNoTimeoutProperties);
 
 
 	// keep trying to verify rpc connection until we succeed

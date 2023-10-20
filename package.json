@@ -21,10 +21,9 @@
     "url": "git+https://gitlab.com/nexa/explorer.git"
   },
   "dependencies": {
-    "async": "^3.2.2",
-    "axios": "^0.27.2",
+    "async": "^3.2.4",
+    "axios": "^1.3.4",
     "basic-auth": "^2.0.1",
-    "bitcoin-core": "EchterAgo/bitcoin-core#c30b4a0cd51305449c08ca361b15afc1646b5388",
     "bitcoinjs-lib": "^5.2.0",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
@@ -39,6 +38,7 @@
     "express-async-handler": "^1.1.4",
     "express-rate-limit": "^6.6.0",
     "express-session": "^1.17.1",
+    "jayson": "^4.1.0",
     "jstransformer-markdown-it": "^2.1.0",
     "lru-cache": "6.0.0",
     "markdown-it": "^12.3.2",

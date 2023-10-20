@@ -941,6 +941,21 @@ function readRichList () {
 	return [parsedLines, coinsDistr];
 }
 
+
+const obfuscateProperties = (obj, properties) => {
+	if (process.env.BTCEXP_SKIP_LOG_OBFUSCATION) {
+		return obj;
+	}
+
+	let objCopy = Object.assign({}, obj);
+
+	properties.forEach(name => {
+		objCopy[name] = "*****";
+	});
+
+	return objCopy;
+}
+
 module.exports = {
 	readRichList: readRichList,
 	reflectPromise: reflectPromise,
@@ -985,5 +1000,6 @@ module.exports = {
 	outputTypeName: outputTypeName,
 	serviceBitsToName: serviceBitsToName,
 	perfMeasure: perfMeasure,
-	getTransactionDatetime: getTransactionDatetime
+	getTransactionDatetime: getTransactionDatetime,
+	obfuscateProperties: obfuscateProperties
 };

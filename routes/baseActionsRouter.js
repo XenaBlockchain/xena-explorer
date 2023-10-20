@@ -6,7 +6,6 @@ var csurf = require('csurf');
 var router = express.Router();
 var util = require('util');
 var moment = require('moment');
-var bitcoinCore = require("bitcoin-core");
 var qrcode = require('qrcode');
 var bitcoinjs = require('bitcoinjs-lib');
 var cashaddrjs = require('nexaaddrjs');
@@ -26,7 +25,6 @@ var rpcApi = require("./../app/api/rpcApi.js");
 const v8 = require('v8');
 
 const forceCsrf = csurf({ ignoreMethods: [] });
-
 
 router.get("/", function(req, res, next) {
 	if (req.session.host == null || req.session.host.trim() == "") {
@@ -256,37 +254,37 @@ router.get("/peers", function(req, res, next) {
 	});
 });
 
-router.post("/connect", function(req, res, next) {
-	var host = req.body.host;
-	var port = req.body.port;
-	var username = req.body.username;
-	var password = req.body.password;
-
-	res.cookie('rpc-host', host);
-	res.cookie('rpc-port', port);
-	res.cookie('rpc-username', username);
-
-	req.session.host = host;
-	req.session.port = port;
-	req.session.username = username;
-
-	var newClient = new bitcoinCore({
-		host: host,
-		port: port,
-		username: username,
-		password: password,
-		timeout: 30000
-	});
-
-	debugLog("created new rpc client: " + newClient);
-
-	global.rpcClient = newClient;
-
-	req.session.userMessage = "<span class='font-weight-bold'>Connected via RPC</span>: " + username + " @ " + host + ":" + port;
-	req.session.userMessageType = "success";
-
-	res.redirect("/");
-});
+//router.post("/connect", function(req, res, next) {
+//	var host = req.body.host;
+//	var port = req.body.port;
+//	var username = req.body.username;
+//	var password = req.body.password;
+//
+//	res.cookie('rpc-host', host);
+//	res.cookie('rpc-port', port);
+//	res.cookie('rpc-username', username);
+//
+//	req.session.host = host;
+//	req.session.port = port;
+//	req.session.username = username;
+//
+//	var newClient = new bitcoinCore({
+//		host: host,
+//		port: port,
+//		username: username,
+//		password: password,
+//		timeout: 30000
+//	});
+//
+//	debugLog("created new rpc client: " + newClient);
+//
+//	global.rpcClient = newClient;
+//
+//	req.session.userMessage = "<span class='font-weight-bold'>Connected via RPC</span>: " + username + " @ " + host + ":" + port;
+//	req.session.userMessageType = "success";
+//
+//	res.redirect("/");
+//});
 
 router.get("/disconnect", function(req, res, next) {
 	res.cookie('rpc-host', "");
