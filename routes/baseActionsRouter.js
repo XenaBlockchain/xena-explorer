@@ -957,6 +957,8 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 			var tx = rawTxResult.transactions[0];
 			res.locals.result.ballot = parseTwoOptionVote(tx);
 			res.locals.result.getrawtransaction = tx;
+			res.locals.result.rawtransaction_parsed = JSON.stringify(tx, utils.bigIntToRawJSON, 4);
+
 			res.locals.result.txInputs = rawTxResult.txInputsByTransaction[tx.txid]
 			res.locals.txid = tx.txid
 			const fee = tx.fee;
@@ -971,6 +973,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 						res.locals.utxos = null;
 					} else {
 						res.locals.utxos = utxos;
+						res.locals.utxos_parsed = JSON.stringify(utxos, utils.bigIntToRawJSON, 4);
 					}
 
 					resolve();
@@ -1016,7 +1019,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 
 			}).catch(function(err) {
 				res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
-				res.render("transacition");
+				res.render("transaction");
 			});
 		}).catch(function(err) {
 			res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;

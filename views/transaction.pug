@@ -386,7 +386,7 @@ block content
 
 						div.highlight
 							pre
-								code.json.bg-light(data-lang="json") #{JSON.stringify(result.getrawtransaction, null, 4)}
+								code.json.bg-light(data-lang="json") #{result.rawtransaction_parsed}
 
 				if (utxos)
 					div.card.shadow-sm.mb-3
@@ -396,7 +396,7 @@ block content
 
 							div.highlight
 								pre
-									code.json.bg-light(data-lang="json") #{JSON.stringify(utxos, null, 4)}
+									code.json.bg-light(data-lang="json") #{utxos_parsed}
 
 					if (txpoolDetails)
 						h3.h5 Txpool Details

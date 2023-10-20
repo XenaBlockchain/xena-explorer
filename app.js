@@ -289,7 +289,7 @@ function refreshUtxoSetSummary() {
 
 		result.lastUpdated = Date.now();
 
-		debugLog("Refreshed utxo summary: " + JSON.stringify(result));
+		debugLog("Refreshed utxo summary: " + JSON.stringify(result, utils.bigIntToRawJSON));
 	});
 }
 
@@ -415,7 +415,9 @@ app.continueStartup = function() {
 		port: rpcCred.port,
 		username: rpcCred.username,
 		password: rpcCred.password,
-		timeout: rpcCred.timeout
+		timeout: rpcCred.timeout,
+		reviver: utils.intToBigInt,
+		replacer: utils.bigIntToRawJSON
 	};
 
 	debugLog(`RPC Connection properties: ${JSON.stringify(utils.obfuscateProperties(rpcClientProperties, ["password"]), null, 4)}`);
@@ -436,7 +438,9 @@ app.continueStartup = function() {
 		timeout: 0,
 		headers: {
 			"Authorization": authorizationHeader
-		}
+		},
+		reviver: utils.intToBigInt,
+		replacer: utils.bigIntToRawJSON
 	};
 
 	// no timeout RPC client, for long-running commands

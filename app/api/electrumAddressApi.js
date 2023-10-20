@@ -249,7 +249,7 @@ function getAddressBalance(addrScripthash) {
 			return electrumClient.blockchainScripthash_getBalance(addrScripthash);
 
 		}).then(function(results) {
-			debugLog(`getAddressBalance=${JSON.stringify(results, utils.bigIntiToRawJSON)}`);
+			debugLog(`getAddressBalance=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
 				for (var i = 0; i < results.length; i++) {
