@@ -985,7 +985,7 @@ const intToBigInt = function(key, val, unparsedVal) {
 	// if val belongs to the number type, it is bigger than max safe integer,
 	// and it's not a rational number, then convert it to BigInt starting from
 	// the orginal unparsed value.
-	if (typeof val === 'number' && val > Number.MAX_SAFE_INTEGER && val % 1 == 0) {
+	if (typeof val === 'number' && (val > Number.MAX_SAFE_INTEGER || val < Number.MIN_SAFE_INTEGER) && val % 1 == 0) {
 		// BigInt() can't parse string that ends wiht '.00' and e.g. 11.00 % 1
 		// returns 0 so we need to take into account this special case.
 		let regex = /^[0-9]+\.[0]{2}$/;
