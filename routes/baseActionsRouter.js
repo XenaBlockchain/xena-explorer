@@ -13,6 +13,7 @@ var sha256 = require("crypto-js/sha256");
 var hexEnc = require("crypto-js/enc-hex");
 var Decimal = require("decimal.js");
 var semver = require("semver");
+
 const asyncHandler = require("express-async-handler");
 
 var utils = require('./../app/utils.js');
@@ -673,13 +674,11 @@ router.get("/block-height/:blockHeight", function(req, res, next) {
 			utils.perfMeasure(req);
 
 		}).catch(function(err) {
-			res.locals.userMessageMarkdown = `Failed loading block: height=**${blockHeight}**`;
 
 			res.render("block");
 
 		});
 	}).catch(function(err) {
-		res.locals.userMessageMarkdown = `Failed loading block: height=**${blockHeight}**`;
 
 		res.locals.pageErrors.push(utils.logError("389wer07eghdd", err));
 
@@ -750,7 +749,6 @@ router.get("/block/:blockHash", function(req, res, next) {
 		utils.perfMeasure(req);
 
 	}).catch(function(err) {
-		res.locals.userMessageMarkdown = `Failed to load block: **${blockHash}**`;
 
 		res.render("block");
 
@@ -935,7 +933,6 @@ function getInputPayloadContractPayload(tx) {
 router.get("/tx/:transactionIdentifier", function(req, res, next) {
 	var txIdentifier = req.params.transactionIdentifier;
 	if (txIdentifier.length != 64) {
-		res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${transactionIdentifier}** txid/txidem/outpoint lenght != 64`;
 		res.locals.pageErrors.push(utils.logError("2237y4ewssgt", err));
 
 		res.render("transaction");
@@ -1018,11 +1015,9 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 				utils.perfMeasure(req);
 
 			}).catch(function(err) {
-				res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
 				res.render("transaction");
 			});
 		}).catch(function(err) {
-			res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
 			res.locals.pageErrors.push(utils.logError("1237y4ewssgt", err));
 
 			res.render("transaction");
@@ -1316,8 +1311,6 @@ router.get("/address/:address", function(req, res, next) {
 
 	}).catch(function(err) {
 		res.locals.pageErrors.push(utils.logError("2108hs0gsdfe", err, {address:address}));
-
-		res.locals.userMessageMarkdown = `Failed to load address: **${address}**`;
 
 		res.render("address");
 

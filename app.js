@@ -47,7 +47,6 @@ var addressApi = require("./app/api/addressApi.js");
 var electrumAddressApi = require("./app/api/electrumAddressApi.js");
 var coreApi = require("./app/api/coreApi.js");
 var auth = require('./app/auth.js');
-var markdown = require("markdown-it")();
 const jayson = require('jayson/promise');
 
 var package_json = require('./package.json');
@@ -693,7 +692,6 @@ app.use(function(err, req, res, next) {
 app.locals.moment = moment;
 app.locals.Decimal = Decimal;
 app.locals.utils = utils;
-app.locals.marked = src => markdown.render(src);
 
 
 
