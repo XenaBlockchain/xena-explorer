@@ -30,7 +30,7 @@
     "cookie-parser": "^1.4.5",
     "crypto-js": "^4.0.0",
     "csurf": "^1.11.0",
-    "debug": "~4.3.1",
+    "debug": "^4.3.4",
     "decimal.js": "^10.2.0",
     "dotenv": "^8.2.0",
     "electrum-client": "github:janoside/electrum-client",
