@@ -6,7 +6,6 @@ var csurf = require('csurf');
 var router = express.Router();
 var util = require('util');
 var moment = require('moment');
-var bitcoinCore = require("bitcoin-core");
 var qrcode = require('qrcode');
 var bitcoinjs = require('bitcoinjs-lib');
 var cashaddrjs = require('nexaaddrjs');
@@ -14,6 +13,7 @@ var sha256 = require("crypto-js/sha256");
 var hexEnc = require("crypto-js/enc-hex");
 var Decimal = require("decimal.js");
 var semver = require("semver");
+const asyncHandler = require("express-async-handler");
 
 var utils = require('./../app/utils.js');
 var coins = require("./../app/coins.js");
@@ -50,9 +50,6 @@ router.get("/", function(req, res, next) {
 
 	// don't need timestamp on homepage "blocks-list", this flag disables
 	//res.locals.hideTimestampColumn = true;
-
-	var feeConfTargets = [1, 6, 144, 1008];
-	res.locals.feeConfTargets = feeConfTargets;
 
 	var promises = [];
 
@@ -147,28 +144,33 @@ router.get("/", function(req, res, next) {
 	});
 });
 
-router.get("/node-status", function(req, res, next) {
-	var required = [
-		{ target: "getblockchaininfo", promise: coreApi.getBlockchainInfo() },
-		{ target: "getnetworkinfo", promise: coreApi.getNetworkInfo() },
-		{ target: "uptimeSeconds", promise: coreApi.getUptimeSeconds() },
-		{ target: "getnettotals", promise: coreApi.getNetTotals() },
-		{ target: "gettxpoolinfo", promise: coreApi.getTxpoolInfo() },
-	];
-	Promise.allSettled(required.map(r => r.promise)).then(function(promiseResults) {
-		var rejects = promiseResults.filter(r => r.status === "rejected");
-		if (rejects.length > 0)
-			res.locals.userMessage = "Error getting node status: err=" +
-				rejects.map(r => r.reason).join('\n');
+router.get("/node-status", asyncHandler(async (req, res, next) => {
+	try {
+		var required = [
+			{ target: "getblockchaininfo", promise: coreApi.getBlockchainInfo() },
+			{ target: "getnetworkinfo", promise: coreApi.getNetworkInfo() },
+			{ target: "uptimeSeconds", promise: coreApi.getUptimeSeconds() },
+			{ target: "getnettotals", promise: coreApi.getNetTotals() },
+			{ target: "gettxpoolinfo", promise: coreApi.getTxpoolInfo() },
+		];
+		await Promise.allSettled(required.map(r => r.promise)).then(function(promiseResults) {
+			var rejects = promiseResults.filter(r => r.status === "rejected");
+			if (rejects.length > 0)
+				res.locals.userMessage = "Error getting node status: err=" +
+					rejects.map(r => r.reason).join('\n');
 
-		promiseResults.map((r, i) => [r, i])
-			.filter(r => r[0].status === "fulfilled")
-			.forEach(r => res.locals[required[r[1]].target] = r[0].value);
+			promiseResults.map((r, i) => [r, i])
+				.filter(r => r[0].status === "fulfilled")
+				.forEach(r => res.locals[required[r[1]].target] = r[0].value);
 
-		res.render("node-status");
-		utils.perfMeasure(req);
-	});
-});
+			res.render("node-status");
+			utils.perfMeasure(req);
+		});
+	} catch (err) {
+		utils.logError("32978efegdde", err);
+		res.locals.userMessage = "Error building page: " + err;
+	}
+}));
 
 router.get("/txpool-summary", function(req, res, next) {
 	res.locals.satoshiPerByteBucketMaxima = coinConfig.feeSatoshiPerByteBucketMaxima;
@@ -252,37 +254,37 @@ router.get("/peers", function(req, res, next) {
 	});
 });
 
-router.post("/connect", function(req, res, next) {
-	var host = req.body.host;
-	var port = req.body.port;
-	var username = req.body.username;
-	var password = req.body.password;
-
-	res.cookie('rpc-host', host);
-	res.cookie('rpc-port', port);
-	res.cookie('rpc-username', username);
-
-	req.session.host = host;
-	req.session.port = port;
-	req.session.username = username;
-
-	var newClient = new bitcoinCore({
-		host: host,
-		port: port,
-		username: username,
-		password: password,
-		timeout: 30000
-	});
-
-	debugLog("created new rpc client: " + newClient);
-
-	global.rpcClient = newClient;
-
-	req.session.userMessage = "<span class='font-weight-bold'>Connected via RPC</span>: " + username + " @ " + host + ":" + port;
-	req.session.userMessageType = "success";
-
-	res.redirect("/");
-});
+//router.post("/connect", function(req, res, next) {
+//	var host = req.body.host;
+//	var port = req.body.port;
+//	var username = req.body.username;
+//	var password = req.body.password;
+//
+//	res.cookie('rpc-host', host);
+//	res.cookie('rpc-port', port);
+//	res.cookie('rpc-username', username);
+//
+//	req.session.host = host;
+//	req.session.port = port;
+//	req.session.username = username;
+//
+//	var newClient = new bitcoinCore({
+//		host: host,
+//		port: port,
+//		username: username,
+//		password: password,
+//		timeout: 30000
+//	});
+//
+//	debugLog("created new rpc client: " + newClient);
+//
+//	global.rpcClient = newClient;
+//
+//	req.session.userMessage = "<span class='font-weight-bold'>Connected via RPC</span>: " + username + " @ " + host + ":" + port;
+//	req.session.userMessageType = "success";
+//
+//	res.redirect("/");
+//});
 
 router.get("/disconnect", function(req, res, next) {
 	res.cookie('rpc-host', "");
@@ -451,6 +453,7 @@ router.get("/decoded-tx/:txHex",function(req, res, next) {
 		res.render("decoded-hex");
 	});
 });
+
 router.post("/decoder", function(req, res, next) {
 	if (!req.body.query) {
 		req.session.userMessage = "Enter a hex-encoded transaction or script";
@@ -954,6 +957,8 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 			var tx = rawTxResult.transactions[0];
 			res.locals.result.ballot = parseTwoOptionVote(tx);
 			res.locals.result.getrawtransaction = tx;
+			res.locals.result.rawtransaction_parsed = JSON.stringify(tx, utils.bigIntToRawJSON, 4);
+
 			res.locals.result.txInputs = rawTxResult.txInputsByTransaction[tx.txid]
 			res.locals.txid = tx.txid
 			const fee = tx.fee;
@@ -968,6 +973,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 						res.locals.utxos = null;
 					} else {
 						res.locals.utxos = utxos;
+						res.locals.utxos_parsed = JSON.stringify(utxos, utils.bigIntToRawJSON, 4);
 					}
 
 					resolve();
@@ -1013,7 +1019,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 
 			}).catch(function(err) {
 				res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
-				res.render("transacition");
+				res.render("transaction");
 			});
 		}).catch(function(err) {
 			res.locals.userMessageMarkdown = `Failed to load transaction: txid=**${txid}**`;
@@ -1599,45 +1605,41 @@ router.get("/tx-stats", function(req, res, next) {
 });
 
 router.get("/difficulty-history", function(req, res, next) {
-	coreApi.getBlockchainInfo().then(function(getblockchaininfo) {
-		var blockHeights = Array.from({length: global.coinConfig.difficultyAdjustmentBlockOffset / global.coinConfig.difficultyAdjustmentBlockCount}, (_, i) => getblockchaininfo.blocks - (i * global.coinConfig.difficultyAdjustmentBlockCount));
-		coreApi.getBlockHeadersByHeight(blockHeights).then(function(blockHeaders) {
-			var data = blockHeaders.map((b, i) => {
-				return {
-					h: b.height,
-					d: b.difficulty,
-					dd: blockHeaders[i + 1] ? (b.difficulty / blockHeaders[i + 1].difficulty) - 1 : 0
+	try {
+		coreApi.getBlockchainInfo().then(function(getblockchaininfo) {
+			var blockHeights = Array.from({length: global.coinConfig.difficultyAdjustmentBlockOffset / global.coinConfig.difficultyAdjustmentBlockCount}, (_, i) => getblockchaininfo.blocks - (i * global.coinConfig.difficultyAdjustmentBlockCount));
+			coreApi.getBlockHeadersByHeight(blockHeights).then(function(blockHeaders) {
+				var data = blockHeaders.map((b, i) => {
+					return {
+						h: b.height,
+						d: b.difficulty,
+						dd: blockHeaders[i + 1] ? (b.difficulty / blockHeaders[i + 1].difficulty) - 1 : 0
+					}
+				});
+
+				// 3hrs
+				var avglen = Math.floor(90 / global.coinConfig.difficultyAdjustmentBlockCount) ;
+				var avg = data[data.length - 1].d;
+				var avgd = data[data.length - 1].dd;
+				for (var i = data.length - 1; i >= 0; i--) {
+					data[i].a  = avg  = ((avg  * (avglen - 1)) + data[i].d)  / avglen;
+					data[i].ad = avgd = ((avgd * (avglen - 1)) + data[i].dd) / avglen;
 				}
+
+				res.locals.avglen = avglen
+				res.locals.data = data;
+
+				res.render("difficulty-history");
+				utils.perfMeasure(req);
 			});
-
-			// 3hrs
-			var avglen = Math.floor(90 / global.coinConfig.difficultyAdjustmentBlockCount) ;
-			var avg = data[data.length - 1].d;
-			var avgd = data[data.length - 1].dd;
-			for (var i = data.length - 1; i >= 0; i--) {
-				data[i].a  = avg  = ((avg  * (avglen - 1)) + data[i].d)  / avglen;
-				data[i].ad = avgd = ((avgd * (avglen - 1)) + data[i].dd) / avglen;
-			}
-
-			res.locals.avglen = avglen
-			res.locals.data = data;
-
-			res.render("difficulty-history");
-			utils.perfMeasure(req);
-		}).catch(function(err) {
-			res.locals.userMessage = "Error: " + err;
-
-			res.render("difficulty-history");
-			utils.perfMeasure(req);
-
-		})
-	}).catch(function(err) {
+		});
+	} catch (err) {
 		res.locals.userMessage = "Error: " + err;
 
 		res.render("difficulty-history");
 		utils.perfMeasure(req);
 
-	});
+	}
 });
 
 router.get("/about", function(req, res, next) {

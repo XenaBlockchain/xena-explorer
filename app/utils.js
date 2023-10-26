@@ -941,6 +941,65 @@ function readRichList () {
 	return [parsedLines, coinsDistr];
 }
 
+
+const obfuscateProperties = (obj, properties) => {
+	if (process.env.BTCEXP_SKIP_LOG_OBFUSCATION) {
+		return obj;
+	}
+
+	let objCopy = Object.assign({}, obj);
+
+	properties.forEach(name => {
+		objCopy[name] = "*****";
+	});
+
+	return objCopy;
+}
+
+// The following 2 functions are needed when using "json parse with source" tc39
+// v8 modification available only while using nodejs >=20
+
+// This will let us use an experimental version of v8 engine that
+// fixes JSON BigInt parsing/stringifying problem.
+//
+// See the following links for more detail:
+//
+// - https://jsoneditoronline.org/indepth/parse/why-does-json-parse-corrupt-large-numbers/
+// - https://github.com/tc39/proposal-json-parse-with-source
+// - https://2ality.com/2022/11/json-parse-with-source.html
+//
+// The TC39 change proposal is called json parse with souirce and it has already been
+// implemented in google v8 since version 10.9.1, see:
+//
+// https://chromium.googlesource.com/v8/v8/+/refs/heads/10.9.1/src/flags/flag-definitions.h#222
+
+const bigIntToRawJSON = function(key, val) {
+	if (typeof val === "bigint" ) {
+		return JSON.rawJSON(String(val));
+	} else {
+		return val;
+	}
+}
+
+const intToBigInt = function(key, val, unparsedVal) {
+	// if val belongs to the number type, it is bigger than max safe integer,
+	// and it's not a rational number, then convert it to BigInt starting from
+	// the orginal unparsed value.
+	if (typeof val === 'number' && val > Number.MAX_SAFE_INTEGER && val % 1 == 0) {
+		// BigInt() can't parse string that ends wiht '.00' and e.g. 11.00 % 1
+		// returns 0 so we need to take into account this special case.
+		let regex = /^[0-9]+\.[0]{2}$/;
+		let toParse = unparsedVal.source;
+		if (regex.test(toParse)) {
+			return BigInt(toParse.slice(0,-3));
+		} else {
+			return BigInt(unparsedVal.source);
+		}
+	} else {
+		return val;
+	}
+}
+
 module.exports = {
 	readRichList: readRichList,
 	reflectPromise: reflectPromise,
@@ -985,5 +1044,8 @@ module.exports = {
 	outputTypeName: outputTypeName,
 	serviceBitsToName: serviceBitsToName,
 	perfMeasure: perfMeasure,
-	getTransactionDatetime: getTransactionDatetime
+	getTransactionDatetime: getTransactionDatetime,
+	obfuscateProperties: obfuscateProperties,
+	bigIntToRawJSON: bigIntToRawJSON,
+	intToBigInt: intToBigInt
 };

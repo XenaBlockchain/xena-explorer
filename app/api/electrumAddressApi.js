@@ -44,7 +44,7 @@ function connectToServer(host, port, protocol) {
 		debugLog("Connecting to ElectrumX Server: " + host + ":" + port);
 
 		// default protocol is 'tcp' if port is 50001, which is the default unencrypted port for electrumx
-		var defaultProtocol = port === 50001 ? 'tcp' : 'tls';
+		var defaultProtocol = port === 20001 ? 'tcp' : 'tls';
 
 		var electrumConfig = { client:"nexa-rpc-explorer", version:"1.4" };
 		var electrumPersistencePolicy = { retryPeriod: 10000, maxRetry: 1000, callback: null };
@@ -249,7 +249,7 @@ function getAddressBalance(addrScripthash) {
 			return electrumClient.blockchainScripthash_getBalance(addrScripthash);
 
 		}).then(function(results) {
-			debugLog(`getAddressBalance=${JSON.stringify(results)}`);
+			debugLog(`getAddressBalance=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
 				for (var i = 0; i < results.length; i++) {

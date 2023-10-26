@@ -1,18 +1,9 @@
 var redis = require("redis");
 var bluebird = require("bluebird");
-var msgpack = require("msgpack-lite");
-var Decimal = require("decimal.js");
+var msgpack = require("msgpackr");
 
 var config = require("./config.js");
 var utils = require("./utils.js");
-
-var codec = msgpack.createCodec();
-codec.addExtPacker(0x3F, Decimal, function(decimal) {
-	return msgpack.encode(decimal.toNumber());
-});
-codec.addExtUnpacker(0x3F, function(buffer) {
-	return new Decimal(msgpack.decode(buffer));
-});
 
 var redisClient = null;
 if (config.redisUrl) {
@@ -41,7 +32,7 @@ function createCache(keyPrefix, onCacheEvent) {
 					} else {
 						onCacheEvent("redis", "hit", prefixedKey);
 
-						resolve(msgpack.decode(result, {codec: codec}));
+						resolve(msgpack.unpack(result));
 					}
 				}).catch(function(err) {
 					onCacheEvent("redis", "error", prefixedKey);
@@ -55,7 +46,7 @@ function createCache(keyPrefix, onCacheEvent) {
 		set: function(key, obj, maxAgeMillis) {
 			var prefixedKey = `${keyPrefix}-${key}`;
 
-			redisClient.set(prefixedKey, msgpack.encode(obj, {codec: codec}), "PX", maxAgeMillis);
+			redisClient.set(prefixedKey, msgpack.pack(obj), "PX", maxAgeMillis);
 		}
 	};
 }

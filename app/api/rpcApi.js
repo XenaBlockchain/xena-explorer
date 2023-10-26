@@ -291,49 +291,43 @@ function getRpcData(cmd) {
 	return new Promise(function(resolve, reject) {
 		debugLog(`RPC: ${cmd}`);
 
-		rpcCall = function(callback) {
+		let rpcCall = async function(callback) {
 			var client = (cmd == "gettxoutsetinfo" ? global.rpcClientNoTimeout : global.rpcClient);
+			try {
+				const rpcResult = await client.request(cmd, []);
+				const result = rpcResult.result;
 
-			client.command(cmd, function(err, result, resHeaders) {
-				try {
-					if (err) {
+				if (Array.isArray(result) && result.length == 1) {
+					var result0 = result[0];
+					if (result0 && result0.name && result0.name == "RpcError") {
+
 						logStats(cmd, false, new Date().getTime() - startTime, false);
 
-						throw new Error(`RpcError: type=failure-01`);
+						throw new Error(`RpcError: type=errorResponse-01`);
 					}
-
-					if (Array.isArray(result) && result.length == 1) {
-						var result0 = result[0];
-
-						if (result0 && result0.name && result0.name == "RpcError") {
-							logStats(cmd, false, new Date().getTime() - startTime, false);
-
-							throw new Error(`RpcError: type=errorResponse-01`);
-						}
-					}
-
-					if (result.name && result.name == "RpcError") {
-						logStats(cmd, false, new Date().getTime() - startTime, false);
-
-						throw new Error(`RpcError: type=errorResponse-02`);
-					}
-
-					resolve(result);
-
-					logStats(cmd, false, new Date().getTime() - startTime, true);
-
-					callback();
-
-				} catch (e) {
-					e.userData = {error:err, request:cmd, result:result};
-
-					utils.logError("9u4278t5h7rfhgf", e, {error:err, request:cmd, result:result});
-
-					reject(e);
-
-					callback();
 				}
-			});
+
+				if (result.name && result.name == "RpcError") {
+					logStats(cmd, false, new Date().getTime() - startTime, false);
+
+					throw new Error(`RpcError: type=errorResponse-02`);
+				}
+
+				resolve(result);
+
+				logStats(cmd, false, new Date().getTime() - startTime, true);
+
+				callback();
+
+			} catch (err) {
+					err.userData = {request:cmd};
+
+					utils.logError("9u4278t5h7rfhgf", err, {request:cmd});
+
+					reject(err);
+
+					callback();
+			}
 		};
 
 		rpcQueue.push({rpcCall:rpcCall});
@@ -346,47 +340,45 @@ function getRpcDataWithParams(request) {
 	return new Promise(function(resolve, reject) {
 		debugLog(`RPC: ${JSON.stringify(request)}`);
 
-		rpcCall = function(callback) {
-			global.rpcClient.command([request], function(err, result, resHeaders) {
-				try {
-					if (err != null) {
+		let rpcCall = async function(callback) {
+			let client = (request.method == "gettxoutsetinfo" ? global.rpcClientNoTimeout : global.rpcClient);
+			try {
+				const rpcResult = await client.request(request.method, request.parameters);
+				let result = rpcResult.result;
+
+				if (Array.isArray(result) && result.length == 1) {
+					var result0 = result[0];
+
+
+					if (result0 && result0.name && result0.name == "RpcError") {
 						logStats(request.method, true, new Date().getTime() - startTime, false);
-
-						throw new Error(`RpcError: type=failure-02`);
-					}
-
-					if (Array.isArray(result) && result.length == 1) {
-						var result0 = result[0];
-
-						if (result0 && result0.name && result0.name == "RpcError") {
-							logStats(request.method, true, new Date().getTime() - startTime, false);
 
 							throw new Error(`RpcError: type=errorResponse-03`);
-						}
 					}
-
-					if (result.name && result.name == "RpcError") {
-						logStats(request.method, true, new Date().getTime() - startTime, false);
-
-						throw new Error(`RpcError: type=errorResponse-04`);
-					}
-
-					resolve(result[0]);
-
-					logStats(request.method, true, new Date().getTime() - startTime, true);
-
-					callback();
-
-				} catch (e) {
-					e.userData = {error:err, request:request, result:result};
-
-					utils.logError("283h7ewsede", e, {error:err, request:request, result:result});
-
-					reject(e);
-
-					callback();
 				}
-			});
+
+				if (result && result.name && result.name == "RpcError") {
+					logStats(request.method, true, new Date().getTime() - startTime, false);
+
+					throw new Error(`RpcError: type=errorResponse-04`);
+				}
+
+				resolve(result);
+
+				logStats(request.method, true, new Date().getTime() - startTime, true);
+
+				callback();
+
+			} catch (err) {
+				err.userData = {request:request};
+
+				utils.logError("283h7ewsede", err, {request:request});
+				logStats(request.method, true, new Date().getTime() - startTime, false)
+
+				reject(err);
+
+				callback();
+			}
 		};
 
 		rpcQueue.push({rpcCall:rpcCall});
