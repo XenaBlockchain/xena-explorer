@@ -421,7 +421,7 @@ router.get("/decoded-script/:scriptHex",function(req, res, next) {
 	Promise.all(promises).then(function(results) {
 		var decodedScript = results[0];
 		res.locals.decodedDetails = utils.prettyScript(decodedScript.asm, '\t');
-		res.locals.decodedJson = decodedScript;
+		res.locals.decodedJson = JSON.stringify(decodedScript, utils.bigIntToRawJSON, 4);
 		res.render("decoded-hex");
 		utils.perfMeasure(req);
 
@@ -484,14 +484,15 @@ router.post("/decoder", function(req, res, next) {
 			res.locals.type = "tx";
 			res.locals.userMessage = "";
 			res.locals.tx = decodedTx;
-			res.locals.decodedJson = decodedTx;  // If tx decodes, assume its a tx because tx hex can be decoded as bad scripts
+			// If tx decodes, assume its a tx because tx hex can be decoded as bad scripts
+			res.locals.decodedJson = JSON.stringify(decodedTx, utils.bigIntToRawJSON, 4);
 		} else if ("asm" in decodedScript) {
 			res.locals.type = "script";
 			res.locals.userMessage = "";
 			// FIXME we are mixing routing with view here. What script does
 			// should be done in the views/decoder.pug
 			res.locals.decodedDetails = utils.prettyScript(decodedScript.asm, '\t');
-			res.locals.decodedJson = decodedScript;
+			res.locals.decodedJson = JSON.stringify(decodedScript, utils.bigIntToRawJSON, 4);
 		} else {
 			res.locals.type = "unknown";
 			res.locals.userMessage = "Decode failed";
