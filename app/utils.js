@@ -932,10 +932,15 @@ function readRichList () {
 			percent: Number(lineArray[4])
 		};
 		parsedLines.push(parsedLine);
-		coinsDistr[4][1] += parsedLine.balance;
-		coinsDistr[4][2] += parsedLine.percent;
-		coinsDistr[Math.floor(i/25)][1] += parsedLine.balance;
-		coinsDistr[Math.floor(i/25)][2] += parsedLine.percent;
+		// skip the address with more coin because it is MEXC cold/hot wallet.
+		// keep it while computing NEXA coins distribution is not fairl cause
+		// and it gives a biased vision of the NEXA coins distribution.
+		if (i > 0) {
+			coinsDistr[4][1] += parsedLine.balance;
+			coinsDistr[4][2] += parsedLine.percent;
+			coinsDistr[Math.floor(i/25)][1] += parsedLine.balance;
+			coinsDistr[Math.floor(i/25)][2] += parsedLine.percent;
+		}
 		i++;
 	});
 	return [parsedLines, coinsDistr];
