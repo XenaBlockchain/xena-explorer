@@ -53,7 +53,7 @@ block content
 						table.table.table-striped.mb-0
 							thead
 								tr
-									th.data-header.text-left(colspan='3') Wealth Distribution
+									th.data-header.text-left(colspan='3') Wealth Distribution (*)
 
 							tbody
 								tr
@@ -74,3 +74,8 @@ block content
 											include includes/value-display.pug
 										td.data-cell.text-monospace.text-right
 											span #{coinsDistr[2].toFixed(2)}
+
+						hr
+						div.mb-tiny
+							small
+								span (*) Nexa coins distribution of the top 100 addresses disregading MEXC cold/hot wallet.
