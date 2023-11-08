@@ -905,6 +905,16 @@ function getTransactionDatetime(utcEpochTime) {
 	return formatted_date;
 }
 
+function shortenAddress(address, threshold, wingLength) {
+	let displayedAddress = "";
+	if (address.length > threshold) {
+		displayedAddress = address.substring(0,wingLength) + "..." + address.substring((address.length - wingLength))
+	} else {
+		displayedAddress = address;
+	}
+	return displayedAddress
+}
+
 function readRichList () {
 	let data = fs.readFileSync(path.resolve(config.richListPath), {encoding:'utf8', flag:'r'});
 	let lines = data.split(/\r?\n/);
@@ -915,14 +925,7 @@ function readRichList () {
 	let coinsDistr = [["Top 25",0,0],["Top 26-50",0,0],["Top 51-75",0,0],["Top 76-100",0,0],["Total",0,0]];
 	lines.forEach(function(line) {
 		let lineArray = line.split(',');
-		let displayedAddress = "";
-		if (lineArray[3].length > 54) {
-			displayedAddress = lineArray[3].substring(0,21) + " ... " + lineArray[3].substring((lineArray[3].length - 21))
-			console.log("Dispalyed address: " + displayedAddress);
-			console.log("Dispalyed address: " + lineArray[3]);
-		} else {
-			displayedAddress = lineArray[3];
-		}
+		let displayedAddress = shortenAddress(lineArray[3], 54, 21);
 		parsedLine = {
 			rank: Number(lineArray[0]),
 			balance: Number(lineArray[1]),
@@ -932,9 +935,9 @@ function readRichList () {
 			percent: Number(lineArray[4])
 		};
 		parsedLines.push(parsedLine);
-		// skip the address with more coin because it is MEXC cold/hot wallet.
-		// keep it while computing NEXA coins distribution is not fairl cause
-		// and it gives a biased vision of the NEXA coins distribution.
+		// Skip the address with more coin because it is MEXC cold/hot wallet.
+		// Keeping it while computing NEXA coins distribution is not fair cause
+		// it gives a biased idea of the NEXA coins distribution.
 		if (i > 0) {
 			coinsDistr[4][1] += parsedLine.balance;
 			coinsDistr[4][2] += parsedLine.percent;
@@ -1052,5 +1055,6 @@ module.exports = {
 	getTransactionDatetime: getTransactionDatetime,
 	obfuscateProperties: obfuscateProperties,
 	bigIntToRawJSON: bigIntToRawJSON,
-	intToBigInt: intToBigInt
+	intToBigInt: intToBigInt,
+	shortenAddress: shortenAddress
 };
