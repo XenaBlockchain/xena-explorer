@@ -791,7 +791,7 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 		getRawTransactions(txids, cacheSpan).then(function(transactions) {
 			var maxInputsTracked = config.site.txMaxInput;
 
-			// FIXME need top make this magic number a parameter
+			// FIXME need to make this magic number a parameter
 			if (maxInputs <= 0) {
 				maxInputsTracked = 1000000;
 			} else if (maxInputs > 0) {
@@ -810,7 +810,6 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 
 				if (transaction && transaction.vin) {
 					for (var j = 0; j < Math.min(maxInputsTracked, transaction.vin.length); j++) {
-						// FIXME: in Nexa there's no txid in vin[] vectos
 						if (transaction.vin[j].outpoint) {
 							vinIds.push({outpoint:transaction.vin[j].outpoint, txid:transaction.txid});
 						}
