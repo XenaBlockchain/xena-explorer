@@ -11,6 +11,7 @@ var qrcode = require("qrcode");
 var textdecoding = require("text-decoding");
 const fs = require('fs');
 const path = require('path');
+const nexaaddr = require('nexaaddrjs');
 
 var config = require("./config.js");
 var coins = require("./coins.js");
@@ -98,6 +99,12 @@ function hex2array(hex) {
 
 function hex2string(hex, encoding = 'utf-8') {
 	return new textdecoding.TextDecoder(encoding).decode(hex2array(hex))
+}
+
+function uint8Array2hexstring(byteArray) {
+	return Array.from(byteArray)
+		.map(b => b.toString(16).padStart(2, '0'))
+		.join('');
 }
 
 function splitArrayIntoChunks(array, chunkSize) {
@@ -905,6 +912,16 @@ function getTransactionDatetime(utcEpochTime) {
 	return formatted_date;
 }
 
+function shortenAddress(address, threshold, wingLength) {
+	let displayedAddress = "";
+	if (address.length > threshold) {
+		displayedAddress = address.substring(0,wingLength) + "..." + address.substring((address.length - wingLength))
+	} else {
+		displayedAddress = address;
+	}
+	return displayedAddress
+}
+
 function readRichList () {
 	let data = fs.readFileSync(path.resolve(config.richListPath), {encoding:'utf8', flag:'r'});
 	let lines = data.split(/\r?\n/);
@@ -915,14 +932,7 @@ function readRichList () {
 	let coinsDistr = [["Top 25",0,0],["Top 26-50",0,0],["Top 51-75",0,0],["Top 76-100",0,0],["Total",0,0]];
 	lines.forEach(function(line) {
 		let lineArray = line.split(',');
-		let displayedAddress = "";
-		if (lineArray[3].length > 54) {
-			displayedAddress = lineArray[3].substring(0,21) + " ... " + lineArray[3].substring((lineArray[3].length - 21))
-			console.log("Dispalyed address: " + displayedAddress);
-			console.log("Dispalyed address: " + lineArray[3]);
-		} else {
-			displayedAddress = lineArray[3];
-		}
+		let displayedAddress = shortenAddress(lineArray[3], 54, 21);
 		parsedLine = {
 			rank: Number(lineArray[0]),
 			balance: Number(lineArray[1]),
@@ -932,9 +942,9 @@ function readRichList () {
 			percent: Number(lineArray[4])
 		};
 		parsedLines.push(parsedLine);
-		// skip the address with more coin because it is MEXC cold/hot wallet.
-		// keep it while computing NEXA coins distribution is not fairl cause
-		// and it gives a biased vision of the NEXA coins distribution.
+		// Skip the address with more coin because it is MEXC cold/hot wallet.
+		// Keeping it while computing NEXA coins distribution is not fair cause
+		// it gives a biased idea of the NEXA coins distribution.
 		if (i > 0) {
 			coinsDistr[4][1] += parsedLine.balance;
 			coinsDistr[4][2] += parsedLine.percent;
@@ -1005,6 +1015,70 @@ const intToBigInt = function(key, val, unparsedVal) {
 	}
 }
 
+
+/**
+ * Given a 32-byte hex-encoded token category, return a deterministic hue and
+ * saturation value to use in HSL colors representing the token category.
+ * Usage: `hsl(${ tokenID2HueSaturation(vout.tokenData.category) }, 50%)`
+ */
+function tokenID2HueSaturation(groupIdEncoded) {
+	let groupId = nexaaddr.decode(groupIdEncoded).hash;
+	if (groupId.length > 32) {
+		// this is asubgroup which contains the parent group id in the first 32 bytes
+		groupId = groupId.slice(32);
+	}
+	const raw = groupId.reduce((acc, num) => acc * num, 1) % 36000;
+	const hue = (raw / 100).toFixed(0);
+	const saturation = Math.min(100, (raw / 360 + 50)).toFixed(0);
+	return `${hue},${saturation}%`;
+}
+
+function tokenID2HexString(groupIdEncoded) {
+	let groupId = nexaaddr.decode(groupIdEncoded).hash;
+	if (groupId.length > 32) {
+		// this is asubgroup which contains the parent group id in the first 32 bytes
+		groupId = groupId.slice(32);
+	}
+	return uint8Array2hexstring(groupId);
+}
+/**
+ * Given groupAuthotiry encoede as 64buit unsigned BigInt, return the a map
+ * rappresenting the 6 most significant digits of the given value encoded
+ * as a binary. Each digit as a particular meaning as described here:
+ * https://gitlab.com/nexa/nexa/-/blame/dev/src/consensus/grouptokens.h#L28
+ *
+ * The following is the C++ code that defines the meaning of those digits:
+ *
+ * enum class GroupAuthorityFlags : uint64_t
+ * {
+ *     AUTHORITY = 1ULL << 63, // Is this a controller utxo (forces negative number in amount)
+ *     MINT = 1ULL << 62, // Can mint tokens
+ *     MELT = 1ULL << 61, // Can melt tokens,
+ *     BATON = 1ULL << 60, // Can create controller outputs
+ *     RESCRIPT = 1ULL << 59, // Can change the redeem script
+ *     SUBGROUP = 1ULL << 58,
+
+ *     NONE = 0,
+ *     ACTIVE_FLAG_BITS = AUTHORITY | MINT | MELT | BATON | RESCRIPT | SUBGROUP,
+ *     ALL_FLAG_BITS = 0xffffULL << (64 - 16),
+ *     RESERVED_FLAG_BITS = ACTIVE_FLAG_BITS & ~ALL_FLAG_BITS
+ * };
+ */
+function tokenAuthToFlags(groupAuth) {
+	const groupAuthBinary = BigInt.asUintN(64,String(groupAuth)).toString(2);
+	const stringFlags = groupAuthBinary.substr(0,6);
+	let authFlags = ['Authority', 'Mint', 'Melt', 'Baton', 'Rescript', 'Subgroup']
+	let activeFlags = [];
+	for (let i in stringFlags) {
+		// skip showing "authority" because that is implied by showing any flags
+		if ((stringFlags[i] == '1') && (i > 0)) {
+			activeFlags.push(authFlags[i]);
+		}
+	}
+	return activeFlags;
+}
+
+
 module.exports = {
 	readRichList: readRichList,
 	reflectPromise: reflectPromise,
@@ -1052,5 +1126,9 @@ module.exports = {
 	getTransactionDatetime: getTransactionDatetime,
 	obfuscateProperties: obfuscateProperties,
 	bigIntToRawJSON: bigIntToRawJSON,
-	intToBigInt: intToBigInt
+	intToBigInt: intToBigInt,
+	shortenAddress: shortenAddress,
+	tokenID2HueSaturation: tokenID2HueSaturation,
+	tokenAuthToFlags, tokenAuthToFlags,
+	tokenID2HexString: tokenID2HexString
 };

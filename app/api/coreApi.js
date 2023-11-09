@@ -598,7 +598,7 @@ function getRawTransaction(txid, cacheSpan=ONE_HR) {
 }
 
 /*
- *This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
+ * This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
  */
 function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
 	var rpcApiFunction = function() {
@@ -616,6 +616,7 @@ function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
 					if (vout.scriptPubKey.hex) {
 						delete vout.scriptPubKey.hex;
 					}
+
 				}
 
 				vout.txid = rawTx.txid;
@@ -791,7 +792,7 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 		getRawTransactions(txids, cacheSpan).then(function(transactions) {
 			var maxInputsTracked = config.site.txMaxInput;
 
-			// FIXME need top make this magic number a parameter
+			// FIXME need to make this magic number a parameter
 			if (maxInputs <= 0) {
 				maxInputsTracked = 1000000;
 			} else if (maxInputs > 0) {
@@ -810,7 +811,6 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 
 				if (transaction && transaction.vin) {
 					for (var j = 0; j < Math.min(maxInputsTracked, transaction.vin.length); j++) {
-						// FIXME: in Nexa there's no txid in vin[] vectos
 						if (transaction.vin[j].outpoint) {
 							vinIds.push({outpoint:transaction.vin[j].outpoint, txid:transaction.txid});
 						}
@@ -823,6 +823,8 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 			for (var i = 0; i < vinIds.length; i++) {
 				var vinId = vinIds[i];
 
+				// we are actually fetching data about inputs of this transaction
+				// by looking at the parent transaction of each inputs
 				promises.push(getSummarizedTransactionOutput(vinId.outpoint, vinId.txid, cacheSpan));
 			}
 
