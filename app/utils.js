@@ -11,6 +11,7 @@ var qrcode = require("qrcode");
 var textdecoding = require("text-decoding");
 const fs = require('fs');
 const path = require('path');
+const nexaaddr = require('nexaaddrjs');
 
 var config = require("./config.js");
 var coins = require("./coins.js");
@@ -98,6 +99,12 @@ function hex2array(hex) {
 
 function hex2string(hex, encoding = 'utf-8') {
 	return new textdecoding.TextDecoder(encoding).decode(hex2array(hex))
+}
+
+function uint8Array2hexstring(byteArray) {
+	return Array.from(byteArray)
+		.map(b => b.toString(16).padStart(2, '0'))
+		.join('');
 }
 
 function splitArrayIntoChunks(array, chunkSize) {
@@ -1008,6 +1015,70 @@ const intToBigInt = function(key, val, unparsedVal) {
 	}
 }
 
+
+/**
+ * Given a 32-byte hex-encoded token category, return a deterministic hue and
+ * saturation value to use in HSL colors representing the token category.
+ * Usage: `hsl(${ tokenID2HueSaturation(vout.tokenData.category) }, 50%)`
+ */
+function tokenID2HueSaturation(groupIdEncoded) {
+	let groupId = nexaaddr.decode(groupIdEncoded).hash;
+	if (groupId.length > 32) {
+		// this is asubgroup which contains the parent group id in the first 32 bytes
+		groupId = groupId.slice(32);
+	}
+	const raw = groupId.reduce((acc, num) => acc * num, 1) % 36000;
+	const hue = (raw / 100).toFixed(0);
+	const saturation = Math.min(100, (raw / 360 + 50)).toFixed(0);
+	return `${hue},${saturation}%`;
+}
+
+function tokenID2HexString(groupIdEncoded) {
+	let groupId = nexaaddr.decode(groupIdEncoded).hash;
+	if (groupId.length > 32) {
+		// this is asubgroup which contains the parent group id in the first 32 bytes
+		groupId = groupId.slice(32);
+	}
+	return uint8Array2hexstring(groupId);
+}
+/**
+ * Given groupAuthotiry encoede as 64buit unsigned BigInt, return the a map
+ * rappresenting the 6 most significant digits of the given value encoded
+ * as a binary. Each digit as a particular meaning as described here:
+ * https://gitlab.com/nexa/nexa/-/blame/dev/src/consensus/grouptokens.h#L28
+ *
+ * The following is the C++ code that defines the meaning of those digits:
+ *
+ * enum class GroupAuthorityFlags : uint64_t
+ * {
+ *     AUTHORITY = 1ULL << 63, // Is this a controller utxo (forces negative number in amount)
+ *     MINT = 1ULL << 62, // Can mint tokens
+ *     MELT = 1ULL << 61, // Can melt tokens,
+ *     BATON = 1ULL << 60, // Can create controller outputs
+ *     RESCRIPT = 1ULL << 59, // Can change the redeem script
+ *     SUBGROUP = 1ULL << 58,
+
+ *     NONE = 0,
+ *     ACTIVE_FLAG_BITS = AUTHORITY | MINT | MELT | BATON | RESCRIPT | SUBGROUP,
+ *     ALL_FLAG_BITS = 0xffffULL << (64 - 16),
+ *     RESERVED_FLAG_BITS = ACTIVE_FLAG_BITS & ~ALL_FLAG_BITS
+ * };
+ */
+function tokenAuthToFlags(groupAuth) {
+	const groupAuthBinary = BigInt.asUintN(64,String(groupAuth)).toString(2);
+	const stringFlags = groupAuthBinary.substr(0,6);
+	let authFlags = ['Authority', 'Mint', 'Melt', 'Baton', 'Rescript', 'Subgroup']
+	let activeFlags = [];
+	for (let i in stringFlags) {
+		// skip showing "authority" because that is implied by showing any flags
+		if ((stringFlags[i] == '1') && (i > 0)) {
+			activeFlags.push(authFlags[i]);
+		}
+	}
+	return activeFlags;
+}
+
+
 module.exports = {
 	readRichList: readRichList,
 	reflectPromise: reflectPromise,
@@ -1056,5 +1127,8 @@ module.exports = {
 	obfuscateProperties: obfuscateProperties,
 	bigIntToRawJSON: bigIntToRawJSON,
 	intToBigInt: intToBigInt,
-	shortenAddress: shortenAddress
+	shortenAddress: shortenAddress,
+	tokenID2HueSaturation: tokenID2HueSaturation,
+	tokenAuthToFlags, tokenAuthToFlags,
+	tokenID2HexString: tokenID2HexString
 };

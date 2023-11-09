@@ -598,7 +598,7 @@ function getRawTransaction(txid, cacheSpan=ONE_HR) {
 }
 
 /*
- *This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
+ * This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
  */
 function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
 	var rpcApiFunction = function() {
@@ -616,6 +616,7 @@ function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
 					if (vout.scriptPubKey.hex) {
 						delete vout.scriptPubKey.hex;
 					}
+
 				}
 
 				vout.txid = rawTx.txid;
@@ -822,6 +823,8 @@ function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
 			for (var i = 0; i < vinIds.length; i++) {
 				var vinId = vinIds[i];
 
+				// we are actually fetching data about inputs of this transaction
+				// by looking at the parent transaction of each inputs
 				promises.push(getSummarizedTransactionOutput(vinId.outpoint, vinId.txid, cacheSpan));
 			}
 

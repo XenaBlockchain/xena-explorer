@@ -43,7 +43,7 @@ function connectToServer(host, port, protocol) {
 	return new Promise(function(resolve, reject) {
 		debugLog("Connecting to ElectrumX Server: " + host + ":" + port);
 
-		// default protocol is 'tcp' if port is 50001, which is the default unencrypted port for electrumx
+		// default protocol is 'tcp' if port is 20001, which is the default unencrypted port for electrumx
 		var defaultProtocol = port === 20001 ? 'tcp' : 'tls';
 
 		var electrumConfig = { client:"nexa-rpc-explorer", version:"1.4" };
@@ -164,7 +164,7 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 				balanceData = result.result;
 
 				resolve2();
-				
+
 			}).catch(function(err) {
 				err.userData = {address:address, sort:sort, limit:limit, offset:offset};
 
@@ -215,7 +215,7 @@ function getAddressTxids(addrScripthash) {
 			return electrumClient.blockchainScripthash_getHistory(addrScripthash);
 
 		}).then(function(results) {
-			debugLog(`getAddressTxids=${utils.ellipsize(JSON.stringify(results), 200)}`);
+			debugLog(`getAddressTxids=${utils.ellipsize(JSON.stringify(results, utils.bigIntToRawJSON), 200)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
 				for (var i = 0; i < results.length; i++) {
@@ -279,7 +279,36 @@ function getAddressBalance(addrScripthash) {
 	});
 }
 
+function getTokenGenesis(tokenID) {
+	return new Promise(function(resolve, reject) {
+		runOnAllServers(function(electrumClient) {
+			return electrumClient.tokenGenesisInfo(tokenID);
+
+		}).then(function(results) {
+			debugLog(`tokenGenesisInfo=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+
+			var first = results[0];
+			var done = false;
+
+			for (var i = 1; i < results.length; i++) {
+				if (results[i].length != first.length) {
+					resolve({conflictedResults:results});
+
+					done = true;
+				}
+			}
+
+			if (!done) {
+				resolve(results[0]);
+			}
+		}).catch(function(err) {
+			reject(err);
+		});
+	});
+}
+
 module.exports = {
 	connectToServers: connectToServers,
-	getAddressDetails: getAddressDetails
+	getAddressDetails: getAddressDetails,
+	getTokenGenesis: getTokenGenesis
 };
