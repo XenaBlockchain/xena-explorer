@@ -109,7 +109,7 @@ div.row.text-monospace
 											- var hexEcondedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
 											div.mb-tiny
 												small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;margin-left:3px;`)
-													span(title=`Hex encdoed Token ID: ${hexEcondedTokenID}`, data-toggle="tooltip") #{utils.shortenAddress(vout.scriptPubKey.group,35,10)}
+													span(title="Token ID" data-content=`<ul> <li> ${hexEcondedTokenID} </li> <li> ${vout.scriptPubKey.group} </li></ul>`, data-toggle="popover", data-trigger="click") #{utils.shortenAddress(vout.scriptPubKey.group,35,10)}
 											div(style="display:flex")
 												if (vout.scriptPubKey.groupAuthority > 0)
 													- var activeFlags = utils.tokenAuthToFlags(vout.scriptPubKey.groupAuthority);
@@ -221,7 +221,7 @@ div.row.text-monospace
 												- var hexEcondedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
 												div.mb-tiny
 													small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;margin-left:3px;`)
-														span(title=`Hex encoded Token ID: ${hexEcondedTokenID}`, data-toggle="tooltip") #{utils.shortenAddress(vout.scriptPubKey.group,35,10)}
+														span(title="Token ID" data-content=`<ul> <li> ${hexEcondedTokenID} </li> <li> ${vout.scriptPubKey.group} </li></ul>`, data-toggle="popover", data-trigger="click") #{utils.shortenAddress(vout.scriptPubKey.group,35,10)}
 												div(style="display:flex")
 													if (vout.scriptPubKey.groupAuthority > 0)
 														- var activeFlags = utils.tokenAuthToFlags(vout.scriptPubKey.groupAuthority);
