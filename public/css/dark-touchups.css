@@ -6,6 +6,14 @@ a {
 	background-color: #6F6577;
 }
 
+.popover-header {
+	background-color: #3C2F48 !important;
+}
+.popover {
+	background-color: #3C2F48;
+	border-color: white !important;
+}
+
 .border-primary {
 	border-color: #6F6577 !important;
 }
