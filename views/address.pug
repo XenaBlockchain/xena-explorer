@@ -146,7 +146,7 @@ block content
 										div.row
 											div.summary-split-table-label Balance
 											div.summary-split-table-content.text-monospace
-												- var currencyValue = new Decimal(addressDetails.balanceSat).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
+												- var currencyValue = new Decimal(String(addressDetails.balanceSat)).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
 												include includes/value-display.pug
 
 									if (addressDetails && addressDetails.txCount)
