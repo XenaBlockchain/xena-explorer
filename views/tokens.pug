@@ -1,0 +1,164 @@
+extends layout
+
+block headContent
+	+title(`Token Tracker`)
+
+block content
+	if (true)
+		if (validateToken == false)
+			div.alert.alert-danger.mb-huge
+				h1.h6.font-weight-bold Invalid Token
+				span.text-monospace.word-wrap 
+
+		else
+			h1.h3 Nexa Tokens
+				br
+				small.text-monospace.word-wrap  
+			hr
+
+
+			.row
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Total Tokens
+									- var totalTokensFormatted = utils.addThousandsSeparators(tokenStats.totalTokens)
+									span.h2.font-weight-bold.mb-0 #{totalTokensFormatted}
+								.col-auto
+									.icon.icon-shape.bg-danger.text-white.rounded-circle.shadow
+									i.fas.fa-chart-bar
+							p.mt-3.mb-0.text-muted.text-sm
+								//- span.text-success.mr-2
+								//- 	i.fa.fa-arrow-up
+								//- 	|  3.48%
+								//- span.text-nowrap Since last month
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Total Transfers
+									- var tokenTransfersFormatted = utils.addThousandsSeparators(tokenStats.totalTransfers)
+									span.h2.font-weight-bold.mb-0 #{tokenTransfersFormatted}
+								.col-auto
+									.icon.icon-shape.bg-warning.text-white.rounded-circle.shadow
+									i.fas.fa-chart-pie
+							p.mt-3.mb-0.text-muted.text-sm
+								//- span.text-danger.mr-2
+								//- 	i.fas.fa-arrow-down
+								//- 	|  3.48%
+								//- span.text-nowrap Since last week
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Total Holders
+									- var tokenHoldersFormatted = utils.addThousandsSeparators(tokenStats.totalHolders)
+									span.h2.font-weight-bold.mb-0 #{tokenHoldersFormatted}
+								.col-auto
+									.icon.icon-shape.bg-yellow.text-white.rounded-circle.shadow
+										i.fas.fa-users
+							p.mt-3.mb-0.text-muted.text-sm
+							//- 	span.text-warning.mr-2
+							//- 		i.fas.fa-arrow-down
+							//- 		|  1.10%
+							//- 	span.text-nowrap Since yesterday
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Last BlockHeight
+									- var blocks = utils.addThousandsSeparators(blockChainInfo.blocks)
+									span.h2.font-weight-bold.mb-0 #{blocks}
+								.col-auto
+									.icon.icon-shape.bg-info.text-white.rounded-circle.shadow
+									i.fas.fa-layer-group
+							p.mt-3.mb-0.text-muted.text-sm
+								//- span.text-success.mr-2
+								//- 	i.fas.fa-arrow-up
+								//- 	|  12%
+								//- span.text-nowrap Since last month		
+									
+
+			div.row.mt-3
+				div.col-md-12
+					div.card.shadow-sm.mb-3
+						div.card-body
+							div.table-responsive.table-hidden
+								table.table.table-striped.mb-0
+									thead 
+										tr
+											th.data-header.text-left
+												span.font-weight-bold Name
+											th.data-header.text-left
+												span.font-weight-bold Token Id
+											th.data-header.text-left
+												span.font-weight-bold Transfers
+											th.data-header.text-left
+												span.font-weight-bold Holders
+											th.data-header.text-left
+												span.font-weight-bold Supply
+
+									tbody
+
+										
+										each token in tokens
+											tr
+												td.data-cell.text-monospace.text-left
+													span #{token.name} (#{token.ticker})
+												td.data-cell.text-monospace.text-left.word-wrap
+													span
+														a(href=("/token/" + token.groupId)) #{token.groupId}
+												td.data-cell.text-monospace.text-left
+													span #{token.totalTransfers}
+														//- a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 53)}
+												td.data-cell.text-monospace.text-left
+													span #{token.holders}
+														//- a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 53)}
+												td.data-cell.text-monospace.text-left
+													span #{token.maxSupply}
+														//- a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
+												//- td.data-cell.text-monospace.text-right
+													span 
+														//- a(href=("/block/" + item.height)) #{item.height}
+							div.list-hidden
+								each token in tokens
+									.card(style='width: 100%;').mb-2
+										.card-body(style='background-color: #282d33 !important;')
+											h5.card-title
+												- var isTokenTrusted = utils.knownTokens().includes(token.groupId);
+												if(isTokenTrusted && token.documentInfo)
+													img.m-1.rounded(src=token.documentInfo.icon, alt="", width=24)
+												span #{token.name} 
+											
+											p.card-text
+												span
+													a(href=("/token/" + token.groupId)) #{token.groupId}
+										ul.list-group.list-group-flush
+											li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+												span Transfers
+												span #{token.totalTransfers}
+											li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+												span Holders
+												span #{token.holders}
+											li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+												span Max Supply
+												span #{token.maxSupply} (#{token.ticker})
+									
+							if (tokenStats.totalTokens > limit)
+								- var pageNumber = offset / limit + 1;
+								- var pageCount = Math.floor(tokenStats.totalTokens / limit);
+								- if (pageCount * limit < tokenStats.totalTokens) {
+									- pageCount++;
+								- }
+								- var paginationUrlFunction = function(x) {
+									- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+								- }
+
+								hr.mt-3
+
+								include includes/pagination.pug

@@ -1,142 +1,117 @@
-var debug = require("debug");
-var debugLog = debug("nexexp:electrumx");
+import debug from 'debug';
+const debugLogError = debug("nexexp:error");
+import config from "./../config.js";
+import coins from "../coins.js";
+import utils from "../utils.js";
+import crypto from 'crypto-js';
+import nexaaddr from 'nexaaddrjs'
+import coreApi from './coreApi.js';
+import rpcApi from './rpcApi.js';
+import { ClusterOrder, ElectrumCluster, ElectrumTransport } from 'electrum-cash';
+import global from "../global.js";
+const debugLog = debug("nexexp:electrumx");
 
-var config = require("./../config.js");
-var coins = require("../coins.js");
-var utils = require("../utils.js");
-var sha256 = require("crypto-js/sha256");
-var hexEnc = require("crypto-js/enc-hex");
+const coinConfig = coins[config.coin];
 
-var coinConfig = coins[config.coin];
-
-global.net = require('net');
-global.tls = require('tls');
-
-const ElectrumClient = require('electrum-client');
-
-var electrumClients = [];
+const electrum = new ElectrumCluster('nexa-rpc-explorer', '1.4.3', 1, 3, ClusterOrder.PRIORITY, 30000);
 
 var noConnectionsErrorText = "No ElectrumX connection available. This could mean that the connection was lost or that ElectrumX is processing transactions and therefore not accepting requests. This tool will try to reconnect. If you manage your own ElectrumX server you may want to check your ElectrumX logs.";
 
+const handleNotifications = async function (data) {
+	if(data.method === 'blockchain.headers.subscribe')
+	{
+		let blockHash = await rpcApi.getBlockHash(data.params[0].height);
+		let block = await coreApi.getBlockByHashWithTransactions(blockHash, 1000, 0);
+				
+		let txIds =  block.transactions.map(x => x.txid);
+		let tokens = new Set();
+		const rawTxResult = await coreApi.getRawTransactionsWithInputs(txIds);
+
+		var handledTxids = [];
+
+		rawTxResult.transactions.forEach((tx) => {
+			const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
+		
+			if (handledTxids.includes(tx.txid)) {
+				return;
+			}
+		
+			handledTxids.push(tx.txid);
+		
+			tx.vout.forEach((vout) => {
+				if (vout.scriptPubKey && vout.scriptPubKey.group) {
+					try {
+						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
+						
+						if(decodedAddress['type'] == 'GROUP') {
+							if (!tokens.has(vout.scriptPubKey.group)) {
+								tokens.add(vout.scriptPubKey.group);
+							}
+							
+						}
+					} catch (err) {
+					}
+				}
+			});
+		
+			tx.vin.forEach((vin, j) => {
+				const txInput = txInputs[j];
+		
+				if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
+					try {
+						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
+						
+						if(decodedAddress['type'] == 'GROUP') {
+							if (!tokens.has(txInput.scriptPubKey.group)) {
+								tokens.add(txInput.scriptPubKey.group);
+							}
+						}
+						
+					} catch (err) {
+					}
+				}
+			});
+		});
+		tokens = [...tokens];
+
+		tokens.forEach(async function(token){
+			debugLog("Updating Token in cache: ",token)
+			try {
+				await coreApi.addTokenToCache(token);
+			} catch (err) {
+				debugLogError(err)
+			}
+		})
+	}
+}
 
 function connectToServers() {
-	return new Promise(function(resolve, reject) {
-		var promises = [];
-
+	return new Promise(async function(resolve, reject) {
 		for (var i = 0; i < config.electrumXServers.length; i++) {
 			var { host, port, protocol } = config.electrumXServers[i];
-			promises.push(connectToServer(host, port, protocol));
+			var defaultProtocol = port === 20001 ? ElectrumTransport.TCP.Scheme: ElectrumTransport.TCP_TLS.Scheme;
+			electrum.addServer(host, port, defaultProtocol);
 		}
-
-		Promise.all(promises).then(function() {
-			resolve();
-
-		}).catch(function(err) {
-			utils.logError("120387rygxx231gwe40", err);
-
-			reject(err);
-		});
+		await electrum.startup()
+		debugLog(`Connected to ElectrumX`);
+		electrum.on('notification', handleNotifications);
+		resolve()
 	});
 }
 
-function connectToServer(host, port, protocol) {
-	return new Promise(function(resolve, reject) {
-		debugLog("Connecting to ElectrumX Server: " + host + ":" + port);
-
-		// default protocol is 'tcp' if port is 20001, which is the default unencrypted port for electrumx
-		var defaultProtocol = port === 20001 ? 'tcp' : 'tls';
-
-		var electrumConfig = { client:"nexa-rpc-explorer", version:"1.4" };
-		var electrumPersistencePolicy = { retryPeriod: 10000, maxRetry: 1000, callback: null };
-
-		var onConnect = function(client, versionInfo) {
-			debugLog(`Connected to ElectrumX @ ${host}:${port} (${JSON.stringify(versionInfo)})`);
-
-			electrumClients.push(client);
-
-			resolve();
-		};
-
-		var onClose = function(client) {
-			debugLog(`Disconnected from ElectrumX @ ${host}:${port}`);
-
-			var index = electrumClients.indexOf(client);
-
-			if (index > -1) {
-				electrumClients.splice(index, 1);
-			}
-		};
-
-		var onError = function(err) {
-			debugLog(`Electrum error: ${JSON.stringify(err)}`);
-
-			utils.logError("937gf47dsyde", err, {host:host, port:port, protocol:protocol});
-		};
-
-		var onLog = function(str) {
-			debugLog(str);
-		};
-
-		var electrumCallbacks = {
-			onConnect: onConnect,
-			onClose: onClose,
-			onError: onError,
-			onLog: onLog
-		};
-
-		var electrumClient = new ElectrumClient(port, host, protocol || defaultProtocol, null, electrumCallbacks);
-		electrumClient.initElectrum(electrumConfig, electrumPersistencePolicy).then(function() {
-			// success
-		}).catch(function(err) {
-			debugLog(`Error connecting to ElectrumX @ ${host}:${port}`);
-
-			utils.logError("137rg023xx7gerfwdd", err, {host:host, port:port, protocol:protocol});
-
-			reject(err);
-		});
-	});
-
-}
-
-function runOnServer(electrumClient, f) {
-	return new Promise(function(resolve, reject) {
-		f(electrumClient).then(function(result) {
-			resolve({result:result, server:electrumClient.host});
-
-		}).catch(function(err) {
-			utils.logError("dif0e21qdh", err, {host:electrumClient.host, port:electrumClient.port});
-
-			reject(err);
-		});
-	});
-}
-
-function runOnAllServers(f) {
-	return new Promise(function(resolve, reject) {
-		var promises = [];
-
-		for (var i = 0; i < electrumClients.length; i++) {
-			promises.push(runOnServer(electrumClients[i], f));
-		}
-
-		Promise.all(promises).then(function(results) {
-			resolve(results);
-
-		}).catch(function(err) {
-			reject(err);
-		});
-	});
+function shutdown() {
+	return electrum.shutdown();
 }
 
 function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 	return new Promise(function(resolve, reject) {
-		if (electrumClients.length == 0) {
+		if (electrum.clients.length == 0) {
 			reject({error: "No ElectrumX Connection", userText: noConnectionsErrorText});
 
 			return;
 		}
 
-		var addrScripthash = hexEnc.stringify(sha256(hexEnc.parse(scriptPubkey)));
+		var addrScripthash = crypto.enc.Hex.stringify(crypto.SHA256(crypto.enc.Hex.parse(scriptPubkey)));
 		addrScripthash = addrScripthash.match(/.{2}/g).reverse().join("");
 
 		var promises = [];
@@ -146,7 +121,7 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 		// TODO exit early in case getAddressTxids or getAddressBalance fails
 		promises.push(new Promise(function(resolve2, reject2) {
 			getAddressTxids(addrScripthash).then(function(result) {
-				txidData = result.result;
+				txidData = result;
 
 				resolve2();
 
@@ -161,7 +136,7 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 
 		promises.push(new Promise(function(resolve2, reject2) {
 			getAddressBalance(addrScripthash).then(function(result) {
-				balanceData = result.result;
+				balanceData = result;
 
 				resolve2();
 
@@ -176,7 +151,6 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 
 		Promise.all(promises.map(utils.reflectPromise)).then(function(results) {
 			var addressDetails = {};
-
 			if (txidData) {
 				addressDetails.txCount = txidData.length;
 
@@ -209,12 +183,12 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 	});
 }
 
-function getAddressTxids(addrScripthash) {
-	return new Promise(function(resolve, reject) {
-		runOnAllServers(function(electrumClient) {
-			return electrumClient.blockchainScripthash_getHistory(addrScripthash);
 
-		}).then(function(results) {
+
+function getAddressTxids(addrScripthash) {
+	return new Promise(async function(resolve, reject) {
+		try {
+		 	let results = await electrum.request('blockchain.scripthash.get_history', addrScripthash);
 			debugLog(`getAddressTxids=${utils.ellipsize(JSON.stringify(results, utils.bigIntToRawJSON), 200)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
@@ -235,20 +209,19 @@ function getAddressTxids(addrScripthash) {
 			}
 
 			if (!done) {
-				resolve(results[0]);
+				resolve(results);
 			}
-		}).catch(function(err) {
+		} catch (err) {
 			reject(err);
-		});
+		}
 	});
 }
 
 function getAddressBalance(addrScripthash) {
-	return new Promise(function(resolve, reject) {
-		runOnAllServers(function(electrumClient) {
-			return electrumClient.blockchainScripthash_getBalance(addrScripthash);
+	return new Promise(async function(resolve, reject) {
+		try {
+			let results = await electrum.request('blockchain.scripthash.get_balance', addrScripthash);
 
-		}).then(function(results) {
 			debugLog(`getAddressBalance=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
 
 			if (addrScripthash == coinConfig.genesisCoinbaseOutputAddressScripthash) {
@@ -271,44 +244,141 @@ function getAddressBalance(addrScripthash) {
 			}
 
 			if (!done) {
-				resolve(results[0]);
+				resolve(results);
 			}
-		}).catch(function(err) {
+		} catch (err) {
 			reject(err);
-		});
+		}
 	});
 }
 
-function getTokenGenesis(tokenID) {
-	return new Promise(function(resolve, reject) {
-		runOnAllServers(function(electrumClient) {
-			return electrumClient.tokenGenesisInfo(tokenID);
-
-		}).then(function(results) {
-			debugLog(`tokenGenesisInfo=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
-
-			var first = results[0];
-			var done = false;
-
-			for (var i = 1; i < results.length; i++) {
-				if (results[i].length != first.length) {
-					resolve({conflictedResults:results});
-
-					done = true;
-				}
-			}
-
-			if (!done) {
-				resolve(results[0]);
-			}
-		}).catch(function(err) {
-			reject(err);
-		});
-	});
+async function getTokenBalanceForAddress(address, token) {
+	try {
+		let results;
+		if (token) {
+			results = await executeElectrumRequest('token.address.get_balance', address, null, token);
+		} else {
+			results = await executeElectrumRequest('token.address.get_balance', address);
+		}
+		return mergeBalances(results);
+	} catch (error) {
+		throw error;
+	}
 }
 
-module.exports = {
-	connectToServers: connectToServers,
-	getAddressDetails: getAddressDetails,
-	getTokenGenesis: getTokenGenesis
+async function getTokenTransactionsForAddress(address) {
+	try {
+		const results = await executeElectrumRequest('token.address.get_history', address);
+		return results;
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function getTokenTransactions(token, sort, limit, offset) {
+	try {
+		const results = await executeElectrumRequest('token.transaction.get_history', token, null);
+		debugLog(`getTokenTransactions=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+		return results.history;
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function getTokenGenesis(tokenID) {
+	try {
+		const results = await executeElectrumRequest('token.genesis.info', tokenID);
+		debugLog(`tokenGenesisInfo=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+		return results;
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function getTokenNFTs(tokenID) {
+	try {
+		const results = await executeElectrumRequest('token.nft.list', tokenID);
+		debugLog(`getTokenNFTs=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+		return results;
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function subscribeToBlockHeaders() {
+	const results = await electrum.subscribe('blockchain.headers.subscribe');
+	if (results instanceof Error) {
+		throw results;
+	}
+
+	return results;
+}
+
+
+async function executeElectrumRequest(method, ...params) {
+	try {
+		const results = await electrum.request(method, ...params);
+		if (results instanceof Error) {
+			throw results;
+		}
+		return results;
+	} catch (error) {
+		throw error;
+	}
+}
+
+
+async function handleKnownToken(token) {
+	if (utils.knownTokens().includes(token)) {
+		return await coreApi.getTokenIcon(token);
+	}
+}
+
+async function mergeBalances(balanceResults) {
+	let mergedBalances = {};
+
+	// Combine confirmed and unconfirmed balances
+	for (const type of ['confirmed', 'unconfirmed']) {
+		for (const key of Object.keys(balanceResults[type])) {
+			// if(utils.hex2array(key).length > 32) {
+			// 	//is nft
+			// 	continue;
+			// }
+			let group = nexaaddr.encode('nexa', 'GROUP', utils.hex2array(key));
+			let scripthash = key;
+			let token = mergedBalances[group] || { scripthash: scripthash, groupId: group };
+
+			// Include additional token information from getTokenGenesis
+			let genesisInfo = await coreApi.getTokenGenesis(group);
+			token.genesisInfo = genesisInfo;
+
+			// Format confirmed and unconfirmed balances
+			let amountNotFormatted = balanceResults[type][key].toString();
+			token[type + 'BalanceFormatted'] = formatBalance(amountNotFormatted, genesisInfo.decimal_places);
+
+			token[type + 'Balance'] = balanceResults[type][key];
+
+			token.tokenImageUrl = await handleKnownToken(group);
+			mergedBalances[group] = token;
+		}
+	}
+	return mergedBalances;
+}
+
+function formatBalance(amountNotFormatted, decimalPlaces) {
+	return decimalPlaces > 0
+		? `${amountNotFormatted}`.slice(0, -decimalPlaces) + "." + `${amountNotFormatted}`.slice(-decimalPlaces)
+		: amountNotFormatted;
+}
+
+export default {
+	connectToServers,
+	getAddressDetails,
+	getTokenGenesis,
+	getTokenTransactions,
+	getTokenBalanceForAddress,
+	subscribeToBlockHeaders,
+	shutdown,
+	getTokenTransactionsForAddress,
+	getTokenNFTs
 };

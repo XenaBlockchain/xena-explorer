@@ -1,0 +1,19 @@
+#qr-code-modal.modal.fade(tabindex='-1' role='dialog' aria-labelledby='exampleModalCenterTitle' aria-hidden='true')
+  .modal-dialog.modal-dialog-centered(role='document')
+    .modal-content
+      .modal-header
+        h5#exampleModalCenterTitle.modal-title.align-middle Address QR Code
+        button.close(type='button' data-dismiss='modal' aria-label='Close')
+          span(aria-hidden='true') &times;
+      .modal-body
+        .d-flex.justify-content-center
+            div
+                a(href=address)
+                    img(src=addressQrCodeUrl, alt=address, style="border: solid 1px #ccc; width:250px;")
+            
+
+        div.text-center.m-2
+            a(href=(config.donations.addresses.sites[coin] + "/address/" + address), class="word-wrap") #{address}
+
+      .modal-footer
+        button.btn.btn-secondary(type='button' data-dismiss='modal') Close

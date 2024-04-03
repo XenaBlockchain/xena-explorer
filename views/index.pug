@@ -54,7 +54,7 @@ block content
 				span.text-monospace #{new Decimal(blockChainInfo.verificationprogress).times(100).toDP(3)}%
 
 
-		div.row
+		div.row.pt-5
 			- var summaryColCount = 8;
 			if (exchangeRates)
 				- summaryColCount = 9;
@@ -97,6 +97,72 @@ block content
 						- var blockOffset = 0;
 
 						include includes/blocks-list.pug
+
+
+		div.row.mb-3
+			div.col
+				div.card.shadow-sm
+					div.card-body.px-2.px-sm-3
+						div.row
+							div.col
+								h3.h6.mb-0 Top Tokens
+
+							div.col.text-right
+								a(href="/tokens") See more &raquo;
+
+						hr
+						table.table.table-striped.table-responsive.mb-0.table-hidden.table-responsive
+									thead 
+										tr
+											th.data-header.text-left
+												span.font-weight-bold Name
+											th.data-header.text-left
+												span.border-dotted(title="The nexa blockchain uses a 'groupid' for tokens which are unique identifiers for nexa tokens", data-toggle="tooltip") Token
+											th.data-header.text-left
+												span.font-weight-bold Transfers
+											th.data-header.text-left
+												span.font-weight-bold Holders
+											th.data-header.text-left
+												span.font-weight-bold Supply
+									tbody
+										each token in topTenTokens
+											tr
+												td.data-cell.text-monospace.text-left
+													span
+														a(href=("/token/" + token.groupId)) #{token.name} (#{token.ticker})
+												td.data-cell.text-monospace.text-left
+													span
+														a(href=("/token/" + token.groupId)) #{token.groupId}
+												td.data-cell.text-monospace.text-left
+													span #{token.totalTransfers}
+												td.data-cell.text-monospace.text-left
+													span #{token.holders}
+												td.data-cell.text-monospace.text-left
+													span #{token.maxSupply}
+						div.list-hidden
+							each token in topTenTokens
+								.card(style='width: 100%;').mb-2
+									.card-body(style='background-color: #282d33 !important;')
+										h5.card-title
+											- var isTokenTrusted = utils.knownTokens().includes(token.groupId);
+											if(isTokenTrusted && token.documentInfo)
+												img.m-1.rounded(src=token.documentInfo.icon, alt="", width=24)
+											span #{token.name} 
+										
+										p.card-text
+											span
+												a(href=("/token/" + token.groupId)) #{token.groupId}
+									ul.list-group.list-group-flush
+										li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+											span Transfers
+											span #{token.totalTransfers}
+										li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+											span Holders
+											span #{token.holders}
+										li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+											span Max Supply
+											span #{token.maxSupply} (#{token.ticker})
+								
 
 		if (txStats)
 			div.row.mb-3

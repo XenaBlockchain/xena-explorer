@@ -1,31 +1,33 @@
-var debug = require("debug");
-var debugLog = debug("nexexp:router");
+import debug from "debug";
+const debugLog = debug("nexexp:router");
 
-var express = require('express');
-var csurf = require('csurf');
-var router = express.Router();
-var util = require('util');
-var moment = require('moment');
-var qrcode = require('qrcode');
-var bitcoinjs = require('bitcoinjs-lib');
-var cashaddrjs = require('nexaaddrjs');
-var sha256 = require("crypto-js/sha256");
-var hexEnc = require("crypto-js/enc-hex");
-var Decimal = require("decimal.js");
-var semver = require("semver");
+import express from 'express';
+import csurf from 'csurf';
+const router = express.Router();
+import moment from 'moment';
+import qrcode from 'qrcode';
+import bitcoinjs from 'bitcoinjs-lib';
+import nexaaddrjs from 'nexaaddrjs';
+import crypto from 'crypto-js';
+const {sha256, hexEnc} = crypto;
+import Decimal from "decimal.js";
+import axios from "axios";
 
-const asyncHandler = require("express-async-handler");
+import asyncHandler from "express-async-handler";
 
-var utils = require('./../app/utils.js');
-var coins = require("./../app/coins.js");
-var config = require("./../app/config.js");
-var coreApi = require("./../app/api/coreApi.js");
-var addressApi = require("./../app/api/addressApi.js");
-var rpcApi = require("./../app/api/rpcApi.js");
+import utils from './../app/utils.js';
+import coins from "./../app/coins.js";
+import config from "./../app/config.js";
+import coreApi from "./../app/api/coreApi.js";
+import addressApi from "./../app/api/addressApi.js";
+import rpcApi from "./../app/api/rpcApi.js";
+const coinConfig = coins[config.coin];
+import global from "../app/global.js";
 
-const v8 = require('v8');
+import v8 from 'v8';
 
-const forceCsrf = csurf({ ignoreMethods: [] });
+import electrumAddressApi from "../app/api/electrumAddressApi.js";
+const { forceCsrf } = csurf;
 
 router.get("/", function(req, res, next) {
 	if (req.session.host == null || req.session.host.trim() == "") {
@@ -87,7 +89,7 @@ router.get("/", function(req, res, next) {
 
 
 		if (data.blockChainInfo.chain !== 'regtest') {
-			var targetBlocksPerDay = 24 * 60 * 60 / global.coinConfig.targetBlockTimeSeconds;
+			var targetBlocksPerDay = 24 * 60 * 60 / coinConfig.targetBlockTimeSeconds;
 
 			// promiseResults[6] (if not regtest)
 			promises.push(coreApi.getTxCountStats(targetBlocksPerDay / 4, -targetBlocksPerDay, "latest"));
@@ -111,7 +113,7 @@ router.get("/", function(req, res, next) {
 
 		res.locals.blocksUntilDifficultyAdjustment = ((res.locals.difficultyPeriod + 1) * coinConfig.difficultyAdjustmentBlockCount) - data.blockList[0].height;
 
-		Promise.all(promises).then(function(promiseResults) {
+		Promise.all(promises).then(async function(promiseResults) {
 			res.locals.txpoolInfo = promiseResults[0];
 			res.locals.miningInfo = promiseResults[1];
 			res.locals.hashrate7d = promiseResults[2];
@@ -134,6 +136,14 @@ router.get("/", function(req, res, next) {
 
 				res.locals.chainTxStats = chainTxStats;
 			}
+			res.locals.topTenTokens = null;
+			try {
+				res.locals.topTenTokens = await coreApi.getTokens(10, 0, "desc");
+			} catch (err) {
+				console.log(err)
+			}
+
+
 
 			res.render("index");
 			utils.perfMeasure(req);
@@ -220,6 +230,70 @@ router.get("/rich-list", function(req, res, next) {
 	utils.perfMeasure(req);
 });
 
+router.get("/tokens", function(req, res, next){
+
+	var limit = 20;
+	var offset = 0;
+	var sort = "desc";
+
+
+	if (req.query.limit) {
+		limit = parseInt(req.query.limit);
+
+		// for demo sites, limit page sizes
+		if (config.demoSite && limit > config.site.addressTxPageSize) {
+			limit = config.site.addressTxPageSize;
+
+			res.locals.userMessage = "Transaction page size limited to " + config.site.addressTxPageSize + ". If this is your site, you can change or disable this limit in the site config.";
+		}
+	}
+
+	if (req.query.offset) {
+		offset = parseInt(req.query.offset);
+	}
+
+	if (req.query.sort) {
+		sort = req.query.sort;
+	}
+
+	res.locals.limit = limit;
+	res.locals.offset = offset;
+	res.locals.sort = sort;
+	res.locals.paginationBaseUrl = `/tokens?sort=${sort}`;
+
+	let promises = [];
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTokens(limit, offset, sort).then(function(results){
+			resolve(results)
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTokenStats().then(function(results){
+			resolve(results)
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getBlockchainInfo().then(function(result) {
+			res.locals.blockChainInfo = result
+			resolve()	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	Promise.all(promises).then(function(promiseResults) {
+		res.locals.tokens = promiseResults[0];
+		res.locals.tokenStats = promiseResults[1];
+		res.render("tokens");
+	})
+	.catch(function(err) {
+		res.locals.userMessage = "Error: " + err;
+		res.render("tokens");
+	});
+})
+
 router.get("/peers", function(req, res, next) {
 	coreApi.getPeerSummary().then(function(peerSummary) {
 		res.locals.peerSummary = peerSummary;
@@ -287,24 +361,24 @@ router.get("/peers", function(req, res, next) {
 //	res.redirect("/");
 //});
 
-router.get("/disconnect", function(req, res, next) {
-	res.cookie('rpc-host', "");
-	res.cookie('rpc-port', "");
-	res.cookie('rpc-username', "");
+// router.get("/disconnect", function(req, res, next) {
+// 	res.cookie('rpc-host', "");
+// 	res.cookie('rpc-port', "");
+// 	res.cookie('rpc-username', "");
 
-	req.session.host = "";
-	req.session.port = "";
-	req.session.username = "";
+// 	req.session.host = "";
+// 	req.session.port = "";
+// 	req.session.username = "";
 
-	debugLog("destroyed rpc client.");
+// 	debugLog("destroyed rpc client.");
 
-	global.rpcClient = null;
+// 	global.rpcClient = null;
 
-	req.session.userMessage = "Disconnected from node.";
-	req.session.userMessageType = "success";
+// 	req.session.userMessage = "Disconnected from node.";
+// 	req.session.userMessageType = "success";
 
-	res.redirect("/");
-});
+// 	res.redirect("/");
+// });
 
 router.get("/changeSetting", function(req, res, next) {
 	if (req.query.name) {
@@ -390,7 +464,7 @@ router.get("/decoder", function(req, res, next) {
 	utils.perfMeasure(req);
 });
 
-allSettled = function(promiseList) {
+const allSettled = function(promiseList) {
     let results = new Array(promiseList.length);
 
     return new Promise((ok, rej) => {
@@ -501,7 +575,14 @@ router.post("/decoder", function(req, res, next) {
 		}
 		res.render("decoder");
 		utils.perfMeasure(req);
-	});
+	}).catch(function(err) {
+		res.locals.type = "unknown";
+		res.locals.userMessage = "Decode failed";
+		res.locals.tx = {};
+		res.locals.decodedJson = {};
+
+		res.render("decoder");
+	});;
 });
 
 router.get("/search", function(req, res, next) {
@@ -549,6 +630,17 @@ router.post("/search", function(req, res, next) {
 					}
 				});
 
+				try {
+					let decodedAddress = nexaaddr.decode(query);
+			
+					if(decodedAddress['type'] == 'GROUP') {
+						res.redirect("/token/" + query);
+
+						return;
+					}
+				} catch (err) {}
+
+
 				req.session.userMessage = "No results found for query: " + query;
 
 				res.redirect("/");
@@ -594,6 +686,7 @@ router.post("/search", function(req, res, next) {
 
 			res.redirect("/");
 		});
+
 	} else {
 		coreApi.getAddress(rawCaseQuery).then(function(validateaddress) {
 			if (validateaddress && validateaddress.isvalid) {
@@ -601,6 +694,16 @@ router.post("/search", function(req, res, next) {
 
 				return;
 			}
+
+			try {
+				let decodedAddress = nexaaddrjs.decode(query);
+		
+				if(decodedAddress['type'] == 'GROUP') {
+					res.redirect("/token/" + query);
+	
+					return;
+				}
+			} catch (err) {}
 
 			req.session.userMessage = "No results found for query: " + rawCaseQuery;
 
@@ -669,7 +772,13 @@ router.get("/block-height/:blockHeight", function(req, res, next) {
 			});
 		}));
 
-		Promise.all(promises).then(function() {
+		Promise.all(promises).then(async function() {
+
+			try {
+				const TxIds = res.locals.result.transactions.map(elem => elem.txid)
+				res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
+			}catch (err){}
+			
 			res.render("block");
 
 			utils.perfMeasure(req);
@@ -950,7 +1059,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 		res.locals.result = {};
 
 		// 5 minutes cache span should be short enough
-		FIVE_MIN = 1000 * 60 * 5
+		const FIVE_MIN = 1000 * 60 * 5
 		coreApi.getRawTransactionsWithInputs([txIdentifier], -1, FIVE_MIN).then(function(rawTxResult) {
 			var tx = rawTxResult.transactions[0];
 			res.locals.result.ballot = parseTwoOptionVote(tx);
@@ -1011,7 +1120,19 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 				}));
 			}
 
+			promises.push(new Promise(function (resolve, reject) {
+				coreApi.getTransactionTokens([tx.txid]).then(async function(result){
+					res.locals.tokenData = result;
+					resolve();
+				}).catch(function(err) {
+					res.locals.pageErrors.push(utils.logError("132r80h32rh", err));
+	
+					reject(err);
+				});
+			}));
+
 			Promise.all(promises).then(function() {
+
 				res.render("transaction");
 				utils.perfMeasure(req);
 
@@ -1025,6 +1146,167 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 
 		});
 	}
+});
+
+router.get("/token/:token", function(req, res, next) {
+
+
+	var limit = config.site.tokenTransferPageSize;
+	var offset = 0;
+	var sort = "desc";
+
+
+	if (req.query.limit) {
+		limit = parseInt(req.query.limit);
+
+		// for demo sites, limit page sizes
+		if (config.demoSite && limit > config.site.addressTxPageSize) {
+			limit = config.site.addressTxPageSize;
+
+			res.locals.userMessage = "Transaction page size limited to " + config.site.addressTxPageSize + ". If this is your site, you can change or disable this limit in the site config.";
+		}
+	}
+
+	if (req.query.offset) {
+		offset = parseInt(req.query.offset);
+	}
+
+	if (req.query.sort) {
+		sort = req.query.sort;
+	}
+
+	var token = req.params.token;
+
+	res.locals.limit = limit;
+	res.locals.offset = offset;
+	res.locals.sort = sort;
+	res.locals.paginationBaseUrl = `/token/${token}?sort=${sort}`;
+	res.locals.transfers = [];
+
+	let isTokenValid = false;
+
+	try {
+		var saneToken = "";
+		var prefix = global.activeBlockchain == "nexa" ? "nexa:" : "nexatest:";
+		if(!token.includes(prefix)) {
+			saneToken = prefix.concat(token);
+		} else {
+			saneToken = token;
+		}
+		let decodedAddress = nexaaddrjs.decode(saneToken);
+		if(decodedAddress['type'] == 'GROUP') {
+			token = saneToken;
+			isTokenValid = true;
+		} else {
+			console.log("token not valid")
+			console.log(decodedAddress['type'])
+			console.log(decodedAddress['hash'].length)
+		}
+	} catch(err3) {
+		//res.locals.pageErrors.push(utils.logError("address parsing error", err3));
+	}
+
+	if (!isTokenValid) {
+		req.session.userMessage = "No results found for query: " + token;
+		res.redirect("/");
+	}
+
+
+	
+	coreApi.getTokenGenesis(token).then(async function(result){
+		var promises = [];
+		if(result) {
+			res.locals.token = token;
+			res.locals.tokenInfo = result;
+			res.locals.validateToken = true;
+			
+			promises.push(new Promise(function(resolve, reject) {
+				coreApi.getTokenMintage(token).then(function(result) {
+					res.locals.tokenMintage = result;
+					res.locals.totalSupply = result.mintage_satoshis
+					res.locals.circulatingSupply = result.mintage_satoshis
+
+					if(res.locals.tokenInfo.decimal_places > 0) {
+						res.locals.totalSupply = String(res.locals.totalSupply).substring(0, String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places) + "." + String(res.locals.totalSupply).substring(String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places);
+						res.locals.circulatingSupply = String(res.locals.circulatingSupply).substring(0, String(res.locals.circulatingSupply).length - res.locals.tokenInfo.decimal_places) + "." + String(res.locals.circulatingSupply).substring(String(res.locals.circulatingSupply).length - res.locals.tokenInfo.decimal_places);
+					}
+
+					res.locals.totalSupply = utils.addThousandsSeparators(res.locals.totalSupply)
+					res.locals.circulatingSupply = utils.addThousandsSeparators(res.locals.circulatingSupply)
+					
+					resolve();
+				}).catch(function(err) {
+					// console.log(err)
+					resolve();
+				});
+			}));
+		
+			promises.push(new Promise(function(resolve, reject) {
+				coreApi.getRawTransaction(res.locals.tokenInfo.txid).then(function(tx) {
+					if (tx) {
+						res.locals.getrawtransaction = tx;
+						res.locals.rawtransaction_parsed = JSON.stringify(tx, utils.bigIntToRawJSON, 4);
+						// always use txidem as query param independently
+						// by which mean we searched in the first place
+					}
+					resolve();
+				}).catch(function(err) {
+					resolve();
+				});
+			}));
+
+			promises.push(new Promise(function(resolve, reject){
+				coreApi.getTokenTotalTransfers(token).then(async function(result){
+					res.locals.transfersCount = result
+					resolve()
+				}).catch(function(err){
+					resolve()
+				})
+			}));
+
+			promises.push(new Promise(function(resolve, reject){
+				coreApi.getTransfersForToken(token, limit, offset).then(async function(result){
+					res.locals.transfers = result;
+					resolve()
+				}).catch(function(err){
+					console.log(err)
+					resolve()
+				})
+			}));
+
+			promises.push(new Promise(function(resolve, reject){
+				coreApi.getRichList(token).then(async function(result){
+					res.locals.richList = result;
+					resolve()
+				}).catch(function(err){
+					resolve()
+				})
+			}));
+
+			promises.push(new Promise(function(resolve, reject){
+				coreApi.getStatsForToken(token).then(async function(result){
+					res.locals.tokenStats = result;
+					resolve()
+				}).catch(function(err){
+					resolve()
+				})
+			}));
+
+			
+
+			Promise.all(promises.map(utils.reflectPromise)).then(function() {
+				res.render("token");
+				utils.perfMeasure(req);
+			}).catch(function(err) {
+				console.log(err)
+				req.session.userMessage = "No results found for query: " + token;
+				res.redirect("/");
+			});
+		}
+	}).catch(function (err) {
+		req.session.userMessage = "No results found for query: " + token;
+		res.redirect("/");
+	});
 });
 
 router.get("/address/:address", function(req, res, next) {
@@ -1062,6 +1344,9 @@ router.get("/address/:address", function(req, res, next) {
 	res.locals.paginationBaseUrl = `/address/${address}?sort=${sort}`;
 	res.locals.transactions = [];
 	res.locals.addressApiSupport = addressApi.getCurrentAddressApiFeatureSupport();
+	res.locals.tokens = new Set();
+	res.locals.tokenGenesisList = [];
+	res.locals.tokenData = [];
 
 	res.locals.result = {};
 	try {
@@ -1085,7 +1370,7 @@ router.get("/address/:address", function(req, res, next) {
 				} else {
 					saneAddress = address;
 				}
-				res.locals.addressObj = cashaddrjs.decode(saneAddress);
+				res.locals.addressObj = nexaaddrjs.decode(saneAddress);
 				res.locals.addressObj["isCashAddr"]=true;
 			} catch(err3) {
 				//res.locals.pageErrors.push(utils.logError("address parsing error", err3));
@@ -1107,7 +1392,7 @@ router.get("/address/:address", function(req, res, next) {
 
 		var promises = [];
 		if (!res.locals.crawlerBot) {
-			var addrScripthash = hexEnc.stringify(sha256(hexEnc.parse(validateaddressResult.scriptPubKey)));
+			var addrScripthash = crypto.enc.Hex.stringify(crypto.SHA256(crypto.enc.Hex.parse(validateaddressResult.scriptPubKey)));
 			addrScripthash = addrScripthash.match(/.{2}/g).reverse().join("");
 
 			res.locals.electrumScripthash = addrScripthash;
@@ -1194,7 +1479,7 @@ router.get("/address/:address", function(req, res, next) {
 									}));
 								}
 
-								Promise.all(blockHeightsPromises).then(function() {
+								Promise.all(blockHeightsPromises).then(async function() {
 									var addrGainsByTx = {};
 									var addrLossesByTx = {};
 
@@ -1239,9 +1524,7 @@ router.get("/address/:address", function(req, res, next) {
 										}
 
 									}
-
 									res.locals.blockHeightsByTxid = blockHeightsByTxid;
-
 									resolve();
 
 								}).catch(function(err) {
@@ -1265,6 +1548,8 @@ router.get("/address/:address", function(req, res, next) {
 						resolve();
 					}
 				}).catch(function(err) {
+					debugLog(err)
+					console.log(err)
 					res.locals.pageErrors.push(utils.logError("23t07ug2wghefud", err));
 
 					res.locals.addressApiError = err;
@@ -1296,6 +1581,17 @@ router.get("/address/:address", function(req, res, next) {
 				res.locals.addressQrCodeUrl = url;
 
 				resolve();
+			});
+		}));
+
+		promises.push(new Promise(function (resolve, reject) {
+			electrumAddressApi.getTokenBalanceForAddress(address).then(async function(result){
+				res.locals.tokenData = result;
+				resolve();
+			}).catch(function(err) {
+				res.locals.pageErrors.push(utils.logError("132r80h32rh", err));
+
+				reject(err);
 			});
 		}));
 
@@ -1548,8 +1844,14 @@ router.get("/unconfirmed-tx", function(req, res, next) {
 	res.locals.sort = sort;
 	res.locals.paginationBaseUrl = "/unconfirmed-tx";
 
-	coreApi.getTxpoolDetails(offset, limit).then(function(txpoolDetails) {
-		res.locals.txpoolDetails = txpoolDetails;
+	coreApi.getTxpoolDetails(offset, limit).then(async function(txpoolDetails) {
+		res.locals.txpoolDetails = txpoolDetails
+		
+		try {
+			const TxIds = txpoolDetails.transactions.map(elem => elem.txid)
+			res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
+		}catch (err){}
+		
 
 		res.render("unconfirmed-transactions");
 		utils.perfMeasure(req);
@@ -1684,4 +1986,4 @@ router.get("/fun", function(req, res, next) {
 	utils.perfMeasure(req);
 });
 
-module.exports = router;
+export default router;

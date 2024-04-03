@@ -1,11 +1,11 @@
-var config = require("./../config.js");
-var coins = require("../coins.js");
-var utils = require("../utils.js");
+import config from "./../config.js";
+import coins from "../coins.js";
+import utils from "../utils.js";
 
-var coinConfig = coins[config.coin];
+const coinConfig = coins[config.coin];
 
-var electrumAddressApi = require("./electrumAddressApi.js");
-var blockchairAddressApi = require("./blockchairAddressApi.js");
+import electrumAddressApi from "./electrumAddressApi.js";
+import blockchairAddressApi from "./blockchairAddressApi.js";
 
 function getSupportedAddressApis() {
 	return ["blockchair.com", "electrumx"];
@@ -60,9 +60,8 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 }
 
 
-
-module.exports = {
-	getSupportedAddressApis: getSupportedAddressApis,
-	getCurrentAddressApiFeatureSupport: getCurrentAddressApiFeatureSupport,
-	getAddressDetails: getAddressDetails
-};
+export default {
+	getSupportedAddressApis,
+	getCurrentAddressApiFeatureSupport,
+	getAddressDetails,
+}

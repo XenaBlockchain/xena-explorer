@@ -64,26 +64,66 @@ block content
 								span
 									a(href=saInfo.referenceUrl) Read more
 
-
-			ul.nav.nav-tabs.mb-3
-				li.nav-item
-					a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Details
-				li.nav-item
-					a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
-
-
-			div.tab-content
-				div.tab-pane.active(id="tab-details", role="tabpanel")
-
+			div.row
+				div.col-12.col-xl-6
 					div.card.mb-3.shadow-sm
-						div.card-header
-							h3.h6.mb-0 Summary
-								if (config.addressApi)
+						div.card-header(style="min-height:430px;")
+							.d-flex.justify-content-between
+								h3.h6.mb-0 Summary
+									if (config.addressApi)
 										small.text-muted.border-dotted.ml-2(title=`Some details for this address were queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
+								button.btn.btn-outline-warning.btn-sm.mb-1(type="button", data-toggle="modal", data-target="#qr-code-modal")
+									i.fas.fa-qrcode.mr-2
+									span QR CODE			
 							hr
 
+							//- div.row
+							//- 		div.summary-split-table-label QR Code
+							//- 		div.summary-split-table-content.text-monospace
+							//- 			a(href=address)
+							//- 				img(src=addressQrCodeUrl, alt=address, style="border: solid 1px #ccc;")
 							div.row
-								div.col-md-6
+								div.col-md-12
+
+									if (balance)
+										if (balance.conflictedResults)
+											div.row
+												div.summary-split-table-label Balance
+												div.summary-split-table-content.text-monospace
+													span.text-warning Conflicted ElectrumX Results
+
+													each item in balance.conflictedResults
+														- var currencyValue = item.confirmed / coinConfig.baseCurrencyUnit.multiplier;
+														include includes/value-display.pug
+
+
+										else
+											div.row
+												div.summary-split-table-label Balance
+												div.summary-split-table-content.text-monospace
+													- var currencyValue = balance.result.confirmed / coinConfig.baseCurrencyUnit.multiplier;
+													include includes/value-display.pug
+
+											if (balance.unconfirmed)
+												div.row
+													div.summary-split-table-label Unconfirmed
+													div.summary-split-table-content.text-monospace
+														- var currencyValue = balance.unconfirmed / coinConfig.baseCurrencyUnit.multiplier;
+														include includes/value-display.pug
+							
+									if (addressDetails && addressDetails.balanceSat)
+										div.row
+											div.summary-split-table-label Balance
+											div.summary-split-table-content.text-monospace
+												- var currencyValue = new Decimal(String(addressDetails.balanceSat)).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
+												include includes/value-display.pug
+
+
+
+									if (addressDetails && addressDetails.txCount)
+										div.row
+											div.summary-split-table-label Transactions
+											div.summary-split-table-content.text-monospace #{addressDetails.txCount.toLocaleString()}
 
 									if (addressObj.hash)
 										if (addressObj.hash && !(addressObj.hasOwnProperty("isCashAddr")))
@@ -116,51 +156,11 @@ block content
 												- var timeAgoTime = firstSeenTransaction.time;
 												include includes/time-ago.pug
 
-									if (balance)
-										if (balance.conflictedResults)
-											div.row
-												div.summary-split-table-label Balance
-												div.summary-split-table-content.text-monospace
-													span.text-warning Conflicted ElectrumX Results
-
-													each item in balance.conflictedResults
-														- var currencyValue = item.confirmed / coinConfig.baseCurrencyUnit.multiplier;
-														include includes/value-display.pug
 
 
-										else
-											div.row
-												div.summary-split-table-label Balance
-												div.summary-split-table-content.text-monospace
-													- var currencyValue = balance.result.confirmed / coinConfig.baseCurrencyUnit.multiplier;
-													include includes/value-display.pug
-
-											if (balance.unconfirmed)
-												div.row
-													div.summary-split-table-label Unconfirmed
-													div.summary-split-table-content.text-monospace
-														- var currencyValue = balance.unconfirmed / coinConfig.baseCurrencyUnit.multiplier;
-														include includes/value-display.pug
-
-									if (addressDetails && addressDetails.balanceSat)
-										div.row
-											div.summary-split-table-label Balance
-											div.summary-split-table-content.text-monospace
-												- var currencyValue = new Decimal(String(addressDetails.balanceSat)).dividedBy(coinConfig.baseCurrencyUnit.multiplier);
-												include includes/value-display.pug
-
-									if (addressDetails && addressDetails.txCount)
-										div.row
-											div.summary-split-table-label Transactions
-											div.summary-split-table-content.text-monospace #{addressDetails.txCount.toLocaleString()}
-
-									div.row
-										div.summary-split-table-label QR Code
-										div.summary-split-table-content.text-monospace
-											a(href=address)
-												img(src=addressQrCodeUrl, alt=address, style="border: solid 1px #ccc;")
-
-								div.col-md-6
+									
+							div.row
+								div.col-md-12
 									if (electrumScripthash)
 										div.row
 											div.summary-split-table-label Scripthash
@@ -181,165 +181,268 @@ block content
 												else
 													i.fas.fa-times.text-warning
 
+					
+						
+				div.col-12.col-xl-6
 					div.card.mb-3.shadow-sm
-						div.card-body
-							div.clearfix
-								div.float-left
-									h3.h6.mb-0
-										if (addressDetails && addressDetails.txCount)
-											if (addressDetails.txCount == 1)
-												span 1 Transaction
-											else
-												span #{addressDetails.txCount.toLocaleString()} Transactions
-										else
-											span Transactions
-
-										if (config.addressApi)
-											if (config.addressApi == "electrumx")
-												small.text-muted.border-dotted.ml-2(title=`The list of transaction IDs for this address was queried from ElectrumX (using the configured server(s))` data-toggle="tooltip") Trust Note
-											else
-												small.text-muted.border-dotted.ml-2(title=`The list of transaction IDs for this address was queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
-
-								if (!crawlerBot && txids && txids.length > 1 && addressApiSupport.sortDesc && addressApiSupport.sortAsc)
-									div.float-right
-										a.pull-right.dropdown-toggle(href="#", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
-											if (sort == "desc")
-												span Newest First
-											else
-												span Oldest First
-
-										div.dropdown-menu.dropdown-menu-right
-											a.dropdown-item(href=("/address/" + address))
-												if (sort == "desc")
-													i.fa.fa-check 
-												span  Newest First
-											a.dropdown-item(href=("/address/" + address + "?sort=asc"))
-												if (sort != "desc")
-													i.fa.fa-check 
-												span  Oldest First
-
-								else if (txids && txids.length > 1 && addressApiSupport.sortDesc && !addressApiSupport.sortAsc)
-									div.float-right
-										span.text-muted Newest First
-
+						div.card-header(style="min-height:430px;")
+							h3.h6.mb-0 Address Token Balances
+								if (config.addressApi)
+										small.text-muted.border-dotted.ml-2(title=`Some details for this address were queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
 							hr
+							//- .input-group.mb-3
+							//- 		input.form-control(type='text' placeholder="Search Tokens" aria-label="Search Tokens" aria-describedby='button-addon2')
+							//- 		button#button-addon2.btn.btn-outline-primary(type='button') Search
+							.list-group(style="max-height: 295px;overflow-y:scroll;height:295px;")
+								if(tokenData)
+									each token in tokenData
+										list-group-item.card-header
+											.d-flex.w-100.justify-content-between.row
+												col-md-6
+													img.m-1.rounded(src=token.tokenImageUrl, alt="", width=24)
+														
+													small
+														a(href=("/token/" + token.groupId)) #{token.genesisInfo.name} (#{token.genesisInfo.ticker})
+													//- small  #{token.groupId}
+												col-md-6
+													if (token.confirmedBalance >= 0)
+														p.mb-1 #{utils.addThousandsSeparators(token.confirmedBalance)} 
+													if(token.unconfirmedBalance > 0)
+														small Unconfirmed: #{utils.addThousandsSeparators(token.unconfirmedBalance)} 
+								else
+									list-group-item.card-header
+										.d-flex.w-100.justify-content-center.row
+											span No Nexa tokens at this address
 
-							if (conflictedTxidResults)
-								div.alert.alert-warning.pb-0
-									div.float-left(style="width: 55px; height: 50px; font-size: 18px;")
-										i.fas.fa-exclamation-triangle.fa-2x(style="margin-top: 10px;")
-									h4.alert-heading.h6.font-weight-bold Trust Warning
-									p
-										span The transaction history for this address was requested from mulitple ElectrumX servers and the results did not match. The results below were obtained only from 
-										span.font-weight-bold #{electrumHistory.server}
+
+			ul.nav.nav-tabs.mb-3
+				li.nav-item
+					a.nav-link.active(data-toggle="tab", href="#tab-transactions", role="tab") Transactions
+				//- li.nav-item
+				//- 	a.nav-link(data-toggle="tab", href="#tab-tokens", role="tab") Token Transfers
+				li.nav-item
+					a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
 
 
-							if (addressApiError && addressApiError.error && addressApiError.error.code && addressApiError.error.code == -32600)
-								span Failed to retrieve transaction history from ElectrumX. See
-								a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
-								span for more information.
+			div.tab-content
+				div.tab-pane.active(id="tab-transactions", role="tabpanel")
+					div.row
+						div.col-md-12
+							div.card.mb-3.shadow-sm
+								div.card-body
+											div.clearfix
+												div.float-left
+													h3.h6.mb-0
+														if (addressDetails && addressDetails.txCount)
+															if (addressDetails.txCount == 1)
+																span 1 Transaction
+															else
+																span #{addressDetails.txCount.toLocaleString()} Transactions
+														else
+															span Transactions
+
+														if (config.addressApi)
+															if (config.addressApi == "electrumx")
+																small.text-muted.border-dotted.ml-2(title=`The list of transaction IDs for this address was queried from ElectrumX (using the configured server(s))` data-toggle="tooltip") Trust Note
+															else
+																small.text-muted.border-dotted.ml-2(title=`The list of transaction IDs for this address was queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
+
+												if (!crawlerBot && txids && txids.length > 1 && addressApiSupport.sortDesc && addressApiSupport.sortAsc)
+													div.float-right
+														a.pull-right.dropdown-toggle(href="#", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
+															if (sort == "desc")
+																span Newest First
+															else
+																span Oldest First
+
+														div.dropdown-menu.dropdown-menu-right
+															a.dropdown-item(href=("/address/" + address))
+																if (sort == "desc")
+																	i.fa.fa-check 
+																span  Newest First
+															a.dropdown-item(href=("/address/" + address + "?sort=asc"))
+																if (sort != "desc")
+																	i.fa.fa-check 
+																span  Oldest First
+
+												else if (txids && txids.length > 1 && addressApiSupport.sortDesc && !addressApiSupport.sortAsc)
+													div.float-right
+														span.text-muted Newest First
+
+											hr
+
+											if (conflictedTxidResults)
+												div.alert.alert-warning.pb-0
+													div.float-left(style="width: 55px; height: 50px; font-size: 18px;")
+														i.fas.fa-exclamation-triangle.fa-2x(style="margin-top: 10px;")
+													h4.alert-heading.h6.font-weight-bold Trust Warning
+													p
+														span The transaction history for this address was requested from mulitple ElectrumX servers and the results did not match. The results below were obtained only from 
+														span.font-weight-bold #{electrumHistory.server}
 
 
-							else if (addressApiError && addressApiError.userText)
-								div.text-danger Error: #{addressApiError.userText}
-							else if (addressDetailsErrors && addressDetailsErrors.length > 0)
-								// Electrs return the same kind of error for get_history and get_balance
-								- var set = new Set(addressDetailsErrors.map(item => JSON.stringify(item)));
-								- var uniqueAddressDetailsErrors = [...set].map(item => JSON.parse(item));
-								each err, errIndex in uniqueAddressDetailsErrors
-									if (err.e && err.e && err.e.message == "history too large")
-										span Failed to retrieve transaction history from ElectrumX because this address is involved in too many transactions (more than ElectrumX currently supports retrieving). See
-										a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
-										span for more information.
+											if (addressApiError && addressApiError.error && addressApiError.error.code && addressApiError.error.code == -32600)
+												span Failed to retrieve transaction history from ElectrumX. See
+												a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
+												span for more information.
 
-									else if (err.e && err.e.error && err.e.error.message == "failed to get confirmed status")
-										span Failed to retrieve transaction history from ElectrsCash server. As a workaround, consider starting ElectrsCash server with a custom --txid-limit argument, to support longer transaction histories.
 
-									else if (err == "No address API configured")
-										span No address API is configured. See 
-										a(href="https://gitlab.com/nexa/nex-rpc-explorer/blob/master/.env-sample") the example configuration file 
-										span for help setting up an address API if desired.
-									else
-										span.text-danger Error retrieving transaction history (##{errIndex + 1})
-										pre
-											code.json #{JSON.stringify(err, null, 4)}
+											else if (addressApiError && addressApiError.userText)
+												div.text-danger Error: #{addressApiError.userText}
+											else if (addressDetailsErrors && addressDetailsErrors.length > 0)
+												// Electrs return the same kind of error for get_history and get_balance
+												- var set = new Set(addressDetailsErrors.map(item => JSON.stringify(item)));
+												- var uniqueAddressDetailsErrors = [...set].map(item => JSON.parse(item));
+												each err, errIndex in uniqueAddressDetailsErrors
+													if (err.e && err.e && err.e.message == "history too large")
+														span Failed to retrieve transaction history from ElectrumX because this address is involved in too many transactions (more than ElectrumX currently supports retrieving). See
+														a(href="https://github.com/janoside/btc-rpc-explorer/issues/67") Issue #67
+														span for more information.
 
-							else if (transactions.length == 0)
-								span No transactions found
+													else if (err.e && err.e.error && err.e.error.message == "failed to get confirmed status")
+														span Failed to retrieve transaction history from ElectrsCash server. As a workaround, consider starting ElectrsCash server with a custom --txid-limit argument, to support longer transaction histories.
 
-							each tx, txIndex in transactions
-								div.card.shadow-sm(class=((txIndex < (transactions.length - 1) || txids.length > limit) ? "mb-3" : ""))
-									div.card-header.text-monospace.clearfix
-										div.float-left.mr-0
-											if (sort == "desc")
-												span ##{(addressDetails.txCount - offset - txIndex).toLocaleString()}
-											else
-												span ##{(offset + txIndex + 1).toLocaleString()}
-											span &ndash;
-
-										div.row
-											div.col-md-8
-												if (tx && tx.txid)
-													a(href=("/tx/" + tx.txid)) #{tx.txid}
-
-													if (global.specialTransactions && global.specialTransactions[tx.txid])
-														span
-														a(data-toggle="tooltip", title=(coinConfig.name + " Fun! See transaction for details"))
-															i.fas.fa-certificate.text-primary
-
-												br
-
-												if (addrGainsByTx[tx.txid])
-													- var currencyValue = addrGainsByTx[tx.txid];
-													span.text-success +
-														include includes/value-display.pug
-
-													if (addrLossesByTx[tx.txid])
-														span  /
-
-												if (addrLossesByTx[tx.txid])
-													- var currencyValue = addrLossesByTx[tx.txid];
-													span.text-danger -
-														include includes/value-display.pug
-
-											div.col-md-4
-												div.text-md-right
-													if (tx.time)
-														- var timestampHuman = tx.time;
-														include includes/timestamp-human.pug
-
-														br
-
-														- var timeAgoTime = tx.time;
-														small.text-muted (
-															include includes/time-ago-text.pug
-															span ago)
-
+													else if (err == "No address API configured")
+														span No address API is configured. See 
+														a(href="https://gitlab.com/nexa/nex-rpc-explorer/blob/master/.env-sample") the example configuration file 
+														span for help setting up an address API if desired.
 													else
-														span.text-danger Unconfirmed
+														span.text-danger Error retrieving transaction history (##{errIndex + 1})
+														pre
+															code.json #{JSON.stringify(err, null, 4)}
 
-									div.card-body
-										- var txInputs = txInputsByTransaction[tx.txid];
-										- var blockHeight = blockHeightsByTxid[tx.txid];
-										- var txIOHighlightAddress = address;
+											else if (transactions.length == 0)
+												span No transactions found
 
-										include includes/transaction-io-details.pug
+											each tx, txIndex in transactions
+												div.card.shadow-sm(class=((txIndex < (transactions.length - 1) || txids.length > limit) ? "mb-3" : ""))
+													div.card-header.text-monospace.clearfix
+														div.float-left.mr-0
+															if (sort == "desc")
+																span ##{(addressDetails.txCount - offset - txIndex).toLocaleString()}
+															else
+																span ##{(offset + txIndex + 1).toLocaleString()}
+															span &ndash;
 
-							if (!crawlerBot && addressDetails && addressDetails.txCount > limit)
-								- var txCount = addressDetails.txCount;
-								- var pageNumber = offset / limit + 1;
-								- var pageCount = Math.floor(txCount / limit);
-								- if (pageCount * limit < txCount) {
-									- pageCount++;
-								- }
-								- var paginationUrlFunction = function(x) {
-									- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
-								- }
+														div.row
+															div.col-md-8
+																if (tx && tx.txid)
+																	a(href=("/tx/" + tx.txid)) #{tx.txid}
 
-								hr.mt-3
+																	if (global.specialTransactions && global.specialTransactions[tx.txid])
+																		span
+																		a(data-toggle="tooltip", title=(coinConfig.name + " Fun! See transaction for details"))
+																			i.fas.fa-certificate.text-primary
 
-								include includes/pagination.pug
+																br
 
+																if (addrGainsByTx[tx.txid])
+																	- var currencyValue = addrGainsByTx[tx.txid];
+																	span.text-success +
+																		include includes/value-display.pug
+
+																	if (addrLossesByTx[tx.txid])
+																		span  /
+
+																if (addrLossesByTx[tx.txid])
+																	- var currencyValue = addrLossesByTx[tx.txid];
+																	span.text-danger -
+																		include includes/value-display.pug
+
+															div.col-md-4
+																div.text-md-right
+																	if (tx.time)
+																		- var timestampHuman = tx.time;
+																		include includes/timestamp-human.pug
+
+																		br
+
+																		- var timeAgoTime = tx.time;
+																		small.text-muted (
+																			include includes/time-ago-text.pug
+																			span ago)
+
+																	else
+																		span.text-danger Unconfirmed
+
+													div.card-body
+														- var txInputs = txInputsByTransaction[tx.txid];
+														- var blockHeight = blockHeightsByTxid[tx.txid];
+														- var txIOHighlightAddress = address;
+
+														include includes/transaction-io-details.pug
+
+											if (!crawlerBot && addressDetails && addressDetails.txCount > limit)
+												- var txCount = addressDetails.txCount;
+												- var pageNumber = offset / limit + 1;
+												- var pageCount = Math.floor(txCount / limit);
+												- if (pageCount * limit < txCount) {
+													- pageCount++;
+												- }
+												- var paginationUrlFunction = function(x) {
+													- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+												- }
+
+												hr.mt-3
+
+												include includes/pagination.pug
+
+
+				//- div.tab-pane(id="tab-tokens", role="tabpanel")
+				//- 	div.card.shadow-sm.mb-3
+				//- 		div.card-body
+				//- 			h4.h6.mb-0 Token Transfers
+				//- 			hr
+				//- 			div.table-responsive
+				//- 				table.table.table-striped.mb-0
+				//- 					//- thead
+				//- 					//- 	tr
+				//- 					//- 		th.data-header.text-left(colspan='5') Top 100 - Current Balance
+
+				//- 					tbody
+
+				//- 						tr
+				//- 							td.data-header.text-right
+				//- 								span.font-weight-bold Amount
+				//- 							td.data-header.text-left
+				//- 								span.font-weight-bold From
+				//- 							td.data-header.text-left
+				//- 								span.font-weight-bold To
+				//- 							td.data-header.text-left
+				//- 								span.font-weight-bold Tx Hash
+				//- 							td.data-header.text-right
+				//- 								span.font-weight-bold Block
+										
+				//- 						each item in transfers
+				//- 							tr
+				//- 								td.data-cell.text-monospace.text-right
+				//- 									span #{item.amount}
+				//- 								td.data-cell.text-monospace.text-left
+				//- 									span 
+				//- 										a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 53)}
+				//- 								td.data-cell.text-monospace.text-left
+				//- 									span
+				//- 										a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 53)}
+				//- 								td.data-cell.text-monospace.text-left
+				//- 									span
+				//- 										a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
+				//- 								td.data-cell.text-monospace.text-right
+				//- 									span 
+				//- 										a(href=("/block/" + item.height)) #{item.height}
+
+				//- 			if (transfersCount > limit)
+				//- 				- var pageNumber = offset / limit + 1;
+				//- 				- var pageCount = Math.floor(transfersCount / limit);
+				//- 				- if (pageCount * limit < transfersCount) {
+				//- 					- pageCount++;
+				//- 				- }
+				//- 				- var paginationUrlFunction = function(x) {
+				//- 					- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+				//- 				- }
+
+				//- 				hr.mt-3
+
+				//- 				include includes/pagination.pug
 
 
 
@@ -362,4 +465,6 @@ block content
 								div.highlight
 									pre
 										code.json.bg-light #{JSON.stringify(addressDetails, null, 4)}
+			div(style="margin-bottom: 30px;")
+				include ./includes/qr-code-modal.pug
 

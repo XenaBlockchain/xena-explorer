@@ -1,23 +1,17 @@
 #!/usr/bin/env node
 
 'use strict';
-
-var os = require('os');
-var path = require('path');
-var dotenv = require("dotenv");
-var fs = require('fs');
-
-var configPaths = [ path.join(os.homedir(), '.config', 'nex-rpc-explorer.env'), path.join(process.cwd(), '.env') ];
-configPaths.filter(fs.existsSync).forEach(path => {
-	console.log('Loading env file:', path);
-	dotenv.config({ path });
-});
+import os from 'os'
+import path from 'path';
+import dotenv from 'dotenv'
+import fs from 'fs'
+import { fileURLToPath } from 'url';
 
 global.cacheStats = {};
 
 // debug module is already loaded by the time we do dotenv.config
 // so refresh the status of DEBUG env var
-const debug = require("debug");
+import debug from 'debug'
 debug.enable(process.env.DEBUG || "nexexp:app,nexexp:error");
 
 const debugLog = debug("nexexp:app");
@@ -25,36 +19,48 @@ const debugLogError = debug("nexexp:error");
 const debugPerfLog = debug("nexexp:actionPerformace");
 const debugAccessLog = debug("nexexp:access");
 
-var express = require('express');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var session = require("express-session");
-var csurf = require("csurf");
-var config = require("./app/config.js");
-var simpleGit = require('simple-git');
-var utils = require("./app/utils.js");
-var moment = require("moment");
-var Decimal = require('decimal.js');
-var pug = require("pug");
-var momentDurationFormat = require("moment-duration-format");
-var coreApi = require("./app/api/coreApi.js");
-var coins = require("./app/coins.js");
-var axios = require("axios");
-var qrcode = require("qrcode");
-var addressApi = require("./app/api/addressApi.js");
-var electrumAddressApi = require("./app/api/electrumAddressApi.js");
-var coreApi = require("./app/api/coreApi.js");
-var auth = require('./app/auth.js');
-const jayson = require('jayson/promise');
+import express from 'express'
+import cookieParser from 'cookie-parser';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import csurf from 'csurf';
+import config from './app/config.js'
+import simpleGit from 'simple-git';
+import utils from './app/utils.js'
 
-var package_json = require('./package.json');
-global.appVersion = package_json.version;
+import moment from 'moment';
+import Decimal from 'decimal.js';
+import pug from 'pug'
+import momentDurationFormat from 'moment-duration-format';
+import coreApi from './app/api/coreApi.js';
+import coins from './app/coins.js';
+import axios from 'axios';
+import qrcode from 'qrcode'
+import addressApi from './app/api/addressApi.js';
+import electrumAddressApi from './app/api/electrumAddressApi.js';
+import auth from './app/auth.js';
+import jayson from 'jayson'
+import global from './app/global.js';
+const coinConfig = coins[config.coin];
 
-var baseActionsRouter = require('./routes/baseActionsRouter.js');
-var apiActionsRouter = require('./routes/apiRouter.js');
-var snippetActionsRouter = require('./routes/snippetRouter.js');
+import { readFileSync } from "fs";
+
+// ./package.json is relative to the current file
+const packageJsonPath = "./package.json";
+
+const packageJsonContents = readFileSync(packageJsonPath).toString();
+
+const packageJson = JSON.parse(packageJsonContents);
+
+global.appVersion = packageJson.version
+
+// Assuming you are in a CommonJS module, not ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import baseActionsRouter from './routes/baseActionsRouter.js';
+import apiActionsRouter from './routes/apiRouter.js';
+import snippetActionsRouter from './routes/snippetRouter.js';
 
 var app = express();
 
@@ -89,9 +95,35 @@ app.use(session({
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+let appStatus = 1;
+
+app.use((req, res, next) => {
+	if (appStatus) {
+		return next();
+	}
+	throw new Error('App is closing');
+})
+
+app.locals.global = global;
+
 process.on("unhandledRejection", (reason, p) => {
 	debugLog("Unhandled Rejection at: Promise", p, "reason:", reason, "stack:", (reason != null ? reason.stack : "null"));
 });
+
+process.on('SIGINT', (signal) => {
+	process.exit(0);
+	appStatus = 0;
+	console.log('*** Signal received ****');
+	console.log('*** App will be closed in 3 sec ****');
+	setTimeout(shutdownProcedure, 3000);
+})
+
+async function shutdownProcedure() {
+	await electrumAddressApi.shutdown()
+	console.log('*** App is now closing ***');
+	process.exit(0);
+}
+
 
 function loadMiningPoolConfigs() {
 	debugLog("Loading mining pools config");
@@ -466,7 +498,6 @@ app.continueStartup = function() {
 		});
 	}
 
-
 	if (config.addressApi) {
 		var supportedAddressApis = addressApi.getSupportedAddressApis();
 		if (!supportedAddressApis.includes(config.addressApi)) {
@@ -477,7 +508,17 @@ app.continueStartup = function() {
 			if (config.electrumXServers && config.electrumXServers.length > 0) {
 				electrumAddressApi.connectToServers().then(function() {
 					global.electrumAddressApi = electrumAddressApi;
-
+					electrumAddressApi.subscribeToBlockHeaders()
+					// electrumAddressApi.getTokenGenesis('zzzzzzzzzzzzzzzzzzzzzzzzzzz')
+					// .then(function(data){
+					// 	console.log('then :' + data)
+					// }).catch(function(error){
+					// 	console.log('error: ' + error)
+					// })
+					// electrumAddressApi.getTokenNFTs('nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f')
+					// .then(function(results){
+					// 	console.log(results)
+					// })
 				}).catch(function(err) {
 					utils.logError("31207ugf4e0fed", err, {electrumXServers:config.electrumXServers});
 				});
@@ -490,6 +531,12 @@ app.continueStartup = function() {
 
 	loadMiningPoolConfigs();
 
+	//load known tokens
+	global.firstRun = true;
+	global.processingTokens = false;
+	global.knownTokens = [];
+	global.tokenImages = [];
+
 	// disable projects metadat a till we
 	// find a proper API for gitlab
 	//getSourcecodeProjectMetadata();
@@ -499,6 +546,15 @@ app.continueStartup = function() {
 
 	utils.logMemoryUsage();
 	setInterval(utils.logMemoryUsage, 5000);
+
+	setInterval(function(){
+		try {
+			coreApi.readKnownTokensIntoCache()
+		} catch (err){
+			console.log(err)
+		}
+		
+	}, 30000)
 };
 
 app.use(function(req, res, next) {
@@ -528,6 +584,7 @@ app.use(function(req, res, next) {
 	res.locals.utxoSetSummary = global.utxoSetSummary;
 	res.locals.utxoSetSummaryPending = global.utxoSetSummaryPending;
 	res.locals.networkVolume = global.networkVolume;
+	res.locals.rpcClient = global.rpcClient;
 
 	res.locals.host = req.session.host;
 	res.locals.port = req.session.port;
@@ -536,7 +593,6 @@ app.use(function(req, res, next) {
 	res.locals.genesisCoinbaseTransactionId = coreApi.getGenesisCoinbaseTransactionId();
 
 	res.locals.pageErrors = [];
-
 
 	// currency format type
 	if (!req.session.currencyFormatType) {
@@ -678,6 +734,7 @@ if (app.get("env") === "development" || app.get("env") === "local") {
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
+	console.log(err)
 	if (err) {
 		sharedErrorHandler(req, err);
 	}
@@ -695,4 +752,4 @@ app.locals.utils = utils;
 
 
 
-module.exports = app;
+export default app;

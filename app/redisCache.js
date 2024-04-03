@@ -1,18 +1,18 @@
-var redis = require("redis");
-var bluebird = require("bluebird");
-var msgpack = require("msgpackr");
+import redis from "redis";
+import bluebird from "bluebird";
+import {unpack, pack} from "msgpackr";
 
-var config = require("./config.js");
-var utils = require("./utils.js");
+import config from "./config.js";
+import utils from "./utils.js";
 
-var redisClient = null;
+let redisClient = null;
 if (config.redisUrl) {
-	bluebird.promisifyAll(redis.RedisClient.prototype);
+  bluebird.promisifyAll(redis.RedisClient.prototype);
 
-	redisClient = redis.createClient({
-		url: config.redisUrl,
-		return_buffers: true
-	});
+  redisClient = redis.createClient({
+    url: config.redisUrl,
+    return_buffers: true,
+  });
 }
 
 function createCache(keyPrefix, onCacheEvent) {
@@ -32,7 +32,7 @@ function createCache(keyPrefix, onCacheEvent) {
 					} else {
 						onCacheEvent("redis", "hit", prefixedKey);
 
-						resolve(msgpack.unpack(result));
+						resolve(unpack(result));
 					}
 				}).catch(function(err) {
 					onCacheEvent("redis", "error", prefixedKey);
@@ -46,12 +46,12 @@ function createCache(keyPrefix, onCacheEvent) {
 		set: function(key, obj, maxAgeMillis) {
 			var prefixedKey = `${keyPrefix}-${key}`;
 
-			redisClient.set(prefixedKey, msgpack.pack(obj), "PX", maxAgeMillis);
+			redisClient.set(prefixedKey, pack(obj), "PX", maxAgeMillis);
 		}
 	};
 }
 
-module.exports = {
+export default{
 	active: (redisClient != null),
-	createCache: createCache
+	createCache
 }

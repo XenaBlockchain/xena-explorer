@@ -1,22 +1,22 @@
-var debug = require("debug");
+import debug from "debug";
+import Decimal from "decimal.js";
+import axios from "axios";
+import qrcode from "qrcode";
+import textdecoding from "text-decoding";
+import fs from "fs";
+import path from "path";
+import nexaaddr from "nexaaddrjs";
 
-var debugLog = debug("nexexp:utils");
-var debugErrorLog = debug("nexexp:error");
-var debugErrorVerboseLog = debug("nexexp:errorVerbose");
-var debugPerfLog = debug("nexexp:actionPerformace");
+import config from "./config.js";
+import coins from "./coins.js";
+import redisCache from "./redisCache.js";
 
-var Decimal = require("decimal.js");
-var axios = require("axios");
-var qrcode = require("qrcode");
-var textdecoding = require("text-decoding");
-const fs = require('fs');
-const path = require('path');
-const nexaaddr = require('nexaaddrjs');
+const debugLog = debug("nexexp:utils");
+const debugErrorLog = debug("nexexp:error");
+const debugErrorVerboseLog = debug("nexexp:errorVerbose");
+const debugPerfLog = debug("nexexp:actionPerformace");
 
-var config = require("./config.js");
-var coins = require("./coins.js");
-var coinConfig = coins[config.coin];
-var redisCache = require("./redisCache.js");
+const coinConfig = coins[config.coin];
 
 
 var ipMemoryCache = {};
@@ -922,6 +922,28 @@ function shortenAddress(address, threshold, wingLength) {
 	return displayedAddress
 }
 
+function readUTXOSetForTokens() {
+	let data = fs.readFileSync(path.resolve(config.utxoPath), {encoding:'utf8', flag:'r'});
+	let lines = data.split(/\r?\n/);
+	lines.pop();
+	let tokens = new Set();
+
+	lines.forEach(function(line) {
+		let lineArray = line.split(',');
+		try {
+			let decodedAddress = nexaaddr.decode(lineArray[5]);
+			
+			if(decodedAddress['type'] == 'GROUP') {
+				tokens.add(lineArray[5]);
+			}
+			
+		} catch (err) {
+		}
+	});
+	tokens = [...tokens];
+	return tokens
+}
+
 function readRichList () {
 	let data = fs.readFileSync(path.resolve(config.richListPath), {encoding:'utf8', flag:'r'});
 	let lines = data.split(/\r?\n/);
@@ -1078,57 +1100,84 @@ function tokenAuthToFlags(groupAuth) {
 	return activeFlags;
 }
 
+function knownTokens() {
+	return [
+		'nexa:tqcr5dzhetyyughy9uwgsc35altfmhwuk9t5vyn7yjzw9pc0pqqqqyz68skt0',
+		'nexa:tptlgmqhvmwqppajq7kduxenwt5ljzcccln8ysn9wdzde540vcqqqcra40x0x',
+		'nexa:tzs4e8n7dqtsyk0axx7zvcgt2snzt3t7z07ued0nu89hlvp6ggqqqdrypc4ea',
+		'nexa:tztnyazksgqpkphrx2m2fgxapllufqmuwp6k07xtlc8k4xcjpqqqq99lxywr8',
+		'nexa:tp0jg4h6gj5gcj5rrf9h6xclxstk52dr72yyttmrn6umrjyd6sqqqsy86tk9q',
+		'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f'
+	]
+}
 
-module.exports = {
-	readRichList: readRichList,
-	reflectPromise: reflectPromise,
-	redirectToConnectPageIfNeeded: redirectToConnectPageIfNeeded,
-	hex2ascii: hex2ascii,
-	hex2array: hex2array,
-	hex2string: hex2string,
-	splitArrayIntoChunks: splitArrayIntoChunks,
-	splitArrayIntoChunksByChunkCount: splitArrayIntoChunksByChunkCount,
-	getRandomString: getRandomString,
-	getCurrencyFormatInfo: getCurrencyFormatInfo,
-	formatCurrencyAmount: formatCurrencyAmount,
-	formatCurrencyAmountWithForcedDecimalPlaces: formatCurrencyAmountWithForcedDecimalPlaces,
-	formatExchangedCurrency: formatExchangedCurrency,
-	formatValueInActiveCurrency: formatValueInActiveCurrency,
-	satoshisPerUnitOfActiveCurrency: satoshisPerUnitOfActiveCurrency,
-	addThousandsSeparators: addThousandsSeparators,
-	formatCurrencyAmountInSmallestUnits: formatCurrencyAmountInSmallestUnits,
-	seededRandom: seededRandom,
-	seededRandomIntBetween: seededRandomIntBetween,
-	logMemoryUsage: logMemoryUsage,
-	getMinerFromCoinbaseTx: getMinerFromCoinbaseTx,
-	getMinerCustomData: getMinerCustomData,
-	getBlockTotalFeesFromCoinbaseTxAndBlockHeight: getBlockTotalFeesFromCoinbaseTxAndBlockHeight,
-	getCoinsMinted: getCoinsMinted,
-	getDifficulty: getDifficulty,
-	refreshExchangeRates: refreshExchangeRates,
-	parseExponentStringDouble: parseExponentStringDouble,
-	findBestCommonExponentScaleIndex: findBestCommonExponentScaleIndex,
-	formatLargeNumber: formatLargeNumber,
-	geoLocateIpAddresses: geoLocateIpAddresses,
-	getTxTotalInputOutputValues: getTxTotalInputOutputValues,
-	rgbToHsl: rgbToHsl,
-	colorHexToRgb: colorHexToRgb,
-	colorHexToHsl: colorHexToHsl,
-	logError: logError,
-	buildQrCodeUrls: buildQrCodeUrls,
-	ellipsize: ellipsize,
-	shortenTimeDiff: shortenTimeDiff,
-	prettyScript: prettyScript,
-	outputTypeAbbreviation: outputTypeAbbreviation,
-	outputTypeName: outputTypeName,
-	serviceBitsToName: serviceBitsToName,
-	perfMeasure: perfMeasure,
-	getTransactionDatetime: getTransactionDatetime,
-	obfuscateProperties: obfuscateProperties,
-	bigIntToRawJSON: bigIntToRawJSON,
-	intToBigInt: intToBigInt,
-	shortenAddress: shortenAddress,
-	tokenID2HueSaturation: tokenID2HueSaturation,
-	tokenAuthToFlags, tokenAuthToFlags,
-	tokenID2HexString: tokenID2HexString
+function isValidHttpUrl(string) {
+	let url;
+	
+	try {
+	  url = new URL(string);
+	} catch (_) {
+	  return false;  
+	}
+  
+	return url.protocol === "http:" || url.protocol === "https:";
+  }
+  
+
+
+export default {
+	readRichList,
+	reflectPromise,
+	redirectToConnectPageIfNeeded,
+	hex2ascii,
+	 hex2array,
+	hex2string,
+	splitArrayIntoChunks,
+	splitArrayIntoChunksByChunkCount,
+	getRandomString,
+	getCurrencyFormatInfo,
+	formatCurrencyAmount,
+	formatCurrencyAmountWithForcedDecimalPlaces,
+	formatExchangedCurrency,
+	formatValueInActiveCurrency,
+	satoshisPerUnitOfActiveCurrency,
+	addThousandsSeparators,
+	formatCurrencyAmountInSmallestUnits,
+	seededRandom,
+	seededRandomIntBetween,
+	logMemoryUsage,
+	getMinerFromCoinbaseTx,
+	getMinerCustomData,
+	getBlockTotalFeesFromCoinbaseTxAndBlockHeight,
+	getCoinsMinted,
+	getDifficulty,
+	refreshExchangeRates,
+	parseExponentStringDouble,
+	findBestCommonExponentScaleIndex,
+	formatLargeNumber,
+	geoLocateIpAddresses,
+	getTxTotalInputOutputValues,
+	rgbToHsl,
+	colorHexToRgb,
+	colorHexToHsl,
+	logError,
+	buildQrCodeUrls,
+	ellipsize,
+	shortenTimeDiff,
+	prettyScript,
+	outputTypeAbbreviation,
+	outputTypeName,
+	serviceBitsToName,
+	perfMeasure,
+	getTransactionDatetime,
+	obfuscateProperties,
+	bigIntToRawJSON,
+	intToBigInt,
+	shortenAddress,
+	tokenID2HueSaturation,
+	tokenAuthToFlags,
+	tokenID2HexString,
+	knownTokens,
+	readUTXOSetForTokens,
+	isValidHttpUrl
 };

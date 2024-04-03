@@ -1,25 +1,24 @@
-var debug = require("debug");
-var debugLog = debug("nexexp:router");
+import debug from 'debug';
+const debugLog = debug('nexexp:router');
 
-var express = require('express');
-var csurf = require('csurf');
-var router = express.Router();
-var util = require('util');
-var moment = require('moment');
-var qrcode = require('qrcode');
-var bitcoinjs = require('bitcoinjs-lib');
-var sha256 = require("crypto-js/sha256");
-var hexEnc = require("crypto-js/enc-hex");
-var Decimal = require("decimal.js");
+import express from 'express';
+import csurf from 'csurf';
+const router = express.Router();
+import util from 'util';
+import moment from 'moment';
+import qrcode from 'qrcode';
+import bitcoinjs from 'bitcoinjs-lib';
+import pkg from 'crypto-js';
+const {sha256, hexEnc} = pkg;
+import Decimal from 'decimal.js';
 
-var utils = require('./../app/utils.js');
-var coins = require("./../app/coins.js");
-var config = require("./../app/config.js");
-var coreApi = require("./../app/api/coreApi.js");
-var addressApi = require("./../app/api/addressApi.js");
+import utils from './../app/utils.js';
+import coins from './../app/coins.js';
+import config from './../app/config.js';
+import coreApi from './../app/api/coreApi.js';
+import addressApi from './../app/api/addressApi.js';
 
 const forceCsrf = csurf({ ignoreMethods: [] });
-
 
 
 
@@ -32,5 +31,4 @@ router.get("/formatCurrencyAmount/:amt", function(req, res, next) {
 
 });
 
-
-module.exports = router;
+export default router;

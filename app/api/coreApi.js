@@ -1,22 +1,29 @@
-var debug = require("debug");
+import debug from "debug";
 
-var debugLog = debug("nexexp:core");
+const debugLog = debug("nexexp:core");
 
-var LRU = require("lru-cache");
-var fs = require('fs');
+import LRU from "lru-cache";
+import fs from 'fs';
 
-var utils = require("../utils.js");
-var config = require("../config.js");
-var coins = require("../coins.js");
-var redisCache = require("../redisCache.js");
-var Decimal = require("decimal.js");
-var md5 = require("md5");
+import utils from "../utils.js";
+import config from "../config.js";
+import coins from "../coins.js";
+import redisCache from "../redisCache.js";
+import Decimal from "decimal.js";
+import nexaaddr from 'nexaaddrjs'
+import axios from 'axios';
+import md5 from "md5";
+import NexCore from 'nexcore-lib'
 
 // choose one of the below: RPC to a node, or mock data while testing
-var rpcApi = require("./rpcApi.js");
-//var rpcApi = require("./mockApi.js");
+import rpcApi from "./rpcApi.js";
+import electrumAddressApi from "../api/electrumAddressApi.js";
+// import { reject } from "bluebird"; // Uncomment if needed
 
-
+// var rpcApi = require("./mockApi.js"); // Comment out or remove this line
+import global from "../global.js";
+global.cacheStats = {};
+global.tokenIcons = [];
 // this value should be incremented whenever data format changes, to avoid
 // pulling old-format data from a persistent cache
 var cacheKeyVersion = "v1";
@@ -52,33 +59,65 @@ function createMemoryLruCache(cacheObj, onCacheEvent) {
 	}
 }
 
-function tryCache(cacheKey, cacheObjs, index, resolve, reject) {
-	if (index == cacheObjs.length) {
-		resolve(null);
+async function tryCache(cacheKey, cacheObjs, index) {
+    if (index === cacheObjs.length) {
+        return null;
+    }
 
-		return;
-	}
+    const result = await cacheObjs[index].get(cacheKey);
 
-	cacheObjs[index].get(cacheKey).then(function(result) {
-		if (result != null) {
-			resolve(result);
-
-		} else {
-			tryCache(cacheKey, cacheObjs, index + 1, resolve, reject);
-		}
-	});
+    if (result !== null) {
+        return result;
+    } else {
+        return tryCache(cacheKey, cacheObjs, index + 1);
+    }
 }
 
 function createTieredCache(cacheObjs) {
 	return {
-		get:function(key) {
-			return new Promise(function(resolve, reject) {
-				tryCache(key, cacheObjs, 0, resolve, reject);
-			});
+		get: async function (key) {
+			return await tryCache(key, cacheObjs, 0);
 		},
-		set:function(key, obj, maxAge) {
-			for (var i = 0; i < cacheObjs.length; i++) {
+		
+		set: function (key, obj, maxAge) {
+			for (let i = 0; i < cacheObjs.length; i++) {
 				cacheObjs[i].set(key, obj, maxAge);
+			}
+		},
+		
+		append: async function (key, obj, maxAge) {
+			let result = await tryCache(key, cacheObjs, 0);
+			result = Array.isArray(result) && result.length > 0 ? [...result, obj] : [obj];
+		
+			for (let i = 0; i < cacheObjs.length; i++) {
+				cacheObjs[i].set(key, result, maxAge);
+			}
+		},
+		
+		prepend: async function (key, obj, maxAge) {
+			let result = await tryCache(key, cacheObjs, 0);
+			result = Array.isArray(result) && result.length > 0 ? [obj, ...result] : [obj];
+		
+			for (let i = 0; i < cacheObjs.length; i++) {
+				cacheObjs[i].set(key, result, maxAge);
+			}
+		},
+		updateOrAppend: async function (cacheKey, obj, objKey, objKeyValue, maxAge) {
+			let result = await tryCache(cacheKey, cacheObjs, 0);
+			if (Array.isArray(result) && result.length > 0) {
+				const foundIndex = result.findIndex((element) => element[objKey] == objKeyValue);
+				if (foundIndex !== -1) {
+					result[foundIndex] = obj
+				} else {
+					result.push(obj);
+				}
+			} else {
+				result = [];
+				result.push(obj);
+			}
+		
+			for (let i = 0; i < cacheObjs.length; i++) {
+				cacheObjs[i].set(cacheKey, result, maxAge);
 			}
 		}
 	}
@@ -90,6 +129,7 @@ function createTieredCache(cacheObjs) {
 var miscCaches = [];
 var blockCaches = [];
 var txCaches = [];
+var tokenCaches = [];
 
 if (!config.noInmemoryRpcCache) {
 	global.cacheStats.memory = {
@@ -99,12 +139,20 @@ if (!config.noInmemoryRpcCache) {
 	};
 
 	var onMemoryCacheEvent = function(cacheType, eventType, cacheKey) {
+		if(!('memory' in global.cacheStats)) {
+			global.cacheStats.memory = {
+				try: 0,
+				hit: 0,
+				miss: 0
+			};
+		}
 		global.cacheStats.memory[eventType]++;
 	}
 
 	miscCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	blockCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	txCaches.push(createMemoryLruCache(new LRU(10000), onMemoryCacheEvent));
+	tokenCaches.push(createMemoryLruCache(new LRU (10000), onMemoryCacheEvent));
 }
 
 if (redisCache.active) {
@@ -116,6 +164,13 @@ if (redisCache.active) {
 	};
 
 	var onRedisCacheEvent = function(cacheType, eventType, cacheKey) {
+		if(!('redis' in global.cacheStats)) {
+			global.cacheStats.redis = {
+				try: 0,
+				hit: 0,
+				miss: 0
+			};
+		}
 		global.cacheStats.redis[eventType]++;
 	}
 
@@ -130,11 +185,13 @@ if (redisCache.active) {
 	miscCaches.push(redisCacheObj);
 	blockCaches.push(redisCacheObj);
 	txCaches.push(redisCacheObj);
+	tokenCaches.push(redisCacheObj);
 }
 
 var miscCache = createTieredCache(miscCaches);
 var blockCache = createTieredCache(blockCaches);
 var txCache = createTieredCache(txCaches);
+var tokenCache = createTieredCache(tokenCaches);
 
 
 
@@ -145,6 +202,36 @@ function getGenesisBlockHash() {
 
 function getGenesisCoinbaseTransactionId() {
 	return coins[config.coin].genesisCoinbaseTransactionIdsByNetwork[global.activeBlockchain];
+}
+
+function getTokenGenesis(token) {
+	return tryCacheThenElectrum(tokenCache, "getTokenGenesis-" + token, ONE_YR, electrumAddressApi.getTokenGenesis(token));
+}
+
+async function tryCacheThenElectrum(cache, cacheKey, cacheMaxAge, electrumApiFunction, cacheConditionFunction) {
+    if (cacheConditionFunction == null) {
+        cacheConditionFunction = function(obj) {
+            return true;
+        };
+    }
+
+    try {
+        const cacheResult = await cache.get(cacheKey);
+        
+        if (cacheResult != null) {
+            return cacheResult;
+        }
+
+        const electrumResult = await electrumApiFunction;
+
+        if (electrumResult != null && cacheConditionFunction(electrumResult)) {
+            cache.set(cacheKey, electrumResult, cacheMaxAge);
+        }
+
+        return electrumResult;
+    } catch (err) {
+        throw err;
+    }
 }
 
 
@@ -263,6 +350,34 @@ function decodeScript(hex) {
 	return tryCacheThenRpcApi(miscCache, "decodeScript-" + hex, 1000 * 60 * 1000, function() {
 		return rpcApi.decodeScript(hex);
 	});
+}
+
+function getTokenMintage(token) {
+	return tryCacheThenRpcApi(miscCache, "getTokenMintage-" + token,  20 * ONE_MIN, function() {
+		return rpcApi.tokenMintage(token);
+	});
+}
+
+function getTransactions(txids, cacheSpan=ONE_HR) {
+	return new Promise(function(resolve, reject) {
+		var promises = [];
+		for (var i = 0; i < txids.length; i++) {
+			promises.push(getTransaction(txids[i], cacheSpan));
+		}
+
+		Promise.all(promises).then(function(results) {
+			resolve(results);
+
+		}).catch(function(err) {
+			reject(err);
+		});
+	});
+}
+
+function getTransaction(tx) {
+	return tryCacheThenRpcApi(miscCache, "gettransaction-" + tx, 1000 * 60 * 1000, function() {
+		return rpcApi.getTransaction(tx);
+	}); 
 }
 
 function decodeRawTransaction(hex) {
@@ -459,7 +574,7 @@ function getBlockInt(hash_or_height)
 			getRawTransaction(block.txid[0]).then(function(tx) {
 				block.coinbaseTx = tx;
 				block.totalFees = utils.getBlockTotalFeesFromCoinbaseTxAndBlockHeight(tx, block.height);
-				block.subsidy = coinConfig.blockRewardFunction(block.height, global.activeBlockchain);
+				block.subsidy = global.coinConfig.blockRewardFunction(block.height, global.activeBlockchain);
 				if (block.nTx === undefined)
 					block.nTx = block.txid.length;
 				resolve(block);
@@ -1124,47 +1239,693 @@ function logCacheSizes() {
 	stream.end();
 }
 
-module.exports = {
-	getGenesisBlockHash: getGenesisBlockHash,
-	getGenesisCoinbaseTransactionId: getGenesisCoinbaseTransactionId,
-	getBlockchainInfo: getBlockchainInfo,
-	getNetworkInfo: getNetworkInfo,
-	getNetTotals: getNetTotals,
-	getTxpoolInfo: getTxpoolInfo,
-	getTxpoolTxids: getTxpoolTxids,
-	getMiningInfo: getMiningInfo,
-	getBlock: getBlock,
-	getBlocks: getBlocks,
-	getBlockByHeight: getBlockByHeight,
-	getBlocksByHeight: getBlocksByHeight,
-	getBlockByHashWithTransactions: getBlockByHashWithTransactions,
-	getMiningCandidate: getMiningCandidate,
-	getRawTransaction: getRawTransaction,
-	getRawTransactions: getRawTransactions,
-	getRawTransactionsWithInputs: getRawTransactionsWithInputs,
-	getRecentBlocksMinimalData: getRecentBlocksMinimalData,
-	getTxUtxos: getTxUtxos,
-	getTxpoolTxDetails: getTxpoolTxDetails,
-	getUptimeSeconds: getUptimeSeconds,
-	getHelp: getHelp,
-	getRpcMethodHelp: getRpcMethodHelp,
-	getAddress: getAddress,
-	logCacheSizes: logCacheSizes,
-	getPeerSummary: getPeerSummary,
-	getChainTxStats: getChainTxStats,
-	getTxpoolDetails: getTxpoolDetails,
-	getTxCountStats: getTxCountStats,
-	getUtxoSetSummary: getUtxoSetSummary,
-	getNetworkHashrate: getNetworkHashrate,
-	getBlockStats: getBlockStats,
-	getBlockCount: getBlockCount,
-	getBlocksStats: getBlocksStats,
-	getBlocksStatsByHeight: getBlocksStatsByHeight,
-	buildBlockAnalysisData: buildBlockAnalysisData,
-	getBlockHeader: getBlockHeader,
-	getBlockHeaderByHeight: getBlockHeaderByHeight,
-	getBlockHeadersByHeight: getBlockHeadersByHeight,
-	decodeScript: decodeScript,
-	decodeRawTransaction: decodeRawTransaction,
-	getBlockList: getBlockList
+
+function loadAddressTokenTransactions(address, tokenObjs, pageOffset, pageLimit) {
+	return new Promise(function(resolve, reject) {
+		const transfers = [];
+		electrumAddressApi.getTokenTransactionsForAddress(address).then(async function(result){
+			var txids = []
+			var txToBlockHeight = []
+			result.transactions.forEach(function (transaction){
+				txids.push(transaction.tx_hash)
+				txToBlockHeight[transaction.tx_hash] = transaction.height;
+			})
+
+			const rawTxResult = await getRawTransactionsWithInputs(txids);
+
+			var addrGainsByTx = {};
+			var addrLossesByTx = {};
+
+			var handledTxids = [];
+
+			rawTxResult.transactions.forEach((tx) => {
+				const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
+			
+				if (handledTxids.includes(tx.txid)) {
+					return;
+				}
+			
+				handledTxids.push(tx.txid);
+			
+				tx.vout.forEach((vout) => {
+					if (vout.scriptPubKey && vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && vout.scriptPubKey.groupAuthority === 0 && vout.scriptPubKey.addresses && vout.scriptPubKey.addresses.includes(address)) {
+						addrGainsByTx[tx.txid] = addrGainsByTx[tx.txid] || [];
+						addrGainsByTx[tx.txid].push({
+							group: vout.scriptPubKey.group,
+							amount: BigInt(vout.scriptPubKey.groupQuantity),
+							address: vout.scriptPubKey.addresses[0]
+						});
+					}
+				});
+			
+				tx.vin.forEach((vin, j) => {
+					const txInput = txInputs[j];
+			
+					if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group && txInput.scriptPubKey.groupQuantity > 0 && txInput.scriptPubKey.groupAuthority === 0 && txInput.scriptPubKey.addresses && txInput.scriptPubKey.addresses.includes(address)) {
+						addrLossesByTx[tx.txid] = addrLossesByTx[tx.txid] || [];
+						if (txInput.scriptPubKey.addresses && txInput.scriptPubKey.addresses.length > 0) {
+							addrLossesByTx[tx.txid].push({
+								group: txInput.scriptPubKey.group,
+								amount: BigInt(txInput.scriptPubKey.groupQuantity),
+								address: txInput.scriptPubKey.addresses[0]
+							});
+						}
+					}
+				});
+			});
+
+			
+			
+			Object.keys(addrGainsByTx).forEach((key) => {
+				addrGainsByTx[key].forEach((gain) => {
+					if (addrLossesByTx[key] && addrLossesByTx[key].length > 0) {
+						const amountNotFormatted = gain.amount;
+						const tokenInfo = tokenObjs[gain.group].genesisInfo;
+						let amount = tokenInfo.decimal_places > 0
+							? `${amountNotFormatted}`.slice(0, -tokenInfo.decimal_places) + "." + `${amountNotFormatted}`.slice(-tokenInfo.decimal_places)
+							: amountNotFormatted;
+
+						amount = utils.addThousandsSeparators(amount)
+						
+						transfers.push({
+							txId: key,
+							from: addrLossesByTx[key][0].address,
+							to: gain.address,
+							amount: amount,
+							amountNotFormatted: amountNotFormatted,
+							height: txToBlockHeight[key]
+						});
+					}
+				});
+			});
+			
+
+			let sortedResults = transfers.sort(blockHeightCompare)
+			sortedResults = sortedResults.reverse()
+			const paginatedTransfers = sortedResults.slice(pageOffset, pageOffset + pageLimit);
+			resolve([paginatedTransfers, sortedResults.length]);
+		}).catch(function(err){
+			console.log(err)
+			utils.logError("nds9fc2eg621tf3", err, {address:address});
+			reject(err)
+			reject(err)
+		})
+	});
+}
+
+function addTokenToCache(token) {
+	return new Promise(function(resolve, reject) {
+		let tokenInfo = null;
+		const transfers = [];
+		let richList = [];
+		let holders = new Set();
+		let holdersCount = 0;
+		let totalSupply = BigInt(0);
+		let circulatingSupply = BigInt(0);
+		getTokenGenesis(token).then(async function(result){
+			var promises = [];
+			if(result) {
+				tokenInfo = result;
+
+				promises.push(new Promise(function(resolve, reject) {
+					getTokenMintage(token).then(function(result) {
+						totalSupply = BigInt(result.mintage_satoshis)
+						circulatingSupply = BigInt(result.mintage_satoshis)
+						resolve();
+					}).catch(function(err) {
+						console.log(err)
+						reject(err);
+					});
+				}));
+
+				promises.push(new Promise(function(resolve, reject){
+					electrumAddressApi.getTokenTransactions(token).then(async function(result){
+						var txids = []
+						var txToBlockHeight = []
+						for (const historyItem in result) {
+							txids.push(result[historyItem].tx_hash)
+							txToBlockHeight[result[historyItem].tx_hash] = result[historyItem].height;
+						}
+
+						const rawTxResult = await getRawTransactionsWithInputs(txids);
+
+						var addrGainsByTx = {};
+						var addrLossesByTx = {};
+
+						var handledTxids = [];
+
+						rawTxResult.transactions.forEach((tx) => {
+							const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
+						
+							if (handledTxids.includes(tx.txid)) {
+								return;
+							}
+						
+							handledTxids.push(tx.txid);
+						
+							tx.vout.forEach((vout) => {
+								if (vout.scriptPubKey && vout.scriptPubKey.group && vout.scriptPubKey.group == token && vout.scriptPubKey.groupQuantity > 0 && vout.scriptPubKey.groupAuthority === 0) {
+									addrGainsByTx[tx.txid] = addrGainsByTx[tx.txid] || [];
+									addrGainsByTx[tx.txid].push({
+										amount: BigInt(vout.scriptPubKey.groupQuantity),
+										address: vout.scriptPubKey.addresses[0]
+									});
+								}
+							});
+						
+							tx.vin.forEach((vin, j) => {
+								const txInput = txInputs[j];
+						
+								if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group && txInput.scriptPubKey.group == token && txInput.scriptPubKey.groupQuantity > 0 && txInput.scriptPubKey.groupAuthority === 0) {
+									addrLossesByTx[tx.txid] = addrLossesByTx[tx.txid] || [];
+									if (txInput.scriptPubKey.addresses && txInput.scriptPubKey.addresses.length > 0) {
+										addrLossesByTx[tx.txid].push({
+											amount: BigInt(txInput.scriptPubKey.groupQuantity),
+											address: txInput.scriptPubKey.addresses[0]
+										});
+									}
+								}
+							});
+						});
+
+						const addressBalances = {};
+						Object.entries(addrGainsByTx).forEach(([txid, gains]) => {
+							gains.forEach((gain) => {
+								addressBalances[gain.address] = (addressBalances[gain.address] || BigInt(0)) + gain.amount;
+							});
+						});
+						
+						// Calculate losses
+						Object.entries(addrLossesByTx).forEach(([txid, losses]) => {
+							losses.forEach((loss) => {
+								addressBalances[loss.address] = (addressBalances[loss.address] || BigInt(0)) - loss.amount;
+							});
+						});
+						
+						Object.keys(addrGainsByTx).forEach((key) => {
+							addrGainsByTx[key].forEach((gain) => {
+								const amountNotFormatted = gain.amount;
+								let amount = tokenInfo.decimal_places > 0
+									? `${amountNotFormatted}`.slice(0, -tokenInfo.decimal_places) + "." + `${amountNotFormatted}`.slice(-tokenInfo.decimal_places)
+									: amountNotFormatted;
+					
+								if (!holders.has(gain.address)) {
+									holders.add(gain.address);
+								}
+
+								amount = utils.addThousandsSeparators(amount)
+
+								let from = null;
+								if(addrLossesByTx[key] && addrLossesByTx[key].length > 0) {
+									from = addrLossesByTx[key][0].address
+									transfers.push({
+										txId: key,
+										from: from,
+										to: gain.address,
+										amount: amount,
+										amountNotFormatted: amountNotFormatted,
+										height: txToBlockHeight[key]
+									});
+								} else {
+									from = gain.address
+								}
+
+								
+							});
+						});
+						
+						holders = [...holders];
+						
+						Object.entries(addressBalances).forEach(([address, balance]) => {
+							if(balance > BigInt(0)) {
+								const holderGains = transfers.filter((transfer) => transfer.to === address);
+								const holderLosses = transfers.filter((transfer) => transfer.from === address);
+								const allTransfers = [...holderGains, ...holderLosses];
+
+								const lastTransfer = allTransfers.reduce((latest, transfer) => {
+								  return latest.height > transfer.height ? latest : transfer;
+								}, {});
+	
+								const percentage = totalSupply ? ((Number(balance) / Number(totalSupply))) * 100 : BigInt(0);
+	
+	
+								const netAmount = tokenInfo.decimal_places > 0
+								? `${balance}`.slice(0, -tokenInfo.decimal_places) + "." + `${balance}`.slice(-tokenInfo.decimal_places)
+								: balance;
+	
+								richList.push({
+									address: address,
+									netAmount: netAmount,
+									netAmountNotFormatted: balance,
+									percentage: Number(percentage.toString()).toFixed(2), // Increase precision for percentage
+									lastTransferHeight: lastTransfer.height,
+									lastTransferTxId: lastTransfer.txId
+								});
+								holdersCount++
+							}
+						});
+						
+						richList.sort((a, b) => b.percentage - a.percentage);
+						richList = richList.slice(0, 100);
+						resolve()
+					}).catch(function(err){
+						console.log(token)
+						resolve()
+					})
+				}));
+
+				Promise.all(promises).then(async function() {
+
+					if(tokenInfo.decimal_places > 0) {
+						totalSupply = String(totalSupply).substring(0, String(totalSupply).length - tokenInfo.decimal_places) + "." + String(totalSupply).substring(String(totalSupply).length - tokenInfo.decimal_places);
+					}
+
+					totalSupply = utils.addThousandsSeparators(totalSupply)
+					let documentInfo = null;
+
+					if(tokenInfo.document_url && utils.isValidHttpUrl(tokenInfo.document_url)) {
+						try {
+							let url = tokenInfo.document_url;
+							const response = await axios.get(url, { headers: { "User-Agent": "axios", "Content-Type": "application/json"}});
+							const contentType = response.headers["content-type"];
+							if(contentType.includes("application/json")) {
+								let data = response.data;
+
+								if(data.length > 0) {
+									if(typeof data[0] == 'object') {
+										documentInfo = {}
+										documentInfo['tokenObject'] = data[0];
+										documentInfo['signature'] = data[1];
+
+										if(documentInfo['tokenObject']['icon'] != null) {
+											if(utils.isValidHttpUrl(documentInfo['tokenObject']['icon'])) {
+												const linkParts = documentInfo['tokenObject']['icon'].split('.')
+												const extension  = linkParts[linkParts.length - 1];
+												let fileTypes = ['jpg', 'JPG', 'png', 'PNG', 'svg', 'SVG'];
+												if(fileTypes.includes(extension)){
+													documentInfo['icon'] = documentInfo['tokenObject']['icon'];
+												}
+											} else {
+												documentInfo['icon'] = new URL(tokenInfo.document_url).origin + documentInfo['tokenObject']['icon'];
+											}
+											tokenCache.set('tracked-tokens-icon-' + token, documentInfo['icon'], ONE_YR);
+										}
+									}
+								}
+							}
+						} catch (err) {
+							// utils.logError("Cannot load document URL for token: ", token);
+						}
+					}
+
+					let parent = null;
+					let groupId = nexaaddr.decode(token).hash;
+					if (groupId.length > 32) {
+						// this is asubgroup which contains the parent group id in the first 32 bytes
+						parent = nexaaddr.encode('nexa', 'GROUP', groupId.slice(0, 31));
+					}
+					
+					tokenCache.updateOrAppend('tracked-tokens', {
+						groupId: token,
+						parent: parent,
+						holders: holdersCount,
+						totalTransfers: transfers.length,
+						maxSupply: totalSupply,
+						name: tokenInfo.name,
+						ticker: tokenInfo.ticker,
+						documentInfo: documentInfo
+					}, 'groupId', token, ONE_YR);
+					tokenCache.set(token + '-transfers', transfers, ONE_YR);
+					tokenCache.set(token + '-richlist', richList, ONE_YR);
+					tokenCache.set(token + '-holders', holders, ONE_YR);
+					
+					debugLog(`Added Token To Cache: ${token}`)
+					resolve(transfers)
+				}).catch(function(err) {
+					reject(err)
+				});
+			}
+		}).catch(function (err) {
+			utils.logError("cannot-load-token", err, {token:token});
+			reject(err)
+		});
+	});
+}
+
+function blockHeightCompare(a, b) {
+	if (a.height < b.height) {
+	  return -1;
+	} else if (a.height > b.height) {
+	  return 1;
+	}
+	// a must be equal to b
+	return 0;
+}
+
+function compareFn(a, b) {
+	if (a.totalTransfers < b.totalTransfers) {
+	  return -1;
+	} else if (a.totalTransfers > b.totalTransfers) {
+	  return 1;
+	}
+	// a must be equal to b
+	return 0;
+}
+
+function getAllTrackedTokens() {
+	return new Promise(function(resolve, reject){
+		tokenCache.get('tracked-tokens').then(function(results) {
+			if(!results || results.length == 0) {
+				resolve([])
+			}
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("tracked-tokens-failure", err);
+		});
+	});
+}
+
+function getStatsForToken(token) {
+	return new Promise(function(resolve, reject){
+		tokenCache.get('tracked-tokens').then(function(results) {
+			if(!results || results.length == 0) {
+				resolve([])
+			}
+			const foundIndex = results.findIndex((element) => element.groupId == token);
+			if (foundIndex !== -1) { 
+				resolve(results[foundIndex]);
+			} else {
+				resolve[{}]
+			}
+			
+		}).catch(function(err) {
+			utils.logError("tracked-tokens-failure", err);
+		});
+	});
+}
+  
+function getTokenStats() {
+	return new Promise(function(resolve, reject){
+		tokenCache.get('tracked-tokens').then(function(results) {
+			if(!results || results.length == 0) {
+				resolve({
+					totalTokens: 0,
+					totalTransfers: 0,
+					totalHolders: 0
+				})
+			}
+			let totalTransfers = results.reduce((n, {totalTransfers}) => n + totalTransfers, 0)
+			let totalHolders = results.reduce((n, {holders}) => n + holders, 0)
+			resolve({
+				totalTokens: results.length,
+				totalTransfers: totalTransfers,
+				totalHolders: totalHolders
+			});
+		}).catch(function(err) {
+			utils.logError("tracked-tokens-failure", err);
+		});
+	});
+}
+function getTokens(pageLimit = 20, pageoffset = 0, sortDir = 'desc'){
+	return new Promise(function(resolve, reject){
+		tokenCache.get('tracked-tokens').then(function(results) {
+			if(!results || results.length == 0) {
+				resolve([])
+			}
+			let sortedResults = results.sort(compareFn)
+			sortedResults = sortedResults.reverse()
+			const paginatedTokens = sortedResults.slice(pageoffset, pageoffset + pageLimit);
+			resolve(paginatedTokens);
+		}).catch(function(err) {
+			utils.logError("tracked-tokens-failure", err);
+		});
+	});
+}
+
+async function getTransfersForToken(token, transferLimit, transferOffset) {
+    let cacheResult = null;
+
+    try {
+        cacheResult = await tokenCache.get(token + '-transfers');
+        
+        if (cacheResult != null) {
+            // If token transfers exist in the cache, return paginated results
+            const paginatedTransfers = cacheResult.slice(transferOffset, transferOffset + transferLimit);
+            return paginatedTransfers;
+        } else {
+            const transfers = await addTokenToCache(token);
+            const paginatedTransfers = transfers.slice(transferOffset, transferOffset + transferLimit);
+            return paginatedTransfers;
+        }
+    } catch (err) {
+        utils.logError("token-cache-failure", err, { token: token });
+        throw err;
+    }
+}
+
+function getRichList(token) {
+	return new Promise(function(resolve, reject){
+		tokenCache.get(token + '-richlist').then(function(result) {
+			resolve(result);
+		}).catch(function(err) {
+			utils.logError("token-richlist-failure", err, {token:token});
+			reject(err)
+		});
+	});
+}
+
+function getTokenHolders(token) {
+	return new Promise(function(resolve, reject){
+		tokenCache.get(token + '-holders').then(function(result) {
+			resolve(result);
+		}).catch(function(err) {
+			utils.logError("token-holders-failure", err, {token:token});
+			reject(err)
+		});
+	});
+}
+
+function getTokenIcon(token) {
+	return new Promise(function(resolve, reject){
+		tokenCache.get('tracked-tokens-icon-' + token).then(function(result) {
+			resolve(result);
+		}).catch(function(err) {
+			utils.logError("token-holders-failure", err, {token:token});
+			reject(err)
+		});
+	});
+}
+
+function getTokenTotalTransfers(token) {
+	return new Promise(function(resolve, reject){
+		tokenCache.get(token + '-transfers').then(function(result) {
+			resolve(result.length);
+		}).catch(function(err) {
+			resolve(0)
+			utils.logError("token-holders-failure", err, {token:token});
+			// reject(err)
+		});
+	});
+}
+
+function getTransactionTokens(txids) {
+	return new Promise(async function(resolve, reject){
+
+		const rawTxResult = await getRawTransactionsWithInputs(txids);
+
+		var handledTxids = [];
+		let tokens = new Set();
+		let tokensWithData = {};
+
+		rawTxResult.transactions.forEach((tx) => {
+			const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
+		
+			if (handledTxids.includes(tx.txid)) {
+				return;
+			}
+		
+			handledTxids.push(tx.txid);
+		
+			tx.vout.forEach((vout) => {
+				if (vout.scriptPubKey && vout.scriptPubKey.group) {
+					try {
+						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
+						
+						if(decodedAddress['type'] == 'GROUP') {
+							if (!tokens.has(vout.scriptPubKey.group)) {
+								tokens.add(vout.scriptPubKey.group);
+							}
+						}
+					} catch (err) {
+						console.log(err)
+					}
+				}
+			});
+		
+			tx.vin.forEach((vin, j) => {
+				const txInput = txInputs[j];
+		
+				if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
+					try {
+						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
+						
+						if(decodedAddress['type'] == 'GROUP') {
+
+							if (!tokens.has(txInput.scriptPubKey.group)) {
+								tokens.add(txInput.scriptPubKey.group);
+							}
+						}
+						
+					} catch (err) {
+						console.log(err)
+					}
+				}
+			});
+		});
+		tokens = [...tokens];
+
+		for (const token of tokens) {
+			let tokenObj = tokensWithData[token] || {groupId: token };
+
+			// Include additional token information from getTokenGenesis
+			let genesisInfo = await getTokenGenesis(token);
+			tokenObj.genesisInfo = genesisInfo;
+			tokensWithData[token] = tokenObj;
+		}
+		resolve(tokensWithData);
+	});
+}
+
+function readKnownTokensIntoCache() {
+	return new Promise(async function(resolve, reject) {
+		if(!global.processingTokens) {
+			global.processingTokens = true;
+			debugLog("loading known tokens");
+			if(global.firstRun) {
+				try {
+					global.knownTokens = await rpcApi.dumpTokenset()
+					debugLog("used token RPC");
+				} catch(err) {
+					// global.knownTokens = utils.readUTXOSetForTokens();
+					// debugLog("Used UTXO set");
+				}
+	
+				global.firstRun = false;
+			}
+	
+			let indexedTokens = await getAllTrackedTokens();
+			
+			if(config.slowDeviceMode) {
+				for (const token of global.knownTokens) {
+					const foundIndex = indexedTokens.findIndex((element) => element.groupId == token);
+					if (foundIndex == -1) { 
+						try {
+							debugLog("Adding token to cache: ", token);
+							await addTokenToCache(token);
+						} catch (err) {
+							debugLog(err);
+						}
+					} else {
+						// debugLog("Token already cached: ", token);
+					}
+				}
+			} else {
+				const chunkSize = 5;
+				const totalTokens = global.knownTokens.length;
+	
+				for (let i = 0; i < totalTokens; i += chunkSize) {
+					const chunkTokens = global.knownTokens.slice(i, i + chunkSize);
+	
+					const promises = chunkTokens.map(async (token) => {
+						const foundIndex = indexedTokens.findIndex((element) => element.groupId == token);
+						if (foundIndex == -1) {
+							try {
+								debugLog("Adding token to cache: ", token);
+								await addTokenToCache(token);
+							} catch (err) {
+								debugLog(err);
+							}
+						}
+					});
+	
+					try {
+						// await Promise.all(promises);
+						await Promise.all(promises.map(utils.reflectPromise))
+					}
+					catch (err) {
+						debugLog('promise failed in token indexing.')
+						debugLog(err);
+						global.processingTokens = false;
+						reject(err)
+						break;
+					}
+				}
+			}
+			global.processingTokens = false;
+		}
+		resolve()
+	});
+}
+
+
+
+export default {
+	getGenesisBlockHash,
+	getGenesisCoinbaseTransactionId,
+	getBlockchainInfo,
+	getNetworkInfo,
+	getNetTotals,
+	getTxpoolInfo,
+	getTxpoolTxids,
+	getMiningInfo,
+	getBlock,
+	getBlocks,
+	getBlockByHeight,
+	getBlocksByHeight,
+	getBlockByHashWithTransactions,
+	getMiningCandidate,
+	getRawTransaction,
+	getRawTransactions,
+	getRawTransactionsWithInputs,
+	getRecentBlocksMinimalData,
+	getTxUtxos,
+	getTxpoolTxDetails,
+	getUptimeSeconds,
+	getHelp,
+	getRpcMethodHelp,
+	getAddress,
+	logCacheSizes,
+	getPeerSummary,
+	getChainTxStats,
+	getTxpoolDetails,
+	getTxCountStats,
+	getUtxoSetSummary,
+	getNetworkHashrate,
+	getBlockStats,
+	getBlockCount,
+	getBlocksStats,
+	getBlocksStatsByHeight,
+	buildBlockAnalysisData,
+	getBlockHeader,
+	getBlockHeaderByHeight,
+	getBlockHeadersByHeight,
+	decodeScript,
+	decodeRawTransaction,
+	getBlockList,
+	getTokenMintage,
+	getTransaction,
+	getTransactions,
+	getTransfersForToken,
+	getRichList,
+	getTokenHolders,
+	getTokenTotalTransfers,
+	addTokenToCache,
+	getTokens,
+	getTokenStats,
+	getStatsForToken,
+	loadAddressTokenTransactions,
+	readKnownTokensIntoCache,
+	getTokenGenesis,
+	getTransactionTokens,
+	getTokenIcon
 };
