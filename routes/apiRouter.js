@@ -1,31 +1,49 @@
-var debug = require("debug");
-var debugLog = debug("nexexp:router");
+import debug from 'debug';
+const debugLog = debug('nexexp:router');
 
-var express = require('express');
-const rateLimit = require('express-rate-limit')
-var csurf = require('csurf');
+import express from 'express';
+import cors from 'cors'
+import rateLimit from 'express-rate-limit';
+import csurf from 'csurf';
+import util from 'util';
 var router = express.Router();
-var util = require('util');
-var moment = require('moment');
-var qrcode = require('qrcode');
-var bitcoinjs = require('bitcoinjs-lib');
-var sha256 = require("crypto-js/sha256");
-var hexEnc = require("crypto-js/enc-hex");
-var Decimal = require("decimal.js");
+import moment from 'moment';
+import qrcode from 'qrcode';
+import bitcoinjs from 'bitcoinjs-lib';
+import pkg from 'crypto-js';
+const {sha256, hexEnc} = pkg;
+import Decimal from 'decimal.js';
 
-var utils = require('./../app/utils.js');
-var coins = require("./../app/coins.js");
-var config = require("./../app/config.js");
-var coreApi = require("./../app/api/coreApi.js");
-var addressApi = require("./../app/api/addressApi.js");
+import utils from './../app/utils.js';
+import coins from './../app/coins.js';
+import config from './../app/config.js';
+import coreApi from './../app/api/coreApi.js';
+import addressApi from './../app/api/addressApi.js';
 
 const forceCsrf = csurf({ ignoreMethods: [] });
 const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-})
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+
+const corsOptions = {
+
+	origin: function(origin, callback){    // allow requests with no origin 
+		// (like mobile apps or curl requests)
+		if(!origin) return callback(null, true);
+		
+		if(config.corsAllowedServers.indexOf(origin) === -1){
+		  var msg = 'The CORS policy for this site does not ' +
+					'allow access from the specified Origin.';
+		  return callback(new Error(msg), false);
+		}
+		return callback(null, true);
+	},
+	optionsSuccessStatus: 200
+  }
 
 router.use(limiter);
 
@@ -98,7 +116,7 @@ router.get("/getrecentblocks", function(req, res, next) {
 	});
 });
 
-router.get("/blocks", function(req, res, next) {
+router.get("/blocks", cors(corsOptions), function(req, res, next) {
 	var args = {}
 	if (req.query.limit)
 		args.limit = parseInt(req.query.limit);
@@ -291,4 +309,4 @@ router.get("/utils/:func/:params", function(req, res, next) {
 
 
 
-module.exports = router;
+export default router;

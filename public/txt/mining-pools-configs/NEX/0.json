@@ -3,13 +3,20 @@
         "mined from niftyart.cash": {
             "name": "Niftyart",
             "link": "http://niftyart.cash/"
+        },
+        "/WoolyPooly/ nexa-1-RU1": {
+            "name" : "WoolyPooly", 
+            "link" : "http://niftyart.cash/"
         }
     },
     "payout_addresses" : {
         "nexatest:nqtsq5g5qlysklhnme0zdpqvnu3fgf8ehpdp3uh80lfu9m30": {
             "name": "Andrew's",
             "link": "url"
+        },
+        "nexa:nqtsq5g5kzgzgwd3qnunzj8ufuhu93mshclse3y9zeve0fg0": {
+            "name" : "WoolyPooly", 
+            "link" : "http://niftyart.cash/"
         }
-
     }
 }

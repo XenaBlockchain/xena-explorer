@@ -1,12 +1,23 @@
-var fs = require('fs');
-var crypto = require('crypto');
-var url = require('url');
+import fs from 'fs'
+import crypto from 'crypto'
+import url from 'url'
+import coins from './coins.js';
+import credentials from './credentials.js';
 
-var coins = require("./coins.js");
-var credentials = require("./credentials.js");
+import os from 'os'
+import path from 'path';
+import dotenv from 'dotenv'
+
+var configPaths = [ path.join(os.homedir(), '.config', 'nex-rpc-explorer.env'), path.join(process.cwd(), '.env') ];
+configPaths.filter(fs.existsSync).forEach(path => {
+	console.log('Loading env file:', path);
+	dotenv.config({ path });
+});
+
 
 var currentCoin = process.env.NEXEXP_COIN || "NEX";
 var richListPath = process.env.NEXEXP_RICHLIST_PATH || "/tmp/rich_list.csv";
+var utxoPath = process.env.NEXEXP_UTXO_PATH || "/tmp/utxo.csv";
 
 var rpcCred = credentials.rpc;
 
@@ -34,6 +45,18 @@ for (var i = 0; i < electrumXServerUriStrings.length; i++) {
   electrumXServers.push({protocol:uri.protocol.substring(0, uri.protocol.length - 1), host:uri.hostname, port:parseInt(uri.port)});
 }
 
+
+var corsAllowedServersStrings = (process.env.NEXEXP_CORS_SERVERS || "").split(',').filter(Boolean);
+var corsAllowedServers = [];
+for (var i = 0; i < corsAllowedServersStrings.length; i++) {
+  try {
+    url.parse(corsAllowedServersStrings[i]);
+    corsAllowedServers.push(corsAllowedServersStrings[i]);
+  }catch (err) {
+    console.log(err)
+  }
+}
+
 ["NEXEXP_DEMO", "NEXEXP_PRIVACY_MODE", "NEXEXP_NO_INMEMORY_RPC_CACHE", "NEXEXP_UI_SHOW_RPC", "NEXEXP_HEADER_BY_HEIGHT_SUPPORT", "NEXEXP_BLOCK_BY_HEIGHT_SUPPORT", "NEXEXP_SHOW_NEXTDIFF"].forEach(function(item) {
   if (process.env[item] === undefined) {
     process.env[item] = "false";
@@ -47,6 +70,7 @@ for (var i = 0; i < electrumXServerUriStrings.length; i++) {
 });
 
 var siteToolsJSON = [
+  { "name": "Token Tracker", "url": "/tokens", "desc": "Token Tracker.", "fontawesome": "fas fa-money-bill" },
   { "name": "Node Status", "url": "/node-status", "desc": "Summary of this node: version, network, uptime, etc.", "fontawesome": "fas fa-broadcast-tower" },
   { "name": "Peers", "url": "/peers", "desc": "Detailed info about the peers connected to this node.", "fontawesome": "fas fa-sitemap" },
   { "name": "Browse Blocks", "url": "/blocks", "desc": "Browse all blocks in the blockchain.", "fontawesome": "fas fa-cubes" },
@@ -67,11 +91,12 @@ if (process.env.NEXEXP_UI_SHOW_RPC.toLowerCase() === "true") {
   siteToolsJSON.push({ "name": "RPC Terminal", "url": "/rpc-terminal", "desc": "Directly execute RPCs against this node.", "fontawesome": "fas fa-terminal" })
 }
 
-module.exports = {
+export default {
   coin: currentCoin,
 
   cookieSecret: cookieSecret,
   richListPath: richListPath,
+  utxoPath: utxoPath,
   renderPugError: (process.env.NEXEXP_SHOW_PUG_RENDER_STACKTRACE == "true"),
 
   privacyMode: (process.env.NEXEXP_PRIVACY_MODE.toLowerCase() == "true"),
@@ -165,6 +190,8 @@ module.exports = {
   addressApi:process.env.NEXEXP_ADDRESS_API,
   electrumXServers:electrumXServers,
 
+  corsAllowedServers: corsAllowedServers,
+
   redisUrl:process.env.NEXEXP_REDIS_URL,
 
   site: {
@@ -173,6 +200,7 @@ module.exports = {
     },
     blockTxPageSize:20,
     addressTxPageSize:10,
+    tokenTransferPageSize:100,
     txMaxInput:15,
     browseBlocksPageSize:50,
     addressPage:{
@@ -192,7 +220,7 @@ module.exports = {
       ]
     },
     subHeaderToolsList:[0, 1, 4, 7, 8, 9], // indexes in "siteTools" below that are shown in the site "sub menu" (visible on all pages except homepage)
-    prioritizedToolIdsList: [0, 1, 4, 7, 8, 9, 3, 2, 5, 10, 11, 12, 6],
+    prioritizedToolIdsList: [0, 1, 4, 7, 8, 9, 3, 2, 5, 10, 11, 12, 6, 13],
   },
 
   credentials: credentials,
@@ -207,5 +235,4 @@ module.exports = {
       "NEXA":{address:"nexa:nqtsq5g5wtkt44pfqusjj3wulk2n2pd27lhpzg0m326kcnsj"}
     }
   }
-
 };

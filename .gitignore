@@ -4,7 +4,10 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
+redis-data
+nexa
+nexa/*
+.DS_Store
 # Runtime data
 pids
 *.pid

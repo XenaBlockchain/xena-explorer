@@ -1,12 +1,18 @@
 #!/usr/bin/env node
-const os = require('os');
-const path = require('path');
-const dotenv = require("dotenv");
-const fs = require('fs');
-const axios = require("axios");
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import os from 'os';
+import path from 'path';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import axios from 'axios';
 
-const utils = require("../app/utils.js");
-const coins = require("../app/coins.js");
+import utils from '../app/utils.js';
+import coins from '../app/coins.js';
+
+// Get the current file path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function refreshMiningPoolsForCoin(coinName) {
 	console.log(`Refreshing mining pools for ${coinName}...`);
@@ -47,7 +53,7 @@ async function refreshMiningPoolConfig(coinName, index, url) {
 
 		const filename = path.join(__dirname, "..", "public", "txt", "mining-pools-configs", coinName, index + ".json");
 
-		fs.writeFileSync(filename, body, (err) => {
+		fs.writeFileSync(filename, response.data, (err) => {
 			console.log(`Error writing file '${filename}': ${err}`);
 		});
 
@@ -70,5 +76,5 @@ async function refreshAllMiningPoolConfigs() {
 
 refreshAllMiningPoolConfigs().then(() => {
 	process.exit();
-};
+});
 

@@ -1,5 +1,5 @@
-var axios = require("axios");
-var utils = require("./../utils.js");
+import axios from "axios";
+import utils from "./../utils.js";
 
 
 function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
@@ -50,6 +50,6 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 }
 
 
-module.exports = {
-	getAddressDetails: getAddressDetails
+export default{
+	getAddressDetails
 };

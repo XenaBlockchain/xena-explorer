@@ -135,7 +135,7 @@ block content
 					h3.h6 Error Stats
 					hr
 
-					if (JSON.stringify(errorStats) == "{}")
+					if (!errorStats || JSON.stringify(errorStats) == "{}")
 						span.text-success No errors encountered
 
 					else
@@ -165,13 +165,15 @@ block content
 
 					div.highlight
 						pre
-							code.json #{JSON.stringify(memstats, null, 4)}
+							code.json.bg-light #{JSON.stringify(memstats, null, 4)}
 
 			div.card.shadow-sm.mb-3
 				div.card-body
 					h3.h6 Error Stats
 					hr
-
-					div.highlight
-						pre
-							code.json #{JSON.stringify(errorStats, null, 4)}
+					if (!errorStats || JSON.stringify(errorStats) == "{}")
+						span.text-success No errors encountered
+					else	
+						div.highlight
+							pre
+								code.json.bg-light #{JSON.stringify(errorStats, null, 4)}

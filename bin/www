@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-var debug = require('debug')('www');
-var app = require('../app');
+import debug from 'debug';
+import app from '../app.js'
 
-const v8 = require('v8');
+import v8 from 'v8';
 v8.setFlagsFromString("--max_old_space_size=" + (process.env.NEXEXP_OLD_SPACE_MAX_SIZE || 1024));
 debug(`Set max_old_space_size to ${(process.env.NEXEXP_OLD_SPACE_MAX_SIZE || 1024)} MB`);
 v8.setFlagsFromString("--harmony_json_parse_with_source");

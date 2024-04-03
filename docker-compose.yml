@@ -1,0 +1,51 @@
+version: '3'
+
+
+networks:
+  explorer-dev:
+
+services:
+  explorer:
+    build:
+      context: .
+      dockerfile: ./docker/explorer/Dockerfile
+    image: nodejs
+    container_name: nodejs
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - explorer-dev  
+    ports:
+      - "3002:3002"
+    volumes:
+      - .:/home/node/app
+
+  nexad:
+    build:
+      context: ./docker/nexad
+      dockerfile: ./Dockerfile
+    container_name: nexad
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - explorer-dev   
+    # ports:
+      # - "7227:7227"
+      # - "20001:20001"
+      # - "20002:20002"
+    volumes:
+      - ./nexa:/data
+      - ./docker/nexad:/scripts
+
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    container_name: cache
+    # ports:
+    #   - '6379:6379'
+    networks:
+      - explorer-dev 
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - ./redis-data:/data
+

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
+import meow from 'meow'
 
-const args = require('meow')(`
+const args = meow(`
     Usage
       $ nexa-rpc-explorer [options]
 
@@ -74,4 +75,4 @@ Object.keys(args).filter(k => k.length > 1).forEach(k => {
   }
 });
 
-require('./www');
+import('./www');

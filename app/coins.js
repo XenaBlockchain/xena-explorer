@@ -1,7 +1,7 @@
-var nex = require("./coins/nex.js");
+import nex from "./coins/nex.js";
 
-module.exports = {
+export default {
   "NEX": nex,
 
-  "coins":["NEX"]
+  "coins": ["NEX"]
 };

@@ -1,5 +1,5 @@
-var Decimal = require("decimal.js");
-Decimal2 = Decimal.clone({ precision:2, rounding:2 });
+import Decimal from "decimal.js";
+const Decimal2 = Decimal.clone({ precision: 2, rounding: 2 });
 
 var currencyUnits = [
 	{
@@ -50,7 +50,7 @@ var currencyUnits = [
 	},
 ];
 
-module.exports = {
+export default {
 	name:"Nexa",
 	ticker:"NEX",
 	logoUrl:"/img/logo/nex.svg",
