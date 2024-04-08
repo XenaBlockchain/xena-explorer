@@ -31,6 +31,10 @@ h6, .h6 {
 .text-small {
 	font-size: 80%;
 }
+.text-smallest {
+	font-size: 50%;
+}
+
 
 .popover {
 	max-width: 1200px;

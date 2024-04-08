@@ -1068,6 +1068,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 
 			res.locals.result.txInputs = rawTxResult.txInputsByTransaction[tx.txid]
 			res.locals.txid = tx.txid
+			res.locals.txidem = tx.txidem
 			const fee = tx.fee;
 			res.locals.result.isflipstarter = isFlipstarter(tx, fee);
 			res.locals.result.inputPayloadContract = getInputPayloadContractPayload(tx);
@@ -1126,7 +1127,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 					resolve();
 				}).catch(function(err) {
 					res.locals.pageErrors.push(utils.logError("132r80h32rh", err));
-	
+
 					reject(err);
 				});
 			}));
