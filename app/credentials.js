@@ -2,6 +2,14 @@ import os from 'os'
 import path from 'path';
 import url from 'url'
 
+import fs from 'fs'
+import dotenv from 'dotenv'
+
+var configPaths = [ path.join(os.homedir(), '.config', 'nex-rpc-explorer.env'), path.join(process.cwd(), '.env') ];
+configPaths.filter(fs.existsSync).forEach(path => {
+	console.log('Loading env file:', path);
+	dotenv.config({ path });
+});
 
 var btcUri = process.env.NEXEXP_NEXAD_URI ? url.parse(process.env.NEXEXP_NEXAD_URI, true) : { query: { } };
 var btcAuth = btcUri.auth ? btcUri.auth.split(':') : [];
