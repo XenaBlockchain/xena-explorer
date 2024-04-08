@@ -1,7 +1,7 @@
 extends layout
 
 block headContent
-	+title(`Transaction ${txid}`)
+	+title(`Transaction ${txidem}`)
 	style.
 		.field {
 			word-wrap: break-word;
@@ -12,7 +12,9 @@ block content
 	if (result && result.getrawtransaction)
 		h1.h3.word-wrap Transaction
 			br
-			small.text-monospace #{txid}
+			small.text-monospace #{txidem}
+			div
+				small.test-monospace.text-smallest ( txid: #{txid} )
 		hr
 
 		ul.nav.nav-tabs.mb-3
