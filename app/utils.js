@@ -10,6 +10,7 @@ import nexaaddr from "nexaaddrjs";
 import config from "./config.js";
 import coins from "./coins.js";
 import redisCache from "./redisCache.js";
+import global from "./global.js";
 
 const debugLog = debug("nexexp:utils");
 const debugErrorLog = debug("nexexp:error");
