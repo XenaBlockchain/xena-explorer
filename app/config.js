@@ -4,17 +4,6 @@ import url from 'url'
 import coins from './coins.js';
 import credentials from './credentials.js';
 
-import os from 'os'
-import path from 'path';
-import dotenv from 'dotenv'
-
-var configPaths = [ path.join(os.homedir(), '.config', 'nex-rpc-explorer.env'), path.join(process.cwd(), '.env') ];
-configPaths.filter(fs.existsSync).forEach(path => {
-	console.log('Loading env file:', path);
-	dotenv.config({ path });
-});
-
-
 var currentCoin = process.env.NEXEXP_COIN || "NEX";
 var richListPath = process.env.NEXEXP_RICHLIST_PATH || "/tmp/rich_list.csv";
 var utxoPath = process.env.NEXEXP_UTXO_PATH || "/tmp/utxo.csv";
