@@ -828,19 +828,22 @@ router.get("/block/:blockHash", function(req, res, next) {
 
 	var promises = [];
 
-	promises.push(new Promise(function(resolve, reject) {
-		coreApi.getBlockByHashWithTransactions(blockHash, limit, offset).then(function(result) {
+	promises.push(new Promise(async (resolve, reject) => {
+		try {
+			const result = await coreApi.getBlockByHashWithTransactions(blockHash, limit, offset);
+			
 			res.locals.result.getblock = result.getblock;
 			res.locals.result.transactions = result.transactions;
 			res.locals.result.txInputsByTransaction = result.txInputsByTransaction;
-
+	
+			const TxIds = result.transactions.map(elem => elem.txid);
+			res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
+	
 			resolve();
-
-		}).catch(function(err) {
+		} catch (err) {
 			res.locals.pageErrors.push(utils.logError("238h38sse", err));
-
 			reject(err);
-		});
+		}
 	}));
 
 	promises.push(new Promise(function(resolve, reject) {
