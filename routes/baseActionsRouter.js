@@ -550,8 +550,8 @@ router.post("/decoder", function(req, res, next) {
 	promises.push(coreApi.decodeRawTransaction(input));
 
 	allSettled(promises).then(function(promiseResults) {
-		decodedScript = promiseResults[0];
-		decodedTx = promiseResults[1];
+		let decodedScript = promiseResults[0];
+		let decodedTx = promiseResults[1];
 		res.locals.decodedScript = "";
 		res.locals.tx = " ";
 		if ("txid" in decodedTx) {
