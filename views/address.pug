@@ -309,7 +309,7 @@ block content
 													else
 														span.text-danger Error retrieving transaction history (##{errIndex + 1})
 														pre
-															code.json #{JSON.stringify(err, null, 4)}
+															code.json.bg-light #{JSON.stringify(err, null, 4)}
 
 											else if (transactions.length == 0)
 												span No transactions found
