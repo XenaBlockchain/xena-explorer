@@ -226,6 +226,22 @@ router.get("/txpool-summary", function(req, res, next) {
 
 router.get("/rich-list", function(req, res, next) {
 	res.locals.richList = utils.readRichList();
+	if (global.miningPoolsConfigs) {
+		for(var j = 0; j < res.locals.richList[0].length; j++) {
+			let address = res.locals.richList[0][j]['address']
+			for (var i = 0; i < global.miningPoolsConfigs.length; i++) {
+				if (global.miningPoolsConfigs[i].payout_addresses[address]) {
+					res.locals.richList[0][j]['owner'] = global.miningPoolsConfigs[i].payout_addresses[address];
+					break;
+				}
+				if ("exchange_addresses" in global.miningPoolsConfigs[i] && global.miningPoolsConfigs[i].exchange_addresses[address]) {
+					res.locals.richList[0][j]['owner'] = global.miningPoolsConfigs[i].exchange_addresses[address];
+					break;
+				}
+			}
+		}
+
+	}
 	res.render("rich-list");
 	utils.perfMeasure(req);
 });

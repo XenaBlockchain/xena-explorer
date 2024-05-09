@@ -4,12 +4,12 @@ block headContent
 	+title('History')
 
 block content
-	h1.h3 Difficulty History
-	hr
+	div.mt-5.mt-sm-3
+	h3.text-bold Difficulty History
 
 	div.card.shadow-sm.mb-3
 		div.card-body
-			h3.h6.mb-0 Explanation
+			h3.h6.mb-0-text-bold Explanation
 			hr
 
 			ul.mb-0
@@ -27,7 +27,7 @@ block content
 			div.col
 				div.card.shadow-sm.mb-3
 					div.card-body
-						h3.h6.mb-0 Difficulty History
+						h3.h6.mb-0.text-bold Difficulty History
 						hr
 
 						canvas(id="graph-diff-hist")
@@ -36,7 +36,7 @@ block content
 			div.col
 				div.card.shadow-sm.mb-3
 					div.card-body
-						h3.h6.mb-0 Difficulty Change
+						h3.h6.mb-0.text-bold Difficulty Change
 						hr
 
 						canvas(id="graph-diff-change")

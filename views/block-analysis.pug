@@ -4,11 +4,11 @@ block headContent
 	+title(`Block Analysis #${result.getblock.height.toLocaleString()}, ${result.getblock.hash}`)
 
 block content
-	h1.h3 Block Analysis 
+	div.mt-5.mt-sm-3
+	h3.text-bold Block Analysis 
 		small.text-monospace(style="width: 100%;") ##{result.getblock.height.toLocaleString()}
 		br
 		small.text-monospace.word-wrap(style="width: 100%;") #{result.getblock.hash}
-	hr
 
 	div.mb-2
 		if (result.getblock)

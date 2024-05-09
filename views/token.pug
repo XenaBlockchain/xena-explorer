@@ -5,57 +5,59 @@ block headContent
 
 block content
 	if (true)
+		div.mt-5.mt-sm-3
 		if (validateToken == false)
 			div.alert.alert-danger.mb-huge
 				h1.h6.font-weight-bold Invalid Token
 				span.text-monospace.word-wrap  #{tokenInfo.group}
 
 		else
-			h1.h3 Token
-				br
-				small.text-monospace.word-wrap  #{tokenInfo.group}
-			hr
 			- var isTokenTrusted = utils.knownTokens().includes(tokenInfo.group);
 
 			if(isTokenTrusted && tokenStats.documentInfo)
 				div.d-flex.justify-content-start
 					img.rounded(src=tokenStats.documentInfo.icon, alt="", width=100)
-					h1.h3.word-wrap.mt-4.ml-1 #{tokenInfo.name} (#{tokenInfo.ticker})
+					h1.h3.word-wrap.mt-4.ml-1.text-bold.table-hidden Token
+					h1.h3.word-wrap.mt-4.ml-1.text-bold(style="color:gray;") #{tokenInfo.name} (#{tokenInfo.ticker})
 			else
 				div.d-flex.justify-content-start
-					h1.h3.word-wrap.mt-4 #{tokenInfo.name} (#{tokenInfo.ticker})
+					h1.h3.word-wrap.mt-4.text-bold Token #{tokenInfo.name} (#{tokenInfo.ticker})
 
 			div.row.mt-3
 				div.col-12.col-xl-4
-					div.card.mb-3.shadow-sm
+					div.card.stats-card.mb-3
 						div.card-header
 							div.row.mb-10
 								div.col-md-12
 									div.d-flex.justify-content-between
-										span Overview
+										h3.h6.mb-0.text-bold Overview
 										if (config.addressApi)
 											small.text-muted.border-dotted.ml-2(title=`Some details for this address were queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
-							hr
-
-							div.row
+							
+							div.row.mt-3
+								div.col-md-12
+									div.d-flex.justify-content-between
+										span Price
+										span.text-monospace.text-truncate N/A
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Total Supply
 										span.text-monospace.text-truncate #{totalSupply} #{tokenInfo.ticker}
-							hr
-							div.row
+							
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Circulating Supply
 										span.text-monospace.text-truncate #{circulatingSupply} #{tokenInfo.ticker}
-							hr
-							div.row
+							
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Total Market Cap
 										span.text-monospace 0
-							hr
-							div.row
+							
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Circulating Market Cap
@@ -63,26 +65,23 @@ block content
 									
 
 				div.col-12.col-xl-4
-					div.card.mb-3.shadow-sm
+					div.card.stats-card.mb-3
 						div.card-header
-							h3.h6.mb-0 Basic Info
-								hr
+							h3.h6.mb-0.text-bold Basic Info
 
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Group
 										span.text-monospace.word-wrap.ml-1
 											a(href=("/token/" + tokenInfo.group)) #{utils.ellipsize(tokenInfo.group, 45)}
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Genesis Tx
 										span.text-monospace.word-wrap.ml-1
 											a(href=("/tx/" + tokenInfo.txid)) #{utils.ellipsize(tokenInfo.txid, 45)}
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Genesis Time
@@ -95,14 +94,12 @@ block content
 											span.text-muted.ml-2 (
 												include ./includes/time-ago-text.pug
 												span ago)
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Decimals
 										span.text-monospace #{tokenInfo.decimal_places}
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.row
 											div.col-md-3 Links
@@ -114,36 +111,31 @@ block content
 											//- 	span 
 											//- 		a(href=("#")) Twitter			
 				div.col-12.col-xl-4
-					div.card.mb-3.shadow-sm
+					div.card.stats-card.mb-3
 						div.card-header
-							h3.h6.mb-0 More
-								hr
+							h3.h6.mb-0.text-bold More Information
 
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Holders
 										span.text-monospace #{tokenStats.holders}
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Total Transfer Count
 										span.text-monospace #{transfersCount}
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Transfers (24h)
 										span.text-monospace 0
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Trading Volume (24h)
 										span.text-monospace 0
-							hr
-							div.row
+							div.row.mt-3
 								div.col-md-12
 									div.d-flex.justify-content-between
 										span Liquidity
@@ -151,199 +143,184 @@ block content
 									
 
 								
-			ul.nav.nav-tabs.mb-3
+			ul.nav.nav-tabs
 				li.nav-item
-					a.nav-link.active(data-toggle="tab", href="#token-transfers", role="tab") Token Transfers
+					a.nav-link.text-bold.active(data-toggle="tab", href="#token-transfers", role="tab") Token Transfers
 				li.nav-item
-					a.nav-link(data-toggle="tab", href="#token-holders", role="tab") Token Holders
+					a.nav-link.text-bold(data-toggle="tab", href="#token-holders", role="tab") Token Holders
 				li.nav-item
-					a.nav-link(data-toggle="tab", href="#tab-market", role="tab") Markets
+					a.nav-link.text-bold(data-toggle="tab", href="#tab-market", role="tab") Markets
 				li.nav-item
-					a.nav-link(data-toggle="tab", href="#tab-genesis", role="tab") Token Genesis & Document
+					a.nav-link.text-bold(data-toggle="tab", href="#tab-genesis", role="tab") Token Genesis & Document
 				li.nav-item
-					a.nav-link(data-toggle="tab", href="#tab-analysis", role="tab") Token Analysis
+					a.nav-link.text-bold(data-toggle="tab", href="#tab-analysis", role="tab") Token Analysis
 
 			div.tab-content
-
 				div.tab-pane.active(id="token-transfers", role="tabpanel")
-					div.card.shadow-sm.mb-3
-						div.card-body
-							h4.h6.mb-0 Token Transfers
-							hr
-							div.table-responsive
-								table.table.table-striped.mb-0.table-hidden
-									thead 
+					div.card-body.tab-card.mb-3.table-hidden
+						div.table-responsive
+							table.table.table-striped.mb-0.table-hidden
+								thead 
+									tr
+										th.data-header.text-right
+											span.font-weight-bold Amount
+										th.data-header.text-left
+											span.font-weight-bold From
+										th.data-header.text-left
+											span.font-weight-bold To
+										th.data-header.text-left
+											span.font-weight-bold Tx Hash
+										th.data-header.text-right
+											span.font-weight-bold Block
+
+								tbody
+									if(transfers && transfers.length > 0)
+											each item in transfers
+												tr
+													td.data-cell.text-monospace.text-right
+														span #{item.amount}
+													td.data-cell.text-monospace.text-left
+														span 
+															a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 53)}
+													td.data-cell.text-monospace.text-left
+														span
+															a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 53)}
+													td.data-cell.text-monospace.text-left
+														span
+															a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
+													td.data-cell.text-monospace.text-right
+														span 
+															a(href=("/block/" + item.height)) #{item.height}
+									else 
 										tr
-											th.data-header.text-right
-												span.font-weight-bold Amount
-											th.data-header.text-left
-												span.font-weight-bold From
-											th.data-header.text-left
-												span.font-weight-bold To
-											th.data-header.text-left
-												span.font-weight-bold Tx Hash
-											th.data-header.text-right
-												span.font-weight-bold Block
+											td(colspan="5").data-cell.text-monospace.text-center
+												span No Data Available
+					if(transfers && transfers.length > 0)
+						div.list-hidden
+							each item in transfers
+								.card(style='width: 100%;').mb-2
+									.card-body(style='background-color: #282d33 !important;')
+										h5.card-title.text-center
+											span #{item.amount}  #{tokenInfo.ticker}
+										
+										p.card-text
+											span
+												a(href=("/token/" + token.groupId)) #{token.groupId}
+									ul.list-group.list-group-flush
+										li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+											span To
+											span.word-wrap.ml-1
+												a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 35)}
+										li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+											span From
+											span.word-wrap.ml-1
+												a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 35)}
+										li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+											span TXID
+											span.word-wrap.ml-1
+												a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 35)}
+										li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+											span Block
+											span
+												a(href=("/block/" + item.height)) #{item.height}
 
-									tbody
-										if(transfers && transfers.length > 0)
-												each item in transfers
-													tr
-														td.data-cell.text-monospace.text-right
-															span #{item.amount}
-														td.data-cell.text-monospace.text-left
-															span 
-																a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 53)}
-														td.data-cell.text-monospace.text-left
-															span
-																a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 53)}
-														td.data-cell.text-monospace.text-left
-															span
-																a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
-														td.data-cell.text-monospace.text-right
-															span 
-																a(href=("/block/" + item.height)) #{item.height}
-										else 
-											tr
-												td(colspan="5").data-cell.text-monospace.text-center
-													span No Data Available
-							if(transfers && transfers.length > 0)
-								div.list-hidden
-									each item in transfers
-										.card(style='width: 100%;').mb-2
-											.card-body(style='background-color: #282d33 !important;')
-												h5.card-title.text-center
-													span #{item.amount}  #{tokenInfo.ticker}
-												
-												p.card-text
-													span
-														a(href=("/token/" + token.groupId)) #{token.groupId}
-											ul.list-group.list-group-flush
-												li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-													span To
-													span.word-wrap.ml-1
-														a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 35)}
-												li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-													span From
-													span.word-wrap.ml-1
-														a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 35)}
-												li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-													span TXID
-													span.word-wrap.ml-1
-														a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 35)}
-												li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-													span Block
-													span
-														a(href=("/block/" + item.height)) #{item.height}
+						if (transfersCount > limit)
+							- var pageNumber = offset / limit + 1;
+							- var pageCount = Math.floor(transfersCount / limit);
+							- if (pageCount * limit < transfersCount) {
+								- pageCount++;
+							- }
+							- var paginationUrlFunction = function(x) {
+								- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+							- }
 
-							if (transfersCount > limit)
-								- var pageNumber = offset / limit + 1;
-								- var pageCount = Math.floor(transfersCount / limit);
-								- if (pageCount * limit < transfersCount) {
-									- pageCount++;
-								- }
-								- var paginationUrlFunction = function(x) {
-									- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
-								- }
+							hr.mt-3
 
-								hr.mt-3
-
-								include includes/pagination.pug
+							include includes/pagination.pug
 
 
 				div.tab-pane(id="token-holders", role="tabpanel")
-					div.card.shadow-sm.mb-3
-						div.card-body
-							h4.h6.mb-0 Token Holders (Rich List)
-							hr
-							div.table-responsive
-								table.table.table-striped.mb-0.table-hidden
-									thead
-										tr
-											th.data-header.text-right
-												span.font-weight-bold Amount
-											th.data-header.text-left
-												span.font-weight-bold Address
-											th.data-header.text-left
-												span.font-weight-bold last TX
-											th.data-header.text-left
-												span.font-weight-bold Last Block
-											th.data-header.text-right
-												span.font-weight-bold %
-		
-									tbody
-										if(richList && richList.length > 0)
-												each item in richList
-													tr
-														td.data-cell.text-monospace.text-right
-															span #{utils.addThousandsSeparators(item.netAmount)}
-														td.data-cell.text-monospace.text-left
-															span
-																a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 53)}
-														td.data-cell.text-monospace.text-left
-															span
-																a(href=("/tx/" + item.lastTransferTxId)) #{item.lastTransferTxId}
-														td.data-cell.text-monospace.text-left
-															span 
-																a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}	
-														td.data-cell.text-monospace.text-right
-															span #{item.percentage}
-										else 
-											tr
-												td(colspan="6").data-cell.text-monospace.text-center
-													span No Data Available
-							if(richList && richList.length > 0)
-								div.list-hidden
-									each item in richList
-											.card(style='width: 100%;').mb-2
-												.card-body(style='background-color: #282d33 !important;')
-													h5.card-title.text-center
-														span #{utils.addThousandsSeparators(item.netAmount)}  #{tokenInfo.ticker}
-													
-													p.card-text
-														span
-															a(href=("/token/" + token.groupId)) #{token.groupId}
-												ul.list-group.list-group-flush
-													li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-														span Address
-														span.word-wrap.ml-1
-															a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 35)}
-													li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-														span Last Tx
-														span.word-wrap.ml-1
-															if(item.lastTransferTxId)
-																a(href=("/tx/" + item.lastTransferTxId)) #{utils.ellipsize(item.lastTransferTxId, 35)}
-													li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-														span Last Block
-														span
-															a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}	
-				div.tab-pane(id="tab-market", role="tabpanel")
-					div.card.shadow-sm.mb-3
-						div.card-body
-							h4.h6.mb-0 Market Information
-							hr
-
-							div.table-responsive
-								table.table.table-striped.mb-0
+					div.card-body.tab-card.mb-3.table-hidden
+						div.table-responsive
+							table.table.table-striped.mb-0.table-hidden
+								thead
 									tr
-										td(colspan="6").data-cell.text-monospace.text-center
-											span No Data Available
+										th.data-header.text-right
+											span.font-weight-bold Amount
+										th.data-header.text-left
+											span.font-weight-bold Address
+										th.data-header.text-left
+											span.font-weight-bold last TX
+										th.data-header.text-left
+											span.font-weight-bold Last Block
+										th.data-header.text-right
+											span.font-weight-bold %
+	
+								tbody
+									if(richList && richList.length > 0)
+											each item in richList
+												tr
+													td.data-cell.text-monospace.text-right
+														span #{utils.addThousandsSeparators(item.netAmount)}
+													td.data-cell.text-monospace.text-left
+														span
+															a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 53)}
+													td.data-cell.text-monospace.text-left
+														span
+															a(href=("/tx/" + item.lastTransferTxId)) #{item.lastTransferTxId}
+													td.data-cell.text-monospace.text-left
+														span 
+															a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}	
+													td.data-cell.text-monospace.text-right
+														span #{item.percentage}
+									else 
+										tr
+											td(colspan="6").data-cell.text-monospace.text-center
+												span No Data Available
+					if(richList && richList.length > 0)
+						div.list-hidden
+							each item in richList
+									.card(style='width: 100%;').mb-2
+										.card-body(style='background-color: #282d33 !important;')
+											h5.card-title.text-center
+												span #{utils.addThousandsSeparators(item.netAmount)}  #{tokenInfo.ticker}
+											
+											p.card-text
+												span
+													a(href=("/token/" + token.groupId)) #{token.groupId}
+										ul.list-group.list-group-flush
+											li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+												span Address
+												span.word-wrap.ml-1
+													a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 35)}
+											li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+												span Last Tx
+												span.word-wrap.ml-1
+													if(item.lastTransferTxId)
+														a(href=("/tx/" + item.lastTransferTxId)) #{utils.ellipsize(item.lastTransferTxId, 35)}
+											li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+												span Last Block
+												span
+													a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}
+
+
+				div.tab-pane(id="tab-market", role="tabpanel")
+					div.card-body.tab-card.mb-3
+						div.table-responsive
+							table.table.table-striped.mb-0
+								tr
+									td(colspan="6").data-cell.text-monospace.text-center
+										span No Data Available
 
 				div.tab-pane(id="tab-genesis", role="tabpanel")
-					div.card.shadow-sm.mb-3
-						div.card-body
-							h4.h6.mb-0 Token Genesis
-							hr
+						div.card-body.tab-card.mb-3
+							h5.mb-3.text-bold Token Genesis
 
 							div.highlight
 								pre
-									code.json.bg-light(data-lang="json") #{rawtransaction_parsed}
-					if (tokenStats.documentInfo != null)
-						div.card.shadow-sm.mb-3
-							div.card-body
-								h4.h6.mb-0 Token Document
-								hr
-
+									code.json.bg-light.mb-5(data-lang="json") #{rawtransaction_parsed}
+							if (tokenStats.documentInfo != null)
+								h5.mb-3.text-bold Token Document
 								div.highlight
 									pre
 										code.json.bg-light(data-lang="json") #{JSON.stringify(tokenStats.documentInfo.tokenObject, utils.bigIntToRawJSON, 4)}

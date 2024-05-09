@@ -54,70 +54,64 @@ block content
 				span.text-monospace #{new Decimal(blockChainInfo.verificationprogress).times(100).toDP(3)}%
 
 
-		div.row.pt-5
+		div.row.mt-5.mt-md-3
 			- var summaryColCount = 8;
 			if (exchangeRates)
 				- summaryColCount = 9;
 
 			div.mb-3(class=`col-xxl-${summaryColCount}`)
-				div.card.shadow-sm(style="height: 100%;")
+				div.row.mb-3 
+					div.col
+						h4.mb-0.text-bold Network Summary
+				div.card.shadow-sm(style="min-height: 253px;")
 					div.card-body.px-2.px-sm-3
-						h3.h6.mb-0 Network Summary
-						hr
-
 						include includes/index-network-summary.pug
 
 			div.mb-3(class=`col-xxl-${12 - summaryColCount}`)
-				div.card.shadow-sm(style="height: 100%;")
+				div.row.mb-3 
+					div.col
+						h4.mb-0.text-bold Tools
+					div.col.text-right
+						button.btn.btn-primary.btn-sm
+							a(href="/tools").text-white See more &raquo;
+				div.card.shadow-sm
 					div.card-body.px-2.px-sm-3
-						div.row
-							div.col
-								h3.h6.mb-0 Tools
-
-							div.col.text-right
-								a(href="/tools") More info &raquo;
-						hr
-
 						include includes/tools-card.pug
 
 
-		div.row.mb-3
+		div.row.mt-3
 			div.col
+				div.row.mb-3 
+					div.col
+						h4.mb-0.text-bold Latest Blocks
+
+					div.col.text-right.text-bold
+						button.btn.btn-primary.btn-sm
+							a(href="/blocks").text-white See more &raquo;
+						
 				div.card.shadow-sm
 					div.card-body.px-2.px-sm-3
-						div.row
-							div.col
-								h3.h6.mb-0 Latest Blocks
-
-							div.col.text-right
-								a(href="/blocks") See more &raquo;
-
-						hr
-
 						- var blockOffset = 0;
 
 						include includes/blocks-list.pug
 
 
-		div.row.mb-3
+		div.row.mt-5
 			div.col
-				div.card.shadow-sm
+				div.row.mb-3
+					div.col
+						h4.mb-0.text-bold Top Tokens
+
+					div.col.text-right.text-bold
+						button.btn.btn-primary.btn-sm
+							a(href="/tokens").text-white See more &raquo;
+				div.card.shadow-sm.table-hidden
 					div.card-body.px-2.px-sm-3
-						div.row
-							div.col
-								h3.h6.mb-0 Top Tokens
-
-							div.col.text-right
-								a(href="/tokens") See more &raquo;
-
-						hr
 						table.table.table-striped.table-responsive.mb-0.table-hidden.table-responsive
 									thead 
 										tr
 											th.data-header.text-left
 												span.font-weight-bold Name
-											th.data-header.text-left
-												span.border-dotted(title="The nexa blockchain uses a 'groupid' for tokens which are unique identifiers for nexa tokens", data-toggle="tooltip") Token
 											th.data-header.text-left
 												span.font-weight-bold Transfers
 											th.data-header.text-left
@@ -129,55 +123,51 @@ block content
 											tr
 												td.data-cell.text-monospace.text-left
 													span
-														a(href=("/token/" + token.groupId)) #{token.name} (#{token.ticker})
-												td.data-cell.text-monospace.text-left
-													span
-														a(href=("/token/" + token.groupId)) #{token.groupId}
+														a(href=("/token/" + token.groupId))(title=token.groupId, data-toggle="tooltip") #{token.name} (#{token.ticker})
 												td.data-cell.text-monospace.text-left
 													span #{token.totalTransfers}
 												td.data-cell.text-monospace.text-left
 													span #{token.holders}
 												td.data-cell.text-monospace.text-left
 													span #{token.maxSupply}
-						div.list-hidden
-							each token in topTenTokens
-								.card(style='width: 100%;').mb-2
-									.card-body(style='background-color: #282d33 !important;')
-										h5.card-title
-											- var isTokenTrusted = utils.knownTokens().includes(token.groupId);
-											if(isTokenTrusted && token.documentInfo)
-												img.m-1.rounded(src=token.documentInfo.icon, alt="", width=24)
-											span #{token.name} 
-										
-										p.card-text
-											span
-												a(href=("/token/" + token.groupId)) #{token.groupId}
-									ul.list-group.list-group-flush
-										li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-											span Transfers
-											span #{token.totalTransfers}
-										li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-											span Holders
-											span #{token.holders}
-										li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-											span Max Supply
-											span #{token.maxSupply} (#{token.ticker})
+				div.list-hidden
+					each token in topTenTokens
+						.card(style='width: 100%;').mb-2
+							.card-body(style='background-color: #282d33 !important;')
+								h5.card-title
+									- var isTokenTrusted = utils.knownTokens().includes(token.groupId);
+									if(isTokenTrusted && token.documentInfo)
+										img.m-1.rounded(src=token.documentInfo.icon, alt="", width=24)
+									span #{token.name} 
+								
+								p.card-text
+									span
+										a(href=("/token/" + token.groupId)) #{token.groupId}
+							ul.list-group.list-group-flush
+								li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+									span Transfers
+									span #{token.totalTransfers}
+								li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+									span Holders
+									span #{token.holders}
+								li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+									span Max Supply
+									span #{token.maxSupply} (#{token.ticker})
 								
 
 		if (txStats)
-			div.row.mb-3
+			div.row.mt-5
 				div.col
+					div.row
+						div.col.mb-3
+							h4.mb-0.text-bold Transaction Stats
+
+						div.col.text-right.text-bold
+							button.btn.btn-primary.btn-sm
+								a(href="/tx-stats").text-white See more &raquo;
+							
 					div.card.shadow-sm
 						div.card-body.px-2.px-sm-3
-							div.row
-								div.col
-									h3.h6.mb-0 Transaction Stats
-
-								div.col.text-right
-									a(href="/tx-stats") See more &raquo;
-
-							hr
-
 							div.row
 								div.col-lg-6
 									div.table-responsive

@@ -10,14 +10,14 @@ block headContent
 
 block content
 	if (result && result.getrawtransaction)
-		h1.h3.word-wrap Transaction
+		div.mt-5.mt-sm-3
+		h1.h3.word-wrap.text-bold Transaction
 			br
-			small.text-monospace #{txidem}
+			h5.text-monospace #{txidem}
 			div
-				small.test-monospace.text-smallest ( txid: #{txid} )
-		hr
+				small.test-monospace ( txid: #{txid} )
 
-		ul.nav.nav-tabs.mb-3
+		ul.nav.nav-tabs.mt-2
 			li.nav-item
 				a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Details
 			li.nav-item

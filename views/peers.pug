@@ -17,33 +17,24 @@ block headContent
 		#map { height: 700px; }
 
 block content
-	h1.h3 #{peerSummary.getpeerinfo.length} 
-		if (peerSummary.getpeerinfo.length == 1)
-			span Peer
-		else
-			span Peers
-	hr
+	div.mt-5.mt-sm-3
+	h3.text-bold Network Peers
 
-	ul.nav.nav-tabsr.mb-3
+	ul.nav.nav-tabs
 		li.nav-item
-			a.nav-link.active(data-toggle="tab", href="#tab-summary", role="tab") Summary
+			a.nav-link.text-bold.active(data-toggle="tab", href="#tab-summary", role="tab") Summary
 		li.nav-item
-			a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
+			a.nav-link.text-bold(data-toggle="tab", href="#tab-json", role="tab") JSON
 
-	div.tab-content
+	div.tab-content.card.card-body
 		div.tab-pane.active(id="tab-summary", role="tabpanel")
-
-
 			if (peerIpSummary && peerIpSummary.ips)
 				div.mb-3(id="map")
-
-
 			div.row
 				div.col-md-6
-					div.card.shadow-sm.mb-3
-						div.card-body
-							h3.h6.mb-0 Top Versions
-							hr
+					div.card.borderless-card.mb-3
+						div.card-body.tab-card
+							h5.mb-3.text-bold Top Versions
 
 							table.table.table-striped.table-responsive-sm
 								thead
@@ -61,10 +52,9 @@ block content
 
 
 				div.col-md-6
-					div.card.shadow-sm.mb-3
+					div.card.borderless-card.mb-3
 						div.card-body
-							h3.h6.mb-0 Top Service Flags
-							hr
+							h5.mb-3.text-bold Top Service Flags
 
 							table.table.table-striped.table-responsive-sm
 								thead
@@ -81,15 +71,13 @@ block content
 											td.data-cell.text-monospace #{serviceNames}
 											td.data-cell.text-monospace #{item[1].toLocaleString()}
 
-			div.card.shadow-sm.mb-3
+			div.card.borderless-card.mb-3
 				div.card-body
-					h3.h6.mb-0 #{peerSummary.getpeerinfo.length} 
+					h5.mb-3.text-bold #{peerSummary.getpeerinfo.length} 
 						if (peerSummary.getpeerinfo.length == 1)
-							span Peer
+							span Peer connected
 						else
-							span Peers
-
-					hr
+							span Peers connected
 
 					table.table.table-striped.table-responsive-sm.data-table.mt-4
 						thead

@@ -8,11 +8,10 @@ block headContent
 
 block content
 	if (result.getblock)
-		h1.h3 Block 
-			small.text-monospace(style="width: 100%;") ##{result.getblock.height.toLocaleString()}
+		h1.h3.text-bold Block 
+			small.text-monospace.text-bold(style="width: 100%;") ##{result.getblock.height.toLocaleString()}
 			br
-			small.text-monospace.word-wrap(style="width: 100%;") #{result.getblock.hash}
-		hr
+			h5.text-monospace.word-wrap(style="width: 100%;") #{result.getblock.hash}
 
 		include includes/block-content.pug
 

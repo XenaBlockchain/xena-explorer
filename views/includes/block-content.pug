@@ -16,7 +16,7 @@ div.mb-2
 		a.btn.btn-sm.btn-secondary.disabled.mb-1 Next Block: N/A 
 			small (latest block)
 
-ul.nav.nav-tabs.mb-3
+ul.nav.nav-tabs
 	li.nav-item
 		a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Details
 	li.nav-item
@@ -410,48 +410,34 @@ div.tab-content
 					
 	div.tab-pane(id="tab-json", role="tabpanel")
 		- result.getblock.tx = "See 'Transaction IDs'";
+		div.card.shadow-sm.mb-3
+			div.card-body.px-2.px-sm-3
+				ul.nav.nav-tabs
+					li.nav-item
+						a.nav-link.sub-nav-link.text-bold.active(data-toggle="tab", href="#tab-json-block-summary", role="tab") Block Summary
+					li.nav-item
+						a.nav-link.sub-nav-link.text-bold(data-toggle="tab", href="#tab-json-tx-ids", role="tab") Transaction IDs
+					if (result.blockstats)
+						li.nav-item
+							a.nav-link.sub-nav-link.text-bold(data-toggle="tab", href="#tab-json-blockstats", role="tab") Block Stats
+						
 
-		ul.nav.nav-pills.mb-3
-			li.nav-item
-				a.nav-link.active(data-toggle="tab", href="#tab-json-block-summary", role="tab") Block Summary
-			li.nav-item
-				a.nav-link(data-toggle="tab", href="#tab-json-tx-ids", role="tab") Transaction IDs
-
-			if (result.blockstats)
-				li.nav-item
-					a.nav-link(data-toggle="tab", href="#tab-json-blockstats", role="tab") Block Stats
-
-		div.tab-content
-			div.tab-pane.active(id="tab-json-block-summary", role="tabpanel")
-				div.card.shadow-sm.mb-3
-					div.card-body
-						h4.h6.mb-0 Block Summary
-						hr
-
+				div.tab-content
+					div.tab-pane.active(id="tab-json-block-summary", role="tabpanel")
 						div.highlight
 							pre
 								code.json.bg-light #{JSON.stringify(result.getblock, null, 4)}
 
-			div.tab-pane(id="tab-json-tx-ids", role="tabpanel")
-				div.card.shadow-sm.mb-3
-					div.card-body
-						h4.h6.mb-0 Transaction IDs
-						hr
-
+					div.tab-pane(id="tab-json-tx-ids", role="tabpanel")
 						div.spinner-border(id="tab-json-tx-ids-spinner", role="status")
 							span.sr-only Loading...
 
-						div.highlight
-							pre
-								code.json.bg-light
+							div.highlight
+								pre
+									code.json.bg-light
 
-			if (result.blockstats)
-				div.tab-pane(id="tab-json-blockstats", role="tabpanel")
-					div.card.shadow-sm.mb-3
-						div.card-body
-							h4.h6.mb-0 Block Stats
-							hr
-
+					if (result.blockstats)
+						div.tab-pane(id="tab-json-blockstats", role="tabpanel")
 							div.highlight
 								pre
 									code.json.bg-light #{JSON.stringify(result.blockstats, null, 4)}

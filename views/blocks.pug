@@ -4,23 +4,22 @@ block headContent
 	+title('Blocks')
 
 block content
-	h1.h3 Blocks
-	hr
+	div.mt-5.mt-sm-3
+	h3.text-bold Blocks
 
 	if (blockList)
-		nav(aria-label="Page navigation")
-			ul.pagination.justify-content-center
-
-				li.page-item(class=(blockListArgs.sort == "desc" ? "active" : false))
-					a.page-link(href=(blockListArgs.sort == "desc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=desc"))
-						span(aria-hidden="true") Newest blocks first
-
-				li.page-item(class=(blockListArgs.sort == "asc" ? "active" : false))
-					a.page-link(href=(blockListArgs.sort == "asc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=asc"))
-						span(aria-hidden="true") Oldest blocks first
-
 		div.card.shadow-sm.mb-3
 			div.card-body
+				nav(aria-label="Page navigation")
+				ul.pagination.justify-content-center
+
+					li.page-item(class=(blockListArgs.sort == "desc" ? "active" : false))
+						a.page-link(href=(blockListArgs.sort == "desc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=desc"))
+							span(aria-hidden="true") Newest blocks first
+
+					li.page-item(class=(blockListArgs.sort == "asc" ? "active" : false))
+						a.page-link(href=(blockListArgs.sort == "asc" ? "javascript:void(0)" : "/blocks?limit=" + blockListArgs.limit + "&offset=0" + "&sort=asc"))
+							span(aria-hidden="true") Oldest blocks first
 				include includes/blocks-list.pug
 
 				if (blockChainInfo.blocks > blockListArgs.limit)
