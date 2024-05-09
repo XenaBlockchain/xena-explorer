@@ -38,34 +38,43 @@ html(lang="en")
 							- var slogo = coinConfig.specialLogo[activeBlockchain];
 							img(src=slogo.url, width=slogo.width, height=slogo.height, alt=slogo.alt)
 							if (slogo.span)
-								span !{slogo.span}
+								span.yellow-200.text-bold !{slogo.span}
 						else
 							img.header-image(src=coinConfig.logoUrl, alt="logo")
 
 						if (coinConfig.siteTitlesByNetwork && coinConfig.siteTitlesByNetwork[activeBlockchain])
-							span #{coinConfig.siteTitlesByNetwork[activeBlockchain]}
+							span.yellow-200.text-bold #{coinConfig.siteTitlesByNetwork[activeBlockchain]}
 						else
 							if (coinConfig.siteTitleHtml)
-								span !{coinConfig.siteTitleHtml}
+								span.yellow-200.text-bold !{coinConfig.siteTitleHtml}
 							else
-								span #{coinConfig.siteTitle}
+								span.yellow-200.text-bold #{coinConfig.siteTitle}
 
 				button.navbar-toggler.navbar-toggler-right(type="button", data-toggle="collapse", data-target="#navbarNav", aria-label="collapse navigation")
 					span.navbar-toggler-icon
 
+				form.form-inline.mt-1.search-mobile-hidden(method="post", action="/search", style="width:100%;")
+					input(type="hidden", name="_csrf", value=csrfToken)
+					div(class="input-group input-group-sm", style="width:100% !important;")
+						input(type="text", class="form-control form-control-sm", name="query", placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;")
+						div(class="input-group-append")
+							button(type="submit", class="btn btn-primary")
+								span Search
+								i(class="fas fa-search", style="margin-left: 5px;")
+								
 				div.collapse.navbar-collapse(id="navbarNav")
 					if (rpcClient)
 						ul.navbar-nav.mr-auto
 
 							if (activeBlockchain != "main")
 								li.nav-item
-									a.nav-link.text-warning(title=`Current node's chain: ${activeBlockchain}` data-toggle="tooltip") [#{activeBlockchain}]
+									a.nav-link.yellow-200(title=`Current node's chain: ${activeBlockchain}` data-toggle="tooltip") [#{activeBlockchain}]
 
 							if (config.siteTools)
 								li.nav-item.dropdown
-									a.nav-link.dropdown-toggle(href="javascript:void(0)", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
-										span Tools
-									divi.dropdown-menu.shadow(aria-label="Tools Items")
+									a.nav-link.dropdown-toggle.yellow-200(href="javascript:void(0)", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
+										span.yellow-200 Tools
+									div.dropdown-menu.shadow(aria-label="Tools Items")
 										each itemIndex in config.site.prioritizedToolIdsList
 											- var item = config.siteTools[itemIndex];
 
@@ -75,9 +84,9 @@ html(lang="en")
 
 							if (config.site.header.dropdowns)
 								each dropdown, ddIndex in config.site.header.dropdowns
-									li.nav-item.dropdown
-										a.nav-link.dropdown-toggle(href="javascript:void(0)", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
-											span #{dropdown.title}
+									li.nav-item.dropdown.yellow-200.px-2
+										a.nav-link.dropdown-toggle.yellow-200(href="javascript:void(0)", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
+											span.yellow-200 #{dropdown.title}
 										div.dropdown-menu.shadow(aria-label=(dropdown.title + " Items"))
 											each dropdownLink in dropdown.links
 												a.dropdown-item(href=dropdownLink.url)
@@ -86,24 +95,25 @@ html(lang="en")
 													span #{dropdownLink.name}
 
 
-						form.form-inline.mr-3(method="post", action="/search")
+						form.form-inline.mr-3.search-main-hidden(method="post", action="/search")
 							input(type="hidden", name="_csrf", value=csrfToken)
 							div(class="input-group input-group-sm")
-								input(type="text", class="form-control form-control-sm", name="query", placeholder="block height/hash, txid, txidem, address, outpoint", value=(query), style="width:280px;")
+								input(type="text", class="form-control form-control-sm", name="query", placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;width:350px;")
 								div(class="input-group-append")
-									button(type="submit", class="btn btn-primary")
-										i(class="fas fa-search")
+									button(type="submit", class="btn primary-button-gradient")
+										span Search
+										i(class="fas fa-search", style="margin-left: 5px;")
 
 
 						ul(class="navbar-nav")
-							li.nav-item.dropdown
-								a.nav-link.dropdown-toggle(href="javascript:void(0)", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
-									span Admin Tools
-								div.dropdown-menu.dropdown-menu-right.shadow(aria-label="Admin Tools Items")
-									a.dropdown-item(href="/admin") Admin Dashboard
+							//- li.nav-item.dropdown
+							//- 	a.nav-link.dropdown-toggle.text-white(href="javascript:void(0)", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
+							//- 		span.yellow-200 Admin Tools
+							//- 	div.dropdown-menu.dropdown-menu-right.shadow(aria-label="Admin Tools Items")
+							//- 		a.dropdown-item(href="/admin") Admin Dashboard
 							li(class="nav-item dropdown")
-								a(class="nav-link dropdown-toggle", href="javascript:void(0)", id="navbarDropdown", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
-									i(class="fas fa-cog mr-1")
+								a.yellow-200(class="nav-link dropdown-toggle", href="javascript:void(0)", id="navbarDropdown", role="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")
+									i.yellow-200(class="fas fa-cog mr-1")
 								div(class="dropdown-menu dropdown-menu-right shadow", aria-labelledby="navbarDropdown")
 									if (coinConfig.currencyUnits)
 										span(class="dropdown-header") Currency Units
@@ -115,30 +125,30 @@ html(lang="en")
 															i(class="fas fa-check")
 													span #{item.name}
 
-									span(class="dropdown-header") Theme
-									a(class="dropdown-item", href="/changeSetting?name=uiTheme&value=light")
-										if (session.uiTheme == "light" || session.uiTheme == "")
-											i(class="fas fa-check")
-										span Light
-									a(class="dropdown-item", href="/changeSetting?name=uiTheme&value=dark")
-										if (session.uiTheme == "dark")
-											i(class="fas fa-check")
-										span Dark
+									//- span(class="dropdown-header") Theme
+									//- a(class="dropdown-item", href="/changeSetting?name=uiTheme&value=light")
+									//- 	if (session.uiTheme == "light" || session.uiTheme == "")
+									//- 		i(class="fas fa-check")
+									//- 	span Light
+									//- a(class="dropdown-item", href="/changeSetting?name=uiTheme&value=dark")
+									//- 	if (session.uiTheme == "dark")
+									//- 		i(class="fas fa-check")
+									//- 	span Dark
 
 		if (host && port && !homepage && config.site.header.showToolsSubheader)
 			div(id="sub-menu", class="container mb-2 mt-5 pt-2 d-lg-block d-none border-top", style="")
 				ul(class="nav")
 					each item, index in config.siteTools
 						li(class="nav-item")
-							a(href=item.url, class="nav-link text-white px-2 text-decoration-underline")
+							a(href=item.url, class="nav-link text-white text-bold px-2 text-decoration-underline")
 								span #{item.name}
 
 		- var bodyBgColor = "#ffffff;";
 		if (session.uiTheme && session.uiTheme == "dark")
-			- bodyBgColor = "#3C2F48;";
+			- bodyBgColor = "#021a24;";
 
-		div(class="pb-4 pt-3 pt-md-4", style=("background-color: " + bodyBgColor))
-			div(class="container px-2 px-sm-3 pt-5 pt-lg-1 pt-md-5", style=("background-color: " + bodyBgColor))
+		div(class="pb-4 pt-3 pt-md-4 main-layout")
+			div(class="container px-2 px-sm-3 pt-5")
 				if (pageErrors && pageErrors.length > 0)
 					include includes/page-errors-modal.pug
 
@@ -150,7 +160,7 @@ html(lang="en")
 				
 				div(style="min-height: 500px;")
 					if(userMessage)
-						.toast(style='position: absolute; top: 10%; left: 50%; z-index:999999; min-width:500px; min-height:100px; transform: translate(-50%, -50%); background-color: #3C2F48;' data-bs-autohide='false' data-delay=2000).bg-dark
+						.toast(style='position: absolute; top: 10%; left: 50%; z-index:999999; min-width:500px; min-height:100px; transform: translate(-50%, -50%); background-color: #021a24;' data-bs-autohide='false' data-delay=2000).bg-dark
 							.toast-header(style='background-color: #282d33;').p-2
 								div(style='width:100%; display: flex; justify-content:center;')
 									i(class="fa fa-solid fa-circle-exclamation fa-lg" style='color:red;')

@@ -4,16 +4,16 @@ block headContent
 	+title('Transaction Stats')
 	
 block content
-	h1.h3 Transaction Stats
-	hr
+	div.mt-5.mt-sm-3
+	h3.text-bold Transaction Stats
 
 	div.row
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Transactions, 24hr
+					h3.h6.mb-3.text-bold.text-center Transactions, 24hr
 					hr
-
+				
 					script var txCountDataDay = [];
 					each item, index in txStatsDay.txCounts
 						script txCountDataDay.push({x:#{item.x}, y:#{item.y}});
@@ -24,9 +24,9 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Transactions, 7day
+					h3.h6.mb-3.text-bold.text-center Transactions, 7day
 					hr
-
+					
 					script var txCountDataWeek = [];
 					each item, index in txStatsWeek.txCounts
 						script txCountDataWeek.push({x:#{item.x}, y:#{item.y}});
@@ -37,9 +37,9 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Transactions, 30day
+					h3.h6.mb-3.text-bold.text-center Transactions, 30day
+				
 					hr
-
 					script var txCountDataMonth = [];
 					each item, index in txStatsMonth.txCounts
 						script txCountDataMonth.push({x:#{item.x}, y:#{item.y}});
@@ -50,7 +50,7 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Transactions, All time
+					h3.h6.mb-3.text-bold.text-center Transactions, All time
 					hr
 
 					script var txCountDataAlltime = [];
@@ -65,7 +65,7 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Tx Rate, 24hr
+					h3.h6.mb-3.text-bold.text-center Tx Rate, 24hr
 					hr
 
 					script var txRateDataDay = [];
@@ -78,7 +78,7 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Tx Rate, 7day
+					h3.h6.mb-3.text-bold.text-center Tx Rate, 7day
 					hr
 
 					script var txRateDataWeek = [];
@@ -91,7 +91,7 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Tx Rate, 30day
+					h3.h6.mb-3.text-bold.text-center Tx Rate, 30day
 					hr
 
 					script var txRateDataMonth = [];
@@ -104,7 +104,7 @@ block content
 		div.col-lg-6
 			div.card.shadow-sm.mb-3
 				div.card-body
-					h3.h6.mb-0 Tx Rate, All time
+					h3.h6.mb-3.text-bold.text-center Tx Rate, All time
 					hr
 
 					script var txRateDataAlltime = [];

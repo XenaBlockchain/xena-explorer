@@ -4,25 +4,24 @@ block headContent
 	+title('Node Status')
 	
 block content
-	h1.h3 Node Status
-	hr
+	div.mt-5.mt-sm-3
+	h3.text-bold Node Status
 
 	if (getblockchaininfo)
-		ul.nav.nav-tabs.mb-3
+		ul.nav.nav-tabs
 			li.nav-item
-				a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Details
+				a.nav-link.text-bold.active(data-toggle="tab", href="#tab-details", role="tab") Details
 			li.nav-item
-				a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
+				a.nav-link.text-bold(data-toggle="tab", href="#tab-json", role="tab") JSON
 
 
 		div.tab-content
 			div.tab-pane.active(id="tab-details", role="tabpanel")
 				div.card.shadow-sm.mb-3
 					div.card-body.px-2.px-sm-3
-						h3.h6.mb-0 Summary
-						hr
+						h5.mb-3.text-bold Summary
 
-						div.clearfix
+						div.clearfix.stats-background
 							div.row
 								div.summary-table-label Chain
 								div.summary-table-content.text-monospace #{getblockchaininfo.chain}
@@ -97,12 +96,9 @@ block content
 									else
 										span None
 
-				div.card.shadow-sm.mb-3
-					div.card-body.px-2.px-sm-3
-						h3.h6.mb-0 Txpool Info
-						hr
+						h5.mb-3.mt-5.text-bold Txpool Info
 
-						div.clearfix
+						div.clearfix.stats-background
 							div.row
 								div.summary-table-label TX count
 								div.summary-table-content.text-monospace(id="txpool-tx-count") #{gettxpoolinfo.size}
@@ -129,12 +125,9 @@ block content
 								div.summary-table-content.text-monospace(id="txpool-mem-limit") #{text}
 
 
-				div.card.shadow-sm.mb-3
-					div.card-body.px-2.px-sm-3
-						h3.h6.mb-0 Network Info
-						hr
+						h5.mt-5.mb-3.text-bold Network Info
 
-						div.clearfix
+						div.clearfix.stats-background
 							div.row
 								div.summary-table-label Peers
 								div.summary-table-content.text-monospace #{getnetworkinfo.connections.toLocaleString()}
@@ -179,57 +172,38 @@ block content
 
 
 			div.tab-pane(id="tab-json", role="tabpanel")
+				div.card.shadow-sm.mb-3
+						div.card-body.px-2.px-sm-3
+							ul.nav.nav-tabs
+								li.nav-item
+									a.nav-link.sub-nav-link.text-bold.active(data-toggle="tab", href="#tab-getblockchaininfo", role="tab") Blockchain info
+								li.nav-item
+									a.nav-link.sub-nav-link.text-bold(data-toggle="tab", href="#tab-getnettotals", role="tab") Net totals
+								li.nav-item
+									a.nav-link.sub-nav-link.text-bold(data-toggle="tab", href="#tab-getnetworkinfo", role="tab") Network info
+								li.nav-item
+									a.nav-link.sub-nav-link.text-bold(data-toggle="tab", href="#tab-gettxpoolinfo", role="tab") Txpool info
 
-				ul.nav.nav-pills.mb-3
-					li.nav-item
-						a.nav-link.active(data-toggle="tab", href="#tab-getblockchaininfo", role="tab") getblockchaininfo
-					li.nav-item
-						a.nav-link(data-toggle="tab", href="#tab-getnettotals", role="tab") getnettotals
-					li.nav-item
-						a.nav-link(data-toggle="tab", href="#tab-getnetworkinfo", role="tab") getnetworkinfo
-					li.nav-item
-						a.nav-link(data-toggle="tab", href="#tab-gettxpoolinfo", role="tab") gettxpoolinfo
-				
-				div.tab-content
-					div.tab-pane.active(id="tab-getblockchaininfo", role="tabpanel")
-						div.card.shadow-sm.mb-3
-							div.card-body
-								h4.h6.mb-0 getblockchaininfo
-								hr
+							div.tab-content
+								div.tab-pane.active(id="tab-getblockchaininfo", role="tabpanel")
+									div.highlight
+										pre
+											code.json.bg-light(data-lang="json") #{JSON.stringify(getblockchaininfo, null, 4)}
 
-								div.highlight
-									pre
-										code.json.bg-light(data-lang="json") #{JSON.stringify(getblockchaininfo, null, 4)}
+								div.tab-pane(id="tab-getnettotals", role="tabpanel")
+									div.highlight
+										pre
+											code.json.bg-light(data-lang="json") #{JSON.stringify(getnettotals, null, 4)}
 
-					div.tab-pane(id="tab-getnettotals", role="tabpanel")
-						div.card.shadow-sm.mb-3
-							div.card-body
-								h4.h6.mb-0 getnettotals
-								hr
+								div.tab-pane(id="tab-getnetworkinfo", role="tabpanel")
+									div.highlight
+										pre
+											code.json.bg-light(data-lang="json") #{JSON.stringify(getnetworkinfo, null, 4)}
 
-								div.highlight
-									pre
-										code.json.bg-light(data-lang="json") #{JSON.stringify(getnettotals, null, 4)}
-
-					div.tab-pane(id="tab-getnetworkinfo", role="tabpanel")
-						div.card.shadow-sm.mb-3
-							div.card-body
-								h4.h6.mb-0 getnetworkinfo
-								hr
-
-								div.highlight
-									pre
-										code.json.bg-light(data-lang="json") #{JSON.stringify(getnetworkinfo, null, 4)}
-
-					div.tab-pane(id="tab-gettxpoolinfo", role="tabpanel")
-						div.card.shadow-sm.mb-3
-							div.card-body
-								h4.h6.mb-0 gettxpoolinfo
-								hr
-
-								div.highlight
-									pre
-										code.json.bg-light(data-lang="json") #{JSON.stringify(gettxpoolinfo, null, 4)}
+								div.tab-pane(id="tab-gettxpoolinfo", role="tabpanel")
+									div.highlight
+												pre
+													code.json.bg-light(data-lang="json") #{JSON.stringify(gettxpoolinfo, null, 4)}
 
 block endOfBody
 	script.

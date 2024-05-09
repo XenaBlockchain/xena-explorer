@@ -4,20 +4,18 @@ block headContent
 	+title('Decode')
 
 block content
-	h1.h3 Decode Transactions or Scripts
-	hr
+	div.mt-5.mt-sm-3
+	h3.text-bold Decode Transactions or Scripts
 
-	div(class="mb-5")
 	form.form(method="post", action="/decoder", class="form")
 		input(type="hidden", name="_csrf", value=csrfToken)
 		div(class="input-group input-group-lg")
 			textarea(class="form-control form-control-sm", name="query", placeholder="hex data", rows="6", value=(query), style="width: 90%;")
 
 		div.input-group
-			button(type="submit", class="btn btn-primary") Decode
+			button.mt-2.px-3(type="submit", class="btn btn-primary") Decode
 
-	hr
-	ul.nav.nav-tabs.mb-3
+	ul.nav.nav-tabs.mt-5
 		li.nav-item
 			a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Details
 		li.nav-item
