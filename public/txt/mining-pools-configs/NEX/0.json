@@ -33,6 +33,10 @@
         "nexa:nqtsq5g5hxvavd4ktd705c9wzts2u698zhnjqe6t63dmglfk": {
             "name" : "p1pool.com",
             "link" : "https://p1pool.com/"
+        },
+        "nexa:nqtsq5g5qzdk24lynnkc3tjr73sf2yc5ms7d07xq5wp46tdq":{
+            "name": "f2pool.com",
+            "link": "https://f2pool.com"
         }
     },
     "exchange_addresses": {
