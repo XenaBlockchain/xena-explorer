@@ -1,25 +1,25 @@
 {
     "coinbase_tags" : {
         "/WoolyPooly/ nexa-1-RU1": {
-            "name" : "WoolyPooly", 
-            "link" : "http://niftyart.cash/"
+            "name" : "WoolyPooly",
+            "link" : "https://woolypooly.com/en"
         }
     },
     "payout_addresses" : {
         "nexa:nqtsq5g5kzgzgwd3qnunzj8ufuhu93mshclse3y9zeve0fg0": {
-            "name" : "WoolyPooly", 
-            "link" : "http://niftyart.cash/"
+            "name" : "WoolyPooly",
+            "link" : "https://woolypooly.com/en"
         },
         "nexa:nqtsq5g54yl3dshq8gmc7k6afw7jfqjxcpytmh79sesrhuzk": {
-            "name" : "2Miners.com (solo-eu)", 
+            "name" : "2Miners.com (solo-eu)",
             "link" : "https://2miners.com/"
         },
         "nexa:nqtsq5g5n66sg8j4k467z7k7u2qtrhyf6rp6rgcdk8k9pvym": {
-            "name" : "pool.kryptex.com", 
+            "name" : "pool.kryptex.com",
             "link" : "https://kryptex.com/"
         },
         "nexa:nqtsq5g5szgc9uu9rck2vhjh2vux06ep07fscng86t03rkxd": {
-            "name" : "2Miners.com (eu)", 
+            "name" : "2Miners.com (eu)",
             "link" : "https://2miners.com/"
         },
         "nexa:nqtsq5g592gexr0qsffjzyqzntsjche7uxtjj6snl9cnzxev": {
