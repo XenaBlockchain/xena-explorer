@@ -295,7 +295,7 @@ strong {
 		display:revert;
 	}
 	.search-main-hidden {
-		display:ruby;
+		display:block;
 	}	
 	.container {
 		max-width: 1400px;
