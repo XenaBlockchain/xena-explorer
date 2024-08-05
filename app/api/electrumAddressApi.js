@@ -89,7 +89,21 @@ function connectToServers() {
 	return new Promise(async function(resolve, reject) {
 		for (var i = 0; i < config.electrumXServers.length; i++) {
 			var { host, port, protocol } = config.electrumXServers[i];
-			var defaultProtocol = port === 20001 ? ElectrumTransport.TCP.Scheme: ElectrumTransport.TCP_TLS.Scheme;
+			var defaultProtocol;
+			switch (protocol) {
+				case "tcp":
+					defaultProtocol = ElectrumTransport.TCP.Scheme;
+					break;
+				case "tcp_tls":
+					defaultProtocol = ElectrumTransport.TCP_TLS.Scheme;
+					break;
+				case "ws":
+					defaultProtocol = ElectrumTransport.WS.Scheme;
+					break;
+				case "wss":
+					defaultProtocol = ElectrumTransport.WSS.Scheme;
+					break;
+			}
 			electrum.addServer(host, port, defaultProtocol);
 		}
 		await electrum.startup()

@@ -1102,26 +1102,32 @@ function tokenAuthToFlags(groupAuth) {
 }
 
 function knownTokens() {
-	return [
-		'nexa:tqcr5dzhetyyughy9uwgsc35altfmhwuk9t5vyn7yjzw9pc0pqqqqyz68skt0',
-		'nexa:tptlgmqhvmwqppajq7kduxenwt5ljzcccln8ysn9wdzde540vcqqqcra40x0x',
-		'nexa:tzs4e8n7dqtsyk0axx7zvcgt2snzt3t7z07ued0nu89hlvp6ggqqqdrypc4ea',
-		'nexa:tztnyazksgqpkphrx2m2fgxapllufqmuwp6k07xtlc8k4xcjpqqqq99lxywr8',
-		'nexa:tp0jg4h6gj5gcj5rrf9h6xclxstk52dr72yyttmrn6umrjyd6sqqqsy86tk9q',
-		'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f',
-		'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9'
-	]
+	let tokens = [];
+	if (global.activeBlockchain === "nexa") {
+		tokens = [
+			'nexa:tqcr5dzhetyyughy9uwgsc35altfmhwuk9t5vyn7yjzw9pc0pqqqqyz68skt0',
+			'nexa:tptlgmqhvmwqppajq7kduxenwt5ljzcccln8ysn9wdzde540vcqqqcra40x0x',
+			'nexa:tzs4e8n7dqtsyk0axx7zvcgt2snzt3t7z07ued0nu89hlvp6ggqqqdrypc4ea',
+			'nexa:tztnyazksgqpkphrx2m2fgxapllufqmuwp6k07xtlc8k4xcjpqqqq99lxywr8',
+			'nexa:tp0jg4h6gj5gcj5rrf9h6xclxstk52dr72yyttmrn6umrjyd6sqqqsy86tk9q',
+			'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f',
+			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9'
+		];
+	} else {
+		//testnet
+	}
+	return tokens;
 }
 
 function isValidHttpUrl(string) {
 	let url;
-	
+
 	try {
 	  url = new URL(string);
 	} catch (_) {
-	  return false;  
+	  return false;
 	}
-  
+
 	return url.protocol === "http:" || url.protocol === "https:";
   }
   
