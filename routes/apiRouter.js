@@ -5,20 +5,15 @@ import express from 'express';
 import cors from 'cors'
 import rateLimit from 'express-rate-limit';
 import csurf from 'csurf';
-import util from 'util';
 var router = express.Router();
-import moment from 'moment';
-import qrcode from 'qrcode';
-import bitcoinjs from 'bitcoinjs-lib';
-import pkg from 'crypto-js';
-const {sha256, hexEnc} = pkg;
 import Decimal from 'decimal.js';
+import nexaaddr from 'nexaaddrjs'
 
 import utils from './../app/utils.js';
-import coins from './../app/coins.js';
 import config from './../app/config.js';
 import coreApi from './../app/api/coreApi.js';
-import addressApi from './../app/api/addressApi.js';
+import db from '../models/index.js'
+var Op = db.Sequelize.Op;
 
 const forceCsrf = csurf({ ignoreMethods: [] });
 const limiter = rateLimit({
@@ -277,6 +272,66 @@ router.get("/coinsupply", function(req, res, next) {
 		//res.json(new Number(data).toFixed(2));
 		utils.perfMeasure(req);
 	});
+});
+
+router.get("/search", async function(req, res, next) {
+	debugLog(req.query.q)
+	if (!req.query.q) {
+		req.session.userMessage = "Enter a block height, block hash, transaction id or idem or outpoint.";
+
+		res.redirect("/");
+
+		return;
+	}
+	utils.search(req, res, true);
+});
+
+router.get("/nfts/:sort", function(req, res, next) {
+	var limit = 20;
+	var offset = 0;
+
+	var sortBy = req.params.sort;
+
+	if (req.query.limit) {
+		limit = parseInt(req.query.limit);
+
+		// for demo sites, limit page sizes
+		if (config.demoSite && limit > config.site.addressTxPageSize) {
+			limit = config.site.addressTxPageSize;
+
+			res.locals.userMessage = "Transaction page size limited to " + config.site.addressTxPageSize + ". If this is your site, you can change or disable this limit in the site config.";
+		}
+	}
+
+	if (req.query.offset) {
+		offset = parseInt(req.query.offset);
+	}
+
+	if (req.query.sort) {
+		sort = req.query.sort;
+	}
+
+	if(sortBy == "new") {
+		coreApi.getNewNFTS(limit, offset).then(function(results) {
+			res.set('Content-Type', 'text/json')
+			res.send(results)
+			utils.perfMeasure(req);	
+		}).catch(function(err){
+			res.set('Content-Type', 'text/json')
+			res.send([])
+			utils.perfMeasure(req);
+		})
+	} else {
+		coreApi.getAllNFTs(limit, offset).then(function(results) {
+			res.set('Content-Type', 'text/json')
+			res.send(results)
+			utils.perfMeasure(req);	
+		}).catch(function(err){
+			res.set('Content-Type', 'text/json')
+			res.send([])
+			utils.perfMeasure(req);
+		})
+	}
 });
 
 router.get("/utils/:func/:params", function(req, res, next) {

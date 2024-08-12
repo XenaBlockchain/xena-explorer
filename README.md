@@ -52,6 +52,24 @@ Open [http://127.0.0.1:3002/](http://127.0.0.1:3002/) to view the explorer.
 You may set configuration options in a `.env` file or using CLI args.
 See [configuration](#configuration) for details.
 
+## Token indexing
+### You must be running a redis instance for token indexing!
+
+After installing you need to install sequelize cli and migrate the database schema for indexing of tokens.
+
+```bash
+npm install -g sequelize-cli
+```
+
+Migrate the tables:
+
+```bash
+npx sequelize-cli db:migrate
+```
+
+This will start indexing the tokens on the nexa network.
+
+
 ### Configuration
 
 Configuration options may be passed as environment variables

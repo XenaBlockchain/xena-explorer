@@ -1,0 +1,202 @@
+div.d-flex.justify-content-start
+    //- img.mt-4.mr-1.rounded(src="/img/nfts/"+tokens[0].group+'/Front.png', alt="", width=35, height=35)
+    h1.h3.word-wrap.mt-4.ml-1.text-bold.table-hidden NFT Series #{series.name}
+
+
+div.row.mt-3
+    div.col-12.col-xl-6
+        div.card.stats-card.mb-3
+            div.card-header(style="background:transparent;")
+                div.m-2
+                    h3.h6.mb-0.text-bold NFT Collection Overview
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Transfers
+                                span.text-monospace.text-truncate #{nftStats.transfers_count}
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Total NFTs in series
+                                span.text-monospace.text-truncate #{collectionCount}
+                    
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Holders
+                                span.text-monospace.text-truncate #{nftStats.holders_count}
+                    
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Total Market Cap
+                                span.text-monospace 0
+                    
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Circulating Market Cap
+                                span.text-monospace 0
+                    
+    div.col-12.col-xl-6
+        div.card.stats-card.mb-3
+            div.card-header(style="background:transparent;")
+                div.m-2
+                    h3.h6.mb-0.text-bold NFT Summary
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Token GroupID
+                                span.text-monospace.word-wrap.ml-1
+                                    //- a(href=("/token/" + tokenInfo.group)) #{utils.ellipsize(tokenInfo.group, 45)}
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Mint Authority
+                                //- span.text-monospace #{richList[0].address}
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Authority Baton
+                                //- span.text-monospace #{richList[0].address}
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Trading Volume (24h)
+                                span.text-monospace 0
+                    div.row.mt-3
+                        div.col-md-12
+                            div.d-flex.justify-content-between
+                                span Current Supply
+                                //- span.text-monospace #{circulatingSupply}
+                        
+
+                    
+ul.nav.nav-tabs
+    li.nav-item
+        a.nav-link.text-bold.active(data-toggle="tab", href="#nft-list", role="tab") Items
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#token-holders", role="tab") Markets
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-market", role="tab") Activity
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-genesis", role="tab") Holders
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-analysis", role="tab") Analysis
+
+div.tab-content
+    div.tab-pane.active(id="nft-list", role="tabpanel")
+        - var tokenCount = collectionCount;
+        include nft-list.pug
+        if (collectionCount > limit)
+            - var pageNumber = offset / limit + 1;
+            - var pageCount = Math.floor(collectionCount / limit);
+            - if (pageCount * limit < collectionCount) {
+                - pageCount++;
+            - }
+            - var paginationUrlFunction = function(x) {
+                - return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+            - }
+
+            hr.mt-3
+
+            include ./pagination.pug
+
+
+    div.tab-pane(id="token-holders", role="tabpanel")
+        div.card-body.tab-card.mb-3.table-hidden
+            div.table-responsive
+                table.table.table-striped.mb-0.table-hidden
+                    thead
+                        tr
+                            th.data-header.text-right
+                                span.font-weight-bold Amount
+                            th.data-header.text-left
+                                span.font-weight-bold Address
+                            th.data-header.text-left
+                                span.font-weight-bold last TX
+                            th.data-header.text-left
+                                span.font-weight-bold Last Block
+                            th.data-header.text-right
+                                span.font-weight-bold %
+
+                    tbody
+                        if(richList && richList.length > 0)
+                                each item in richList
+                                    tr
+                                        td.data-cell.text-monospace.text-right
+                                            span #{utils.addThousandsSeparators(item.netAmount)}
+                                        td.data-cell.text-monospace.text-left
+                                            span
+                                                a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 53)}
+                                        td.data-cell.text-monospace.text-left
+                                            span
+                                                a(href=("/tx/" + item.lastTransferTxId)) #{item.lastTransferTxId}
+                                        td.data-cell.text-monospace.text-left
+                                            span 
+                                                a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}	
+                                        td.data-cell.text-monospace.text-right
+                                            span #{item.percentage}
+                        else 
+                            tr
+                                td(colspan="6").data-cell.text-monospace.text-center
+                                    span No Data Available
+        if(richList && richList.length > 0)
+            div.list-hidden
+                each item in richList
+                        .card(style='width: 100%;').mb-2
+                            .card-body(style='background-color: #282d33 !important;')
+                                h5.card-title.text-center
+                                    span #{utils.addThousandsSeparators(item.netAmount)}  #{tokenInfo.ticker}
+                                
+                                p.card-text
+                                    span
+                                        a(href=("/token/" + token.groupId)) #{token.groupId}
+                            ul.list-group.list-group-flush
+                                li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                    span Address
+                                    span.word-wrap.ml-1
+                                        a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 35)}
+                                li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                    span Last Tx
+                                    span.word-wrap.ml-1
+                                        if(item.lastTransferTxId)
+                                            a(href=("/tx/" + item.lastTransferTxId)) #{utils.ellipsize(item.lastTransferTxId, 35)}
+                                li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                    span Last Block
+                                    span
+                                        a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}
+
+
+    div.tab-pane(id="tab-market", role="tabpanel")
+        div.card-body.tab-card.mb-3
+            div.table-responsive
+                table.table.table-striped.mb-0
+                    tr
+                        td(colspan="6").data-cell.text-monospace.text-center
+                            span No Data Available
+
+    div.tab-pane(id="tab-genesis", role="tabpanel")
+            div.card-body.tab-card.mb-3
+                h5.mb-3.text-bold Token Genesis
+
+                div.highlight
+                    pre
+                        code.json.bg-light.mb-5(data-lang="json") #{rawtransaction_parsed}
+                //- if (tokenStats.documentInfo != null)
+                //-     h5.mb-3.text-bold Token Document
+                //-     div.highlight
+                //-         pre
+                //-             code.json.bg-light(data-lang="json") #{JSON.stringify(tokenStats.documentInfo.tokenObject, utils.bigIntToRawJSON, 4)}
+
+    div.tab-pane(id="tab-analysis", role="tabpanel")
+        div.card.shadow-sm.mb-3
+            div.card-body
+                h4.h6.mb-0 Token Analysis
+                hr
+
+                div.table-responsive
+                    table.table.table-striped.mb-0
+                        tr
+                            td(colspan="6").data-cell.text-monospace.text-center
+                                span No Data Available

@@ -4,14 +4,15 @@ const debugLog = debug("nexexp:router");
 import express from 'express';
 import csurf from 'csurf';
 const router = express.Router();
-import moment from 'moment';
 import qrcode from 'qrcode';
 import bitcoinjs from 'bitcoinjs-lib';
 import nexaaddrjs from 'nexaaddrjs';
 import crypto from 'crypto-js';
 const {sha256, hexEnc} = crypto;
 import Decimal from "decimal.js";
-import axios from "axios";
+import Nexcore from 'nexcore-lib'
+import db from "../models/index.js";
+
 
 import asyncHandler from "express-async-handler";
 
@@ -28,6 +29,7 @@ import v8 from 'v8';
 
 import electrumAddressApi from "../app/api/electrumAddressApi.js";
 const { forceCsrf } = csurf;
+var Op = db.Sequelize.Op;
 
 router.get("/", function(req, res, next) {
 	if (req.session.host == null || req.session.host.trim() == "") {
@@ -118,6 +120,7 @@ router.get("/", function(req, res, next) {
 			res.locals.miningInfo = promiseResults[1];
 			res.locals.hashrate7d = promiseResults[2];
 			res.locals.hashrate30d = promiseResults[3];
+			res.locals.processingTokens = global.processingTokens
 
 			if (promiseResults[4]) {
 				res.locals.blockTemplate = promiseResults[4];
@@ -248,7 +251,7 @@ router.get("/rich-list", function(req, res, next) {
 
 router.get("/tokens", function(req, res, next){
 
-	var limit = 20;
+	var limit = 24;
 	var offset = 0;
 	var sort = "desc";
 
@@ -285,7 +288,7 @@ router.get("/tokens", function(req, res, next){
 	}));
 
 	promises.push(new Promise(function(resolve, reject) {
-		coreApi.getTokenStats().then(function(results){
+		coreApi.getTokenStats(false).then(function(results){
 			resolve(results)
 		})
 	}));
@@ -307,6 +310,235 @@ router.get("/tokens", function(req, res, next){
 	.catch(function(err) {
 		res.locals.userMessage = "Error: " + err;
 		res.render("tokens");
+	});
+})
+
+router.get("/nfts", function(req, res, next){
+
+	var limit = 24;
+	var offset = 0;
+	var sort = "desc";
+	var filterBy = ''
+
+
+	if (req.query.limit) {
+		limit = parseInt(req.query.limit);
+
+		// for demo sites, limit page sizes
+		if (config.demoSite && limit > config.site.addressTxPageSize) {
+			limit = config.site.addressTxPageSize;
+
+			res.locals.userMessage = "Transaction page size limited to " + config.site.addressTxPageSize + ". If this is your site, you can change or disable this limit in the site config.";
+		}
+	}
+
+	if (req.query.offset) {
+		offset = parseInt(req.query.offset);
+	}
+
+	if (req.query.sort) {
+		sort = req.query.sort;
+	}
+
+	if (req.query.filterBy) {
+		filterBy = req.query.filterBy;
+	}
+
+	console.log(req.query)
+	console.log(offset)
+
+	res.locals.limit = limit;
+	res.locals.offset = offset;
+	res.locals.sort = sort;
+	res.locals.filterBy = filterBy
+	res.locals.paginationBaseUrl = `/nfts`;
+	res.locals.paginationNewBaseUrl = `/nfts?filterBy=new`;
+	res.locals.paginationAllBaseUrl = `/nfts?filterBy=all`;
+
+	let promises = [];
+	promises.push(new Promise(function(resolve, reject) {
+		let localLimit = limit
+		let localOffset = offset
+		if(filterBy) {
+			localLimit = 24
+			localOffset = 0
+		}
+
+		coreApi.getNFTsSeries(localLimit, localOffset, sort).then(function(results){
+			resolve(results)
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTokenStats(true).then(function(results){
+			resolve(results)
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getNFTsHoldersCount().then(function(result) {
+			resolve(result)	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getTotalNFTs().then(function(result) {
+			resolve(result)	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getTotalNFTsSeriesCount().then(function(result) {
+			resolve(result)	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+
+	promises.push(new Promise(function(resolve, reject){
+		let localLimit = limit
+		let localOffset = offset
+		if(filterBy != 'new') {
+			localLimit = 24
+			localOffset = 0
+		}
+		coreApi.getNewNFTS(localLimit, localOffset).then(function(results) {
+			resolve(results)	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		let localLimit = limit
+		let localOffset = offset
+		if(filterBy != 'all') {
+			localLimit = 24
+			localOffset = 0
+		}
+		coreApi.getAllNFTs(localLimit, localOffset).then(function(results) {
+			resolve(results)	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getBlockchainInfo().then(function(result) {
+			resolve(result)	
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+
+	Promise.all(promises).then(function(promiseResults) {
+		res.locals.tokens = promiseResults[0];
+		res.locals.tokenStats = promiseResults[1];
+		res.locals.holdersCount = promiseResults[2]
+		res.locals.totalNFTs = promiseResults[3]
+		res.locals.collectionCount = promiseResults[4]
+		res.locals.newNFTs = promiseResults[5];
+		res.locals.allNFTs = promiseResults[6];
+		res.locals.blockChainInfo = promiseResults[7];
+		res.render("nfts");
+	})
+	.catch(function(err) {
+		res.locals.userMessage = "Error: " + err;
+		res.render("nfts");
+	});
+})
+
+
+router.get("/series/:seriesIdentifier", async function(req, res, next){
+
+	var limit = 24;
+	var offset = 0;
+	var sort = "desc";
+
+	var seriesIdentifier = req.params.seriesIdentifier;
+	if(!seriesIdentifier) {
+		res.redirect("/");
+	}
+	
+	if (req.query.limit) {
+		limit = parseInt(req.query.limit);
+
+		// for demo sites, limit page sizes
+		if (config.demoSite && limit > config.site.addressTxPageSize) {
+			limit = config.site.addressTxPageSize;
+
+			res.locals.userMessage = "Transaction page size limited to " + config.site.addressTxPageSize + ". If this is your site, you can change or disable this limit in the site config.";
+		}
+	}
+
+	if (req.query.offset) {
+		offset = parseInt(req.query.offset);
+	}
+
+	if (req.query.sort) {
+		sort = req.query.sort;
+	}
+
+	res.locals.limit = limit;
+	res.locals.offset = offset;
+	res.locals.sort = sort;
+	res.locals.paginationBaseUrl = `/series/${seriesIdentifier}?sort=${sort}`;
+	let series = null;
+
+	try {
+		series = await db.Series.findOne({
+			where: {
+				identifier: seriesIdentifier
+			}
+		})
+	} catch (err) {
+		req.session.userMessage = "Error: " + err;
+		res.redirect("/");
+	}
+
+	
+
+	let promises = [];
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getNFTsInSeries(limit, offset, sort, series).then(function(results){
+			resolve(results)
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getNFTSeriesStats(series).then(function(result) {
+			resolve(result)
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	promises.push(new Promise(function(resolve, reject){
+		coreApi.getTotalNFTsInSeriesCount(series).then(function(result) {
+			resolve(result)
+		}).catch(function(err){
+			resolve()
+		})
+	}));
+
+	Promise.all(promises).then(function(promiseResults) {
+		res.locals.series = series
+		res.locals.tokens = promiseResults[0];
+		res.locals.nftStats = promiseResults[1][0]
+		res.locals.collectionCount = promiseResults[2]
+		res.locals.seriesIdentifier = seriesIdentifier
+		res.render("series");
+	})
+	.catch(function(err) {
+		req.session.userMessage = "Error: " + err;
+		res.redirect("/");
 	});
 })
 
@@ -606,7 +838,7 @@ router.get("/search", function(req, res, next) {
 
 });
 
-router.post("/search", function(req, res, next) {
+router.post("/search", async function(req, res, next) {
 	if (!req.body.query) {
 		req.session.userMessage = "Enter a block height, block hash, transaction id or idem or outpoint.";
 
@@ -614,118 +846,7 @@ router.post("/search", function(req, res, next) {
 
 		return;
 	}
-
-	var query = req.body.query.toLowerCase().trim();
-	var rawCaseQuery = req.body.query.trim();
-
-	req.session.query = req.body.query;
-
-	if (query.length == 64) {
-		// this could be a successful retrieve produced
-		// by a seach vy txid, txidem or outpoint
-		coreApi.getRawTransaction(query).then(function(tx) {
-			if (tx) {
-				// always use txidem as query param independently
-				// by which mean we searched in the first place
-				res.redirect("/tx/" + query);
-				return;
-			}
-
-			coreApi.getBlockHeader(query).then(function(blockHeader) {
-				if (blockHeader) {
-					res.redirect("/block/" + query);
-
-					return;
-				}
-
-				coreApi.getAddress(rawCaseQuery).then(function(validateaddress) {
-					if (validateaddress && validateaddress.isvalid) {
-						res.redirect("/address/" + rawCaseQuery);
-
-						return;
-					}
-				});
-
-				try {
-					let decodedAddress = nexaaddr.decode(query);
-			
-					if(decodedAddress['type'] == 'GROUP') {
-						res.redirect("/token/" + query);
-
-						return;
-					}
-				} catch (err) {}
-
-
-				req.session.userMessage = "No results found for query: " + query;
-
-				res.redirect("/");
-
-			}).catch(function(err) {
-				req.session.userMessage = "No results found for query: " + query;
-
-				res.redirect("/");
-			});
-
-		}).catch(function(err) {
-			coreApi.getBlockHeader(query).then(function(blockHeader) {
-				if (blockHeader) {
-					res.redirect("/block/" + query);
-
-					return;
-				}
-
-				req.session.userMessage = "No results found for query: " + query;
-
-				res.redirect("/");
-
-			}).catch(function(err) {
-				req.session.userMessage = "No results found for query: " + query;
-
-				res.redirect("/");
-			});
-		});
-
-	} else if (!isNaN(query)) {
-		coreApi.getBlockHeaderByHeight(parseInt(query)).then(function(blockHeader) {
-			if (blockHeader) {
-				res.redirect("/block-height/" + query);
-
-				return;
-			}
-
-			req.session.userMessage = "No results found for query: " + query;
-
-			res.redirect("/");
-		}).catch(function (err) {
-			req.session.userMessage = "No results found for query: " + query;
-
-			res.redirect("/");
-		});
-
-	} else {
-		coreApi.getAddress(rawCaseQuery).then(function(validateaddress) {
-			if (validateaddress && validateaddress.isvalid) {
-				res.redirect("/address/" + rawCaseQuery);
-
-				return;
-			}
-
-			try {
-				let decodedAddress = nexaaddrjs.decode(query);
-		
-				if(decodedAddress['type'] == 'GROUP') {
-					res.redirect("/token/" + query);
-	
-					return;
-				}
-			} catch (err) {}
-
-			req.session.userMessage = "No results found for query: " + rawCaseQuery;
-
-			res.redirect("/");
-		});
-	}
+	utils.search(req, res)
 });
 
 router.get("/block-height/:blockHeight", function(req, res, next) {
@@ -793,7 +914,7 @@ router.get("/block-height/:blockHeight", function(req, res, next) {
 			try {
 				const TxIds = res.locals.result.transactions.map(elem => elem.txid)
 				res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
-			}catch (err){}
+			} catch (err){}
 			
 			res.render("block");
 
@@ -1168,9 +1289,10 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 	}
 });
 
-router.get("/token/:token", function(req, res, next) {
+router.get("/token/:token", async function(req, res, next) {
 
-
+	res.locals.isSafari = req.headers["user-agent"].includes("Safari") > 0
+	
 	var limit = config.site.tokenTransferPageSize;
 	var offset = 0;
 	var sort = "desc";
@@ -1202,6 +1324,9 @@ router.get("/token/:token", function(req, res, next) {
 	res.locals.sort = sort;
 	res.locals.paginationBaseUrl = `/token/${token}?sort=${sort}`;
 	res.locals.transfers = [];
+	res.locals.tokenIndexWaiting = false;
+	res.locals.group = token;
+
 
 	let isTokenValid = false;
 
@@ -1230,21 +1355,59 @@ router.get("/token/:token", function(req, res, next) {
 		req.session.userMessage = "No results found for query: " + token;
 		res.redirect("/");
 	}
+	let indexedToken = null;
+	let tokenGenesis = null;
 
+	try {
+		indexedToken = await db.Tokens.findOne({
+			where: {
+				group: token
+			}
+		})
+	} catch(err) {
+		debugLog('Cannot find Indexed Token: ', err)
+		debugLog('Cannot find Indexed Token: ', token)
+	}
 
-	
+	try {
+		tokenGenesis = await coreApi.getTokenGenesis(token);
+	} catch(err){
+		debugLog('Token Genesis doesnt exist: ', token)
+	}
+
+	// We havent indexed the token but it exists on the chain
+	if(indexedToken == null && tokenGenesis != null){
+		res.locals.tokenIndexWaiting = true
+		res.render("token");
+		utils.perfMeasure(req);
+	}
+	if(indexedToken == null && tokenGenesis == null) {
+		req.session.userMessage = "No results found for query: " + token;
+		res.redirect("/");
+	}
+
 	coreApi.getTokenGenesis(token).then(async function(result){
 		var promises = [];
 		if(result) {
 			res.locals.token = token;
-			res.locals.tokenInfo = result;
-			res.locals.validateToken = true;
+			res.locals.tokenInfo = result
+			try {
+				res.locals.script = new Nexcore.Script(result.op_return).toString()
+				var bytes = nexaaddrjs.decode(token)
+				res.locals.scriptAddress = Nexcore.Script.fromHex(bytes.hash).toString()
+			} catch(err){
+				debugLog("Cannot parse Script:", err)
+			}
 			
+			
+			// Get mintage data of token
 			promises.push(new Promise(function(resolve, reject) {
 				coreApi.getTokenMintage(token).then(function(result) {
 					res.locals.tokenMintage = result;
 					res.locals.totalSupply = result.mintage_satoshis
 					res.locals.circulatingSupply = result.mintage_satoshis
+					res.locals.totalSupplyUnformatted = BigInt(result.mintage_satoshis)
+					res.locals.circulatingSupplyUnformatted = BigInt(result.mintage_satoshis)
 
 					if(res.locals.tokenInfo.decimal_places > 0) {
 						res.locals.totalSupply = String(res.locals.totalSupply).substring(0, String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places) + "." + String(res.locals.totalSupply).substring(String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places);
@@ -1260,7 +1423,8 @@ router.get("/token/:token", function(req, res, next) {
 					resolve();
 				});
 			}));
-		
+
+			// Get transaction string 
 			promises.push(new Promise(function(resolve, reject) {
 				coreApi.getRawTransaction(res.locals.tokenInfo.txid).then(function(tx) {
 					if (tx) {
@@ -1275,17 +1439,27 @@ router.get("/token/:token", function(req, res, next) {
 				});
 			}));
 
+			// Get Token operations
 			promises.push(new Promise(function(resolve, reject){
-				coreApi.getTokenTotalTransfers(token).then(async function(result){
-					res.locals.transfersCount = result
+				coreApi.getTokenOperations(token).then(async function(result){
+					res.locals.tokenOperations = result
+					res.locals.transfersCount = result.transfer
 					resolve()
 				}).catch(function(err){
 					resolve()
 				})
 			}));
 
+			// Get Transfers from token API
 			promises.push(new Promise(function(resolve, reject){
-				coreApi.getTransfersForToken(token, limit, offset).then(async function(result){
+				let page = 1;
+				if (res.locals.offset >= res.locals.transfersCount) {
+					page = 1;
+				} else {
+					page = Math.floor(res.locals.offset / res.locals.limit) + 1;
+				}
+				
+				coreApi.getTransfersForToken(token, res.locals.limit, page).then(async function(result){
 					res.locals.transfers = result;
 					resolve()
 				}).catch(function(err){
@@ -1294,25 +1468,64 @@ router.get("/token/:token", function(req, res, next) {
 				})
 			}));
 
+			// Get richlist from token api and process it to have more data
 			promises.push(new Promise(function(resolve, reject){
 				coreApi.getRichList(token).then(async function(result){
-					res.locals.richList = result;
+				for(var i = 0; i < result.length; i++){
+					let item = result[i]
+					const percentage = res.locals.totalSupplyUnformatted ? ((Number(item.amount) / Number(res.locals.totalSupplyUnformatted))) * 100 : BigInt(0);
+	
+	
+					const netAmount = res.locals.tokenInfo.decimal_places > 0
+					? `${item.amount}`.slice(0, - res.locals.tokenInfo.decimal_places) + "." + `${item.amount}`.slice(-res.locals.tokenInfo.decimal_places)
+					: item.amount;
+					item.percentage =  new Intl.NumberFormat('en-us', { maximumSignificantDigits: 2 }).format(
+						percentage,
+					  );
+					item.net_amount = netAmount
+				}
+ 					res.locals.richList = result;
 					resolve()
 				}).catch(function(err){
+					console.log(err)
 					resolve()
 				})
 			}));
 
+			// Get Token Object from SQLite
 			promises.push(new Promise(function(resolve, reject){
 				coreApi.getStatsForToken(token).then(async function(result){
-					res.locals.tokenStats = result;
+					res.locals.tokenObj = result;
 					resolve()
 				}).catch(function(err){
 					resolve()
 				})
 			}));
 
-			
+			// Get Token holders count
+			promises.push(new Promise(function(resolve, reject){
+				utils.fetchAuthories(token).then(async function(result){
+					if(result.length != 0) {
+						res.locals.authorityInfo = result[0]
+					} else {
+						res.locals.authorityInfo = null;
+					}
+					resolve()
+				}).catch(function(err){
+					debugLog(err)
+					resolve()
+				})
+			}));
+
+			// Get Token authorities
+			promises.push(new Promise(function(resolve, reject){
+				coreApi.getTokenHolders(token).then(async function(result){
+					res.locals.tokenHolders = result.total;
+					resolve()
+				}).catch(function(err){
+					resolve()
+				})
+			}));
 
 			Promise.all(promises.map(utils.reflectPromise)).then(function() {
 				res.render("token");
@@ -1324,6 +1537,7 @@ router.get("/token/:token", function(req, res, next) {
 			});
 		}
 	}).catch(function (err) {
+		console.log(err)
 		req.session.userMessage = "No results found for query: " + token;
 		res.redirect("/");
 	});
@@ -1367,6 +1581,7 @@ router.get("/address/:address", function(req, res, next) {
 	res.locals.tokens = new Set();
 	res.locals.tokenGenesisList = [];
 	res.locals.tokenData = [];
+	
 
 	res.locals.result = {};
 	try {
@@ -1614,6 +1829,7 @@ router.get("/address/:address", function(req, res, next) {
 				reject(err);
 			});
 		}));
+		
 
 		Promise.all(promises.map(utils.reflectPromise)).then(function() {
 			res.render("address");
@@ -1870,7 +2086,7 @@ router.get("/unconfirmed-tx", function(req, res, next) {
 		try {
 			const TxIds = txpoolDetails.transactions.map(elem => elem.txid)
 			res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
-		}catch (err){}
+		} catch (err){}
 		
 
 		res.render("unconfirmed-transactions");

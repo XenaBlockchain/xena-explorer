@@ -5,9 +5,9 @@ block headContent
 
 block content
 	if (true)
-		if (validateToken == false)
+		if (tokenStats.totalTokens == 0)
 			div.alert.alert-danger.mb-huge
-				h1.h6.font-weight-bold Invalid Token
+				h1.h6.font-weight-bold No Nexa Tokens Indexed
 				span.text-monospace.word-wrap 
 
 		else
@@ -23,7 +23,7 @@ block content
 						.card-body
 							.row
 								.col
-									h5.card-title.text-uppercase.text-muted.mb-0 Total Tokens
+									h5.card-title.text-uppercase.text-muted.mb-0 Tokens
 									- var totalTokensFormatted = utils.addThousandsSeparators(tokenStats.totalTokens)
 									span.h2.font-weight-bold.mb-0 #{totalTokensFormatted}
 								.col-auto
@@ -39,7 +39,7 @@ block content
 						.card-body
 							.row
 								.col
-									h5.card-title.text-uppercase.text-muted.mb-0 Total Transfers
+									h5.card-title.text-uppercase.text-muted.mb-0 Transfers
 									- var tokenTransfersFormatted = utils.addThousandsSeparators(tokenStats.totalTransfers)
 									span.h2.font-weight-bold.mb-0 #{tokenTransfersFormatted}
 								.col-auto
@@ -55,7 +55,7 @@ block content
 						.card-body
 							.row
 								.col
-									h5.card-title.text-uppercase.text-muted.mb-0 Total Holders
+									h5.card-title.text-uppercase.text-muted.mb-0 Holders
 									- var tokenHoldersFormatted = utils.addThousandsSeparators(tokenStats.totalHolders)
 									span.h2.font-weight-bold.mb-0 #{tokenHoldersFormatted}
 								.col-auto
@@ -86,12 +86,14 @@ block content
 
 			div.row.mt-3
 				div.col-md-12
-					div.card.shadow-sm.mb-3
+					div.card.shadow-sm.mb-3.table-hidden
 						div.card-body
-							div.table-responsive.table-hidden
+							div.table-responsive
 								table.table.table-striped.mb-0
 									thead 
 										tr
+											th.data-header.text-left
+												span.font-weight-bold Icon
 											th.data-header.text-left
 												span.font-weight-bold Name
 											th.data-header.text-left
@@ -104,61 +106,58 @@ block content
 												span.font-weight-bold Supply
 
 									tbody
-
-										
 										each token in tokens
 											tr
 												td.data-cell.text-monospace.text-left
-													span #{token.name} (#{token.ticker})
+													- var isTokenTrusted = utils.knownTokens().includes(token.group);
+													if(isTokenTrusted)
+														img.rounded(src="img/tokens/"+ token.group.substring(5) + ".png", alt="", width=24)
+												td.data-cell.text-monospace.text-left
+													if token.name && token.ticker
+														span #{token.name} (#{token.ticker})
+													else
+														span #{token.group}
 												td.data-cell.text-monospace.text-left.word-wrap
 													span
-														a(href=("/token/" + token.groupId)) #{token.groupId}
+														a(href=("/token/" + token.group)) #{token.group.substring(5)}
 												td.data-cell.text-monospace.text-left
-													span #{token.totalTransfers}
-														//- a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 53)}
+													span #{token.transfers}
 												td.data-cell.text-monospace.text-left
 													span #{token.holders}
-														//- a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 53)}
 												td.data-cell.text-monospace.text-left
-													span #{token.maxSupply}
-														//- a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
-												//- td.data-cell.text-monospace.text-right
-													span 
-														//- a(href=("/block/" + item.height)) #{item.height}
-							div.list-hidden
-								each token in tokens
-									.card(style='width: 100%;').mb-2
-										.card-body(style='background-color: #282d33 !important;')
-											h5.card-title
-												- var isTokenTrusted = utils.knownTokens().includes(token.groupId);
-												if(isTokenTrusted && token.documentInfo)
-													img.m-1.rounded(src=token.documentInfo.icon, alt="", width=24)
-												span #{token.name} 
-											
-											p.card-text
-												span
-													a(href=("/token/" + token.groupId)) #{token.groupId}
-										ul.list-group.list-group-flush
-											li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-												span Transfers
-												span #{token.totalTransfers}
-											li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-												span Holders
-												span #{token.holders}
-											li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-												span Max Supply
-												span #{token.maxSupply} (#{token.ticker})
+													span #{token.max_supply}
+					div.list-hidden
+						each token in tokens
+							.card(style='width: 100%;').mb-2
+								.card-body(style='background-color: #282d33 !important;')
+									h5.card-title
+										- var isTokenTrusted = utils.knownTokens().includes(token.group);
+										if(isTokenTrusted)
+											img.m-1.rounded(src="img/tokens/"+ token.group.substring(5) + ".png", alt="", width=24)
+										span #{token.name}
 									
-							if (tokenStats.totalTokens > limit)
-								- var pageNumber = offset / limit + 1;
-								- var pageCount = Math.floor(tokenStats.totalTokens / limit);
-								- if (pageCount * limit < tokenStats.totalTokens) {
-									- pageCount++;
-								- }
-								- var paginationUrlFunction = function(x) {
-									- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
-								- }
+									p.card-text
+										span
+											a(href=("/token/" + token.group)) #{utils.ellipsize(token.group, 66)}
+								ul.list-group.list-group-flush
+									li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+										span Transfers
+										span #{token.transfers}
+									li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+										span Holders
+										span #{token.holders}
+									li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
+										span Max Supply
+										span #{token.max_supply} (#{token.ticker})
+									
+					if (tokenStats.totalTokens > limit)
+						- var pageNumber = offset / limit + 1;
+						- var pageCount = Math.floor(tokenStats.totalTokens / limit);
+						- if (pageCount * limit < tokenStats.totalTokens) {
+							- pageCount++;
+						- }
+						- var paginationUrlFunction = function(x) {
+							- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+						- }
 
-								hr.mt-3
-
-								include includes/pagination.pug
+						include includes/pagination.pug

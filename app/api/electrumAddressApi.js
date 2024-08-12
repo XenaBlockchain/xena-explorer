@@ -9,11 +9,13 @@ import coreApi from './coreApi.js';
 import rpcApi from './rpcApi.js';
 import { ClusterOrder, ElectrumCluster, ElectrumTransport } from 'electrum-cash';
 import global from "../global.js";
+import db from '../../models/index.js';
 const debugLog = debug("nexexp:electrumx");
+import tokenQueue from '../queue.js';
 
 const coinConfig = coins[config.coin];
 
-const electrum = new ElectrumCluster('nexa-rpc-explorer', '1.4.3', 1, 3, ClusterOrder.PRIORITY, 30000);
+const electrum = new ElectrumCluster('nexa-rpc-explorer', '1.4.3', 1, 1, ClusterOrder.PRIORITY, 30000);
 
 var noConnectionsErrorText = "No ElectrumX connection available. This could mean that the connection was lost or that ElectrumX is processing transactions and therefore not accepting requests. This tool will try to reconnect. If you manage your own ElectrumX server you may want to check your ElectrumX logs.";
 
@@ -25,6 +27,7 @@ const handleNotifications = async function (data) {
 				
 		let txIds =  block.transactions.map(x => x.txid);
 		let tokens = new Set();
+		let NFTs = new Set();
 		const rawTxResult = await coreApi.getRawTransactionsWithInputs(txIds);
 
 		var handledTxids = [];
@@ -44,12 +47,10 @@ const handleNotifications = async function (data) {
 						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
 						
 						if(decodedAddress['type'] == 'GROUP') {
-							if (!tokens.has(vout.scriptPubKey.group)) {
-								tokens.add(vout.scriptPubKey.group);
-							}
-							
+							utils.parseGroupData(tokens, NFTs, decodedAddress, vout.scriptPubKey.group);
 						}
 					} catch (err) {
+						debugLog("vout electrum error", err)
 					}
 				}
 			});
@@ -62,22 +63,38 @@ const handleNotifications = async function (data) {
 						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
 						
 						if(decodedAddress['type'] == 'GROUP') {
-							if (!tokens.has(txInput.scriptPubKey.group)) {
-								tokens.add(txInput.scriptPubKey.group);
-							}
+							utils.parseGroupData(tokens, NFTs, decodedAddress, txInput.scriptPubKey.group);
 						}
 						
 					} catch (err) {
+						debugLog("vin electrum error", err)
 					}
 				}
 			});
 		});
 		tokens = [...tokens];
+		debugLog('tokens caught by electrum: ', tokens)
+		NFTs = [...NFTs]
+		debugLog('NFTS caught by electrum: ', NFTs)
 
 		tokens.forEach(async function(token){
-			debugLog("Updating Token in cache: ",token)
 			try {
-				await coreApi.addTokenToCache(token);
+				tokenQueue.createJob({token: token, isNFT:false})
+					.timeout(30000)
+					.retries(2)
+					.save()
+			} catch (err) {
+				debugLogError(err)
+			}
+		})
+
+		NFTs.forEach(async function(nft){
+			debugLog("Updating NFT in cache: ",nft)
+			try {
+				tokenQueue.createJob({token: nft, isNFT:true})
+				.timeout(30000)
+				.retries(2)
+				.save()
 			} catch (err) {
 				debugLogError(err)
 			}
@@ -86,6 +103,7 @@ const handleNotifications = async function (data) {
 }
 
 function connectToServers() {
+	debugLog('Connecting to Electrum...')
 	return new Promise(async function(resolve, reject) {
 		for (var i = 0; i < config.electrumXServers.length; i++) {
 			var { host, port, protocol } = config.electrumXServers[i];
@@ -107,6 +125,7 @@ function connectToServers() {
 			electrum.addServer(host, port, defaultProtocol);
 		}
 		await electrum.startup()
+		await electrum.ready()
 		debugLog(`Connected to ElectrumX`);
 		electrum.on('notification', handleNotifications);
 		resolve()
@@ -289,7 +308,7 @@ async function getTokenTransactionsForAddress(address) {
 	}
 }
 
-async function getTokenTransactions(token, sort, limit, offset) {
+async function getTokenTransactions(token) {
 	try {
 		const results = await executeElectrumRequest('token.transaction.get_history', token, null);
 		debugLog(`getTokenTransactions=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
@@ -303,6 +322,16 @@ async function getTokenGenesis(tokenID) {
 	try {
 		const results = await executeElectrumRequest('token.genesis.info', tokenID);
 		debugLog(`tokenGenesisInfo=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+		return results;
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function getTx(tx) {
+	try {
+		const results = await executeElectrumRequest('blockchain.transaction.get', tx,true);
+		debugLog(`getTx=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
 		return results;
 	} catch (error) {
 		throw error;
@@ -354,21 +383,22 @@ async function mergeBalances(balanceResults) {
 	// Combine confirmed and unconfirmed balances
 	for (const type of ['confirmed', 'unconfirmed']) {
 		for (const key of Object.keys(balanceResults[type])) {
-			// if(utils.hex2array(key).length > 32) {
-			// 	//is nft
-			// 	continue;
-			// }
 			let group = nexaaddr.encode('nexa', 'GROUP', utils.hex2array(key));
-			let scripthash = key;
-			let token = mergedBalances[group] || { scripthash: scripthash, groupId: group };
+			const dbToken = await db.Tokens.findOne({
+				where:{
+					group: group
+				}
+			})
 
-			// Include additional token information from getTokenGenesis
-			let genesisInfo = await coreApi.getTokenGenesis(group);
-			token.genesisInfo = genesisInfo;
+			let token = mergedBalances[group] || dbToken;
 
 			// Format confirmed and unconfirmed balances
 			let amountNotFormatted = balanceResults[type][key].toString();
-			token[type + 'BalanceFormatted'] = formatBalance(amountNotFormatted, genesisInfo.decimal_places);
+			if(!token.is_nft) {
+				token[type + 'BalanceFormatted'] = formatBalance(amountNotFormatted, token.genesis.decimal_places);
+			} else {
+				token[type + 'BalanceFormatted'] = amountNotFormatted;
+			}
 
 			token[type + 'Balance'] = balanceResults[type][key];
 
@@ -394,5 +424,6 @@ export default {
 	subscribeToBlockHeaders,
 	shutdown,
 	getTokenTransactionsForAddress,
-	getTokenNFTs
+	getTokenNFTs,
+	getTx
 };

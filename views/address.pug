@@ -195,19 +195,25 @@ block content
 							.list-group(style="max-height: 295px;overflow-y:scroll;height:295px;")
 								if(tokenData)
 									each token in tokenData
-										list-group-item.card-header
-											.d-flex.w-100.justify-content-between.row
-												col-md-6
-													img.m-1.rounded(src=token.tokenImageUrl, alt="", width=24)
-														
-													small
-														a(href=("/token/" + token.groupId)) #{token.genesisInfo.name} (#{token.genesisInfo.ticker})
-													//- small  #{token.groupId}
-												col-md-6
-													if (token.confirmedBalance >= 0)
-														p.mb-1 #{utils.addThousandsSeparators(token.confirmedBalance)} 
-													if(token.unconfirmedBalance > 0)
-														small Unconfirmed: #{utils.addThousandsSeparators(token.unconfirmedBalance)} 
+										if(token.confirmedBalance > 0)
+											list-group-item.card-header
+												.d-flex.w-100.justify-content-between.row
+													col-md-6
+														if(token.is_nft)
+															- var filepath = token.files.length > 0 ? utils.removePublicFromFile(token.files[0].path) : null
+															if(filepath)
+																img.m-1.rounded(src=filepath, alt="", width=24)
+															small
+																a(href=("/token/" + token.group)) #{token.name ? token.name : token.group}
+														else
+															img.m-1.rounded(src=token.tokenImageUrl, alt="", width=24)
+															small
+																a(href=("/token/" + token.group)) #{token.name} (#{token.genesis.ticker})
+													col-md-6
+														if (token.confirmedBalance >= 0)
+															p.mb-1 #{utils.addThousandsSeparators(token.confirmedBalance)} 
+														if(token.unconfirmedBalance > 0)
+															small Unconfirmed: #{utils.addThousandsSeparators(token.unconfirmedBalance)} 
 								else
 									list-group-item.card-header
 										.d-flex.w-100.justify-content-center.row
@@ -217,11 +223,10 @@ block content
 			ul.nav.nav-tabs
 				li.nav-item
 					a.nav-link.active(data-toggle="tab", href="#tab-transactions", role="tab") Transactions
-				//- li.nav-item
-				//- 	a.nav-link(data-toggle="tab", href="#tab-tokens", role="tab") Token Transfers
 				li.nav-item
 					a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
-
+				li.nav-item
+					a.nav-link(data-toggle="tab", href="#tab-script", role="tab") Script
 
 			div.tab-content
 				div.tab-pane.active(id="tab-transactions", role="tabpanel")
@@ -386,65 +391,6 @@ block content
 
 												include includes/pagination.pug
 
-
-				//- div.tab-pane(id="tab-tokens", role="tabpanel")
-				//- 	div.card.shadow-sm.mb-3
-				//- 		div.card-body
-				//- 			h4.h6.mb-0 Token Transfers
-				//- 			hr
-				//- 			div.table-responsive
-				//- 				table.table.table-striped.mb-0
-				//- 					//- thead
-				//- 					//- 	tr
-				//- 					//- 		th.data-header.text-left(colspan='5') Top 100 - Current Balance
-
-				//- 					tbody
-
-				//- 						tr
-				//- 							td.data-header.text-right
-				//- 								span.font-weight-bold Amount
-				//- 							td.data-header.text-left
-				//- 								span.font-weight-bold From
-				//- 							td.data-header.text-left
-				//- 								span.font-weight-bold To
-				//- 							td.data-header.text-left
-				//- 								span.font-weight-bold Tx Hash
-				//- 							td.data-header.text-right
-				//- 								span.font-weight-bold Block
-										
-				//- 						each item in transfers
-				//- 							tr
-				//- 								td.data-cell.text-monospace.text-right
-				//- 									span #{item.amount}
-				//- 								td.data-cell.text-monospace.text-left
-				//- 									span 
-				//- 										a(href=("/address/" + item.from)) #{utils.ellipsize(item.from, 53)}
-				//- 								td.data-cell.text-monospace.text-left
-				//- 									span
-				//- 										a(href=("/address/" + item.to)) #{utils.ellipsize(item.to, 53)}
-				//- 								td.data-cell.text-monospace.text-left
-				//- 									span
-				//- 										a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
-				//- 								td.data-cell.text-monospace.text-right
-				//- 									span 
-				//- 										a(href=("/block/" + item.height)) #{item.height}
-
-				//- 			if (transfersCount > limit)
-				//- 				- var pageNumber = offset / limit + 1;
-				//- 				- var pageCount = Math.floor(transfersCount / limit);
-				//- 				- if (pageCount * limit < transfersCount) {
-				//- 					- pageCount++;
-				//- 				- }
-				//- 				- var paginationUrlFunction = function(x) {
-				//- 					- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
-				//- 				- }
-
-				//- 				hr.mt-3
-
-				//- 				include includes/pagination.pug
-
-
-
 				div.tab-pane(id="tab-json", role="tabpanel")
 					div.card.shadow-sm.mb-3
 						div.card-body
@@ -464,6 +410,15 @@ block content
 								div.highlight
 									pre
 										code.json.bg-light #{JSON.stringify(addressDetails, null, 4)}
+
+				//- div.tab-pane(id="tab-script", role="tabpanel")
+				//- 	div.card-body.tab-card.mb-3
+				//- 		h5.mb-3.text-bold Script
+				//- 		if (scriptAddress != null)
+				//- 			h5.mb-3.text-bold Nexa Script
+				//- 			div.highlight
+				//- 				pre
+				//- 					code.json.bg-light(data-lang="json") #{JSON.stringify(scriptAddress, utils.bigIntToRawJSON, 4)}
 			div(style="margin-bottom: 30px;")
 				include ./includes/qr-code-modal.pug
 

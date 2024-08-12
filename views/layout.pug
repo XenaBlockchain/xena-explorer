@@ -10,15 +10,11 @@ html(lang="en")
 		meta(name="csrf-token", content=csrfToken)
 		meta(name="viewport", content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, shrink-to-fit=no")
 
-		link(rel="stylesheet", href="/css/fonts.css", integrity="sha384-XOmmu8j3C2MFUXRVGg8VWYNwlhEkSNb0rW/4e7bi3F56S6PejEmBUQDGZofQyjbL")
+		link(rel="stylesheet", href="/css/fonts.css")
 		link(rel="stylesheet", href="/css/highlight.min.css", integrity="sha384-zhIsEafzyQWHSoMCQ4BfT8ZlRXQyIFwAHAJn32PNdsb8n6tVysGZSLpEEIvCskw4")
 
-
-		if (session.uiTheme && session.uiTheme == "dark")
-			link(rel="stylesheet", href="/css/bootstrap-dark.min.css", integrity="sha384-yHrdw+uFPe64ykHEYlYL2lmT0s+veKi1+lmxNqB3jVMOl9iX0h9xDLxcgtFtiV6M")
-			link(rel="stylesheet", href="/css/dark-touchups.css")
-		else
-			link(rel="stylesheet", href="/css/bootstrap.min.css", integrity="sha384-QO/VzYasHIIVEtFdqGXHU2wxSK0pjVxX4mrM68IQhYpi0vTCM0ZIuV/KQbPZMfXg")
+		link(rel="stylesheet", href="/css/bootstrap-dark.min.css", integrity="sha384-yHrdw+uFPe64ykHEYlYL2lmT0s+veKi1+lmxNqB3jVMOl9iX0h9xDLxcgtFtiV6M")
+		link(rel="stylesheet", href="/css/dark-touchups.css")
 
 		link(rel='stylesheet', href='/css/styling.css')
 
@@ -56,7 +52,7 @@ html(lang="en")
 				form.form-inline.mt-1.search-mobile-hidden(method="post", action="/search", style="width:100%;")
 					input(type="hidden", name="_csrf", value=csrfToken)
 					div(class="input-group input-group-sm", style="width:100% !important;")
-						input(type="text", class="form-control form-control-sm", name="query", placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;")
+						input(type="text", class="form-control form-control-sm query", name="query", autocomplete="off" data-url="/api/search" placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;")
 						div(class="input-group-append")
 							button(type="submit", class="btn btn-primary")
 								span Search
@@ -98,7 +94,7 @@ html(lang="en")
 						form.form-inline.mr-3.search-main-hidden(method="post", action="/search")
 							input(type="hidden", name="_csrf", value=csrfToken)
 							div(class="input-group input-group-sm")
-								input(type="text", class="form-control form-control-sm", name="query", placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;width:350px;")
+								input(type="text", class="form-control form-control-sm query", name="query", autocomplete="off" data-url="/api/search" placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;width:350px;")
 								div(class="input-group-append")
 									button(type="submit", class="btn primary-button-gradient")
 										span Search
@@ -124,24 +120,6 @@ html(lang="en")
 														if (currencyFormatType == valueName)
 															i(class="fas fa-check")
 													span #{item.name}
-
-									//- span(class="dropdown-header") Theme
-									//- a(class="dropdown-item", href="/changeSetting?name=uiTheme&value=light")
-									//- 	if (session.uiTheme == "light" || session.uiTheme == "")
-									//- 		i(class="fas fa-check")
-									//- 	span Light
-									//- a(class="dropdown-item", href="/changeSetting?name=uiTheme&value=dark")
-									//- 	if (session.uiTheme == "dark")
-									//- 		i(class="fas fa-check")
-									//- 	span Dark
-
-		if (host && port && !homepage && config.site.header.showToolsSubheader)
-			div(id="sub-menu", class="container mb-2 mt-5 pt-2 d-lg-block d-none border-top", style="")
-				ul(class="nav")
-					each item, index in config.siteTools
-						li(class="nav-item")
-							a(href=item.url, class="nav-link text-white text-bold px-2 text-decoration-underline")
-								span #{item.name}
 
 		- var bodyBgColor = "#ffffff;";
 		if (session.uiTheme && session.uiTheme == "dark")
@@ -231,7 +209,7 @@ html(lang="en")
 		script(src="/js/popper.min.js", integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo")
 		script(src="/js/bootstrap.min.js", integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6")
 		script(defer, src="/js/fontawesome.min.js", integrity="sha384-eVEQC9zshBn0rFj4+TU78eNA19HMNigMviK/PU/FFjLXqa/GKPgX58rvt5Z8PLs7")
-
+		script(src="https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js")
 		script(src="/js/highlight.min.js", integrity="sha384-xLrpH5gNLD6HMLgeDH1/p4FXigQ8T9mgNm+EKtCSXL0OJ5i1bnSi57dnwFuUMM9/")
 
 		script(src="/js/site.js", integrity="sha384-v/91ekPcT7McKahGike6yPpHuTSvYsPN6VMoXdM8VB1uTkCXqhwvGHUs1uxBodfK")
@@ -241,6 +219,19 @@ html(lang="en")
 				$('.toast').toast('show')
 				$('[data-toggle="tooltip"]').tooltip();
 				$('[data-toggle="popover"]').popover({html:true, container:"body"});
+
+				$('.query').autoComplete({
+					events: {
+						select: function (qry, callback) {
+							console.log(qry)
+							console.log(callback)
+						}
+					}
+				});
+
+				$('.query').on('autocomplete.select', function (evt, item) {
+					window.location.href = item.value
+				});
 			});
 
 			hljs.initHighlightingOnLoad();
