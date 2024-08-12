@@ -7,6 +7,7 @@ import credentials from './credentials.js';
 var currentCoin = process.env.NEXEXP_COIN || "NEX";
 var richListPath = process.env.NEXEXP_RICHLIST_PATH || "/tmp/rich_list.csv";
 var utxoPath = process.env.NEXEXP_UTXO_PATH || "/tmp/utxo.csv";
+var tokenApiPath = process.env.NEXEXP_TOKEN_API || "https://tokenapi.otoplo.com";
 
 var rpcCred = credentials.rpc;
 
@@ -41,7 +42,7 @@ for (var i = 0; i < corsAllowedServersStrings.length; i++) {
   try {
     url.parse(corsAllowedServersStrings[i]);
     corsAllowedServers.push(corsAllowedServersStrings[i]);
-  }catch (err) {
+  } catch (err) {
     console.log(err)
   }
 }
@@ -60,6 +61,7 @@ for (var i = 0; i < corsAllowedServersStrings.length; i++) {
 
 var siteToolsJSON = [
   { "name": "Token Tracker", "url": "/tokens", "desc": "Token Tracker.", "fontawesome": "fas fa-money-bill green-300" },
+  { "name": "NFT Dashboard", "url": "/nfts", "desc": "NFT Dashboard.", "fontawesome": "fas fa-image green-300" },
   { "name": "Node Status", "url": "/node-status", "desc": "Summary of this node: version, network, uptime, etc.", "fontawesome": "fas fa-broadcast-tower green-300" },
   { "name": "Peers", "url": "/peers", "desc": "Detailed info about the peers connected to this node.", "fontawesome": "fas fa-sitemap green-300" },
   { "name": "Browse Blocks", "url": "/blocks", "desc": "Browse all blocks in the blockchain.", "fontawesome": "fas fa-cubes green-300" },
@@ -180,6 +182,7 @@ export default {
   electrumXServers:electrumXServers,
 
   corsAllowedServers: corsAllowedServers,
+  tokenApi: tokenApiPath,
 
   redisUrl:process.env.NEXEXP_REDIS_URL,
 
@@ -189,7 +192,7 @@ export default {
     },
     blockTxPageSize:20,
     addressTxPageSize:10,
-    tokenTransferPageSize:100,
+    tokenTransferPageSize:20,
     txMaxInput:15,
     browseBlocksPageSize:50,
     addressPage:{

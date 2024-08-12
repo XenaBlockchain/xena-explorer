@@ -1,0 +1,177 @@
+ul.nav.nav-tabs.mt-5
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#token-transfers", role="tab", class=(filterBy === "" ? "active" : undefined)) Series
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#token-marketplace", role="tab") Marketplaces
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-market", role="tab") Markets
+    li.nav-item
+        a.nav-link.text-bold(class=(filterBy === "new" ? "active" : undefined), data-toggle="tab", href="#new-nfts", role="tab") New
+    li.nav-item
+        a.nav-link.text-bold(class=(filterBy === "all" ? "active" : undefined), data-toggle="tab", href="#all-nfts", role="tab") All
+
+div.tab-content
+    div.tab-pane(id="token-transfers", role="tabpanel", class=(filterBy === "" ? "active" : undefined))
+        div.card-body.tab-card.mb-3.table-hidden
+            div.table-responsive
+                table.table.table-striped.mb-0.table-hidden
+                    thead 
+                        tr
+                            th.data-header.text-left
+                                span.font-weight-bold
+                            th.data-header.text-left
+                                span.font-weight-bold Series
+                            th.data-header.text-left
+                                span.font-weight-bold Author
+                            th.data-header.text-left
+                                span.font-weight-bold Items
+                            th.data-header.text-left
+                                span.font-weight-bold Transfers
+
+                    tbody
+                        if(tokens && tokens.length > 0)
+                                each item in tokens
+                                    tr
+                                        td.data-cell.text-monospace.text-left
+                                            span.d-flex.justify-content-start
+                                                - var filepath = item.cover_image != null ? utils.removePublicFromFile(JSON.parse(item.cover_image).path) : null
+                                                if (filepath)
+                                                    case utils.getFileType(JSON.parse(item.cover_image).ext)
+                                                        when "audio"
+                                                            a(href="/series/"+item.identifier)
+                                                                audio.rounded.object-fit-fill(controls='yes', muted)
+                                                                    source(src=filepath, type=item.cover_image.mime)
+                                                                    | Your browser does not support the audio element.
+                                                        when "video"
+                                                            a(href="/series/"+item.identifier)
+                                                                video.rounded.object-fit-fill(height='35', width='35' autoplay='yes', loop='true' muted)
+                                                                    source(src=filepath, type=item.cover_image.mime)
+                                                        default
+                                                            a(href="/series/"+item.identifier)
+                                                                img.rounded(src=filepath, alt="", width=35, height=35)
+                                        td.data-cell.p-3.text-monospace.text-left
+                                            span
+                                                - var url = encodeURIComponent(item.identifier)
+                                                a(href=("/series/" + url)) #{item.name}
+                                        td.data-cell.p-3.text-monospace.text-left
+                                            span #{item.author}
+                                        td.data-cell.p-3.text-monospace.text-left
+                                            span #{item.tokenCount}
+                                        td.data-cell.p-3.text-monospace.text-left
+                                            span #{item.tokenTransfers}
+                        else 
+                            tr
+                                td(colspan="5").data-cell.text-monospace.text-center
+                                    span No Data Available
+        if(tokens && tokens.length > 0)
+            div.list-hidden
+                each item in tokens
+                    .card(style='width: 100%;').mb-2
+                        .card-body(style='background-color: #282d33 !important;')
+                            h5.card-title.text-center
+                                - var filepath = item.cover_image != null ? utils.removePublicFromFile(JSON.parse(item.cover_image).path) : null
+                                if (filepath != null)
+                                    case utils.getFileType(JSON.parse(item.cover_image).ext)
+                                        when "audio"
+                                            a(href="/series/"+item.identifier)
+                                                audio.rounded.object-fit-fill(controls='yes' muted)
+                                                    source(src=filepath, type=item.cover_image.mime)
+                                                    | Your browser does not support the audio element.
+                                        when "video"
+                                            a(href="/series/"+item.identifier)
+                                                video.rounded.object-fit-fill(height='50', width='50' autoplay='yes', loop='true' muted)
+                                                    source(src=filepath, type=item.cover_image.mime)
+                                        default
+                                            a(href="/series/"+item.identifier)
+                                                img.rounded(src=filepath, alt="", width=50, height=50)
+                        ul.list-group.list-group-flush
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Series
+                                span.word-wrap.ml-1
+                                    a(href=("/series/" + item.identifier)) #{item.name}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Author
+                                span.word-wrap.ml-1 #{item.author}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Items
+                                span.word-wrap.ml-1 #{item.tokenCount}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Transfers
+                                span.word-wrap.ml-1 #{item.tokenTransfers}
+
+        if (collectionCount > limit)
+            - var localLimit = limit 
+            - var localOffset = offset 
+            if(filterBy)
+                - localOffset = 0
+                - localLimit = 24
+            - var pageNumber = localOffset / localLimit + 1;
+            - var pageCount = Math.floor(collectionCount / localLimit);
+            - if (pageCount * localLimit < collectionCount) {
+                - pageCount++;
+            - }
+            - var paginationUrlFunction = function(x) {
+                - return paginationBaseUrl + "?limit=" + limit + "&offset=" + ((x - 1) * limit);
+            - }
+
+            include ./pagination.pug
+
+
+    div.tab-pane(id="token-marketplace", role="tabpanel")
+        div.card-body.tab-card.mb-3
+            div.table-responsive
+                table.table.table-striped.mb-0
+                    tr
+                        td(colspan="6").data-cell.text-monospace.text-center
+                            span No Data Available
+
+    div.tab-pane(id="tab-market", role="tabpanel")
+        div.card-body.tab-card.mb-3
+            div.table-responsive
+                table.table.table-striped.mb-0
+                    tr
+                        td(colspan="6").data-cell.text-monospace.text-center
+                            span No Data Available
+
+    div.tab-pane(id="new-nfts", role="tabpanel", class=(filterBy === "new" ? "active" : undefined))
+        - var tokens = newNFTs;
+        - var tokenCount = totalNFTs
+        - var paginationBaseUrl = paginationNewBaseUrl;
+        include nft-list.pug
+        if (tokenCount > limit)
+            - var localLimit = limit 
+            - var localOffset = offset 
+            if(filterBy != "new")
+                - localOffset = 0
+                - localLimit = 24
+            - var pageNumber = localOffset / localLimit + 1;
+            - var pageCount = Math.floor(tokenCount / localLimit);
+            - if (pageCount * localLimit < tokenCount) {
+                - pageCount++;
+            - }
+            - var paginationUrlFunction = function(x) {
+                - return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+            - }
+
+            include ./pagination.pug
+    div.tab-pane(id="all-nfts", role="tabpanel", class=(filterBy === "all" ? "active" : undefined))
+        - var tokens = allNFTs;
+        - var tokenCount = totalNFTs
+        - var paginationBaseUrl = paginationAllBaseUrl;
+        include nft-list.pug
+        if (tokenCount > limit)
+            - var localLimit = limit 
+            - var localOffset = offset 
+            if(filterBy != "all")
+                - localOffset = 0
+                - localLimit = 24
+            - var pageNumber = localOffset / localLimit + 1;
+            - var pageCount = Math.floor(tokenCount / localLimit);
+            - if (pageCount * localLimit < tokenCount) {
+                - pageCount++;
+            - }
+            - var paginationUrlFunction = function(x) {
+                - return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+            - }
+
+            include ./pagination.pug

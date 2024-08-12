@@ -1,0 +1,354 @@
+- var isTokenTrusted = utils.knownTokens().includes(tokenObj.group);
+
+if(isTokenTrusted)
+    div.d-flex.justify-content-start
+        img.rounded(src=tokenObj.document_info.icon, alt="", width=100)
+        h1.h3.word-wrap.mt-4.ml-1.text-bold(style="color:gray;") #{tokenObj.name} (#{tokenObj.ticker})
+else
+    div.d-flex.justify-content-start
+        h1.h3.word-wrap.mt-4.text-bold Token #{tokenObj.name ? tokenObj.name : tokenObj.group}
+
+div.row.mt-3
+    div.col-12.col-xl-4
+        div.card.stats-card.mb-3
+            div.card-header
+                div.row.mb-10
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            h3.h6.mb-0.text-bold Overview
+                            if (config.addressApi)
+                                small.text-muted.border-dotted.ml-2(title=`Some details for this address were queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
+                
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Price
+                            span.text-monospace.text-truncate N/A
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Total Supply
+                            span.text-monospace.text-truncate #{totalSupply} #{tokenObj.ticker}
+                
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Circulating Supply
+                            span.text-monospace.text-truncate #{circulatingSupply} #{tokenObj.ticker}
+                
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Can increase supply of #{tokenObj.ticker} tokens ?
+                            if authorityInfo && authorityInfo.flags.includes('MINT')
+                                span.badge.badge-info.mx-1.p-1 Yes
+                            else
+                                span.badge.badge-danger.mx-1.p-1 No
+                
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Can burn / decrease supply of #{tokenObj.ticker} tokens ?
+                            if authorityInfo && authorityInfo.flags.includes('MELT')
+                                span.badge.badge-info.mx-1.p-1 Yes
+                            else
+                                span.badge.badge-danger.mx-1.p-1 No
+                        
+
+    div.col-12.col-xl-4
+        div.card.stats-card.mb-3
+            div.card-header
+                h3.h6.mb-0.text-bold Basic Info
+
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Group
+                            span.text-monospace.word-wrap.ml-1
+                                a(href=("/token/" + tokenObj.group)) #{utils.ellipsize(tokenObj.group, 40)}
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Genesis Tx
+                            span.text-monospace.word-wrap.ml-1
+                                a(href=("/tx/" + tokenObj.genesis.txid)) #{utils.ellipsize(tokenObj.genesis.txid, 35)}
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Genesis
+                            span.text-monospace(class=sumTableValueClass)
+                                - var timestampHuman = getrawtransaction.time;
+                                    include ./timestamp-human.pug
+                                    small.ml-1 utc
+
+                                - var timeAgoTime = getrawtransaction.time;
+                                span.text-muted.ml-2 (
+                                    include ./time-ago-text.pug
+                                    span ago)
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Decimals
+                            span.text-monospace #{tokenObj.genesis.decimal_places}
+                div.row.mt-3
+                    div.col-md-12
+                        div.row
+                                div.col-md-3 Links
+                                //- div.col-md-9.text-monospace.text-right
+                                //- 	span
+                                //- 		a(href=("#")) CoinGecko 
+                                //- 	span
+                                //- 		a(href=("#")) Reddit
+                                //- 	span 
+                                //- 		a(href=("#")) Twitter			
+    div.col-12.col-xl-4
+        div.card.stats-card.mb-3
+            div.card-header
+                h3.h6.mb-0.text-bold More Information
+
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Holders
+                            span.text-monospace #{tokenHolders}
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Total Transfer Count
+                            span.text-monospace #{tokenOperations.transfer}
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Transfers (24h)
+                            span.text-monospace  #{tokenOperations.transfer_24}
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Trading Volume (24h)
+                            span.text-monospace 0
+                div.row.mt-3
+                    div.col-md-12
+                        div.d-flex.justify-content-between
+                            span Circulating Market Cap
+                            span.text-monospace 0
+                        
+
+                    
+ul.nav.nav-tabs
+    li.nav-item
+        a.nav-link.text-bold.active(data-toggle="tab", href="#token-transfers", role="tab") Transfers
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#token-holders", role="tab") Richlist
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-market", role="tab") Markets
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-genesis", role="tab") Genesis & Document
+    li.nav-item
+        a.nav-link.text-bold(data-toggle="tab", href="#tab-analysis", role="tab") Analysis
+
+div.tab-content
+    div.tab-pane.active(id="token-transfers", role="tabpanel")
+        div.card-body.tab-card.mb-3.table-hidden
+            div.table-responsive
+                table.table.table-striped.mb-0.table-hidden
+                    if(transfers && transfers.length > 0)
+                        thead 
+                            tr
+                                th.data-header.text-right
+                                    span.font-weight-bold Type
+                                th.data-header.text-left
+                                    span.font-weight-bold Tx Id
+                                th.data-header.text-left
+                                    span.font-weight-bold Tx Idem
+                                th.data-header.text-left
+                                    span.font-weight-bold Date / Time
+                                th.data-header.text-left
+                                    span.font-weight-bold Block
+                                th.data-header.text-right
+                                    span.font-weight-bold Actions
+
+                        tbody
+                            each item in transfers
+                                tr
+                                    td.data-cell.text-monospace.text-right
+                                        - var className = utils.getBadgeForType(item.type)
+                                        span.badge(class=`p-1 m-1 ${className}`) #{item.type}
+                                    td.data-cell.text-monospace.text-left
+                                        span 
+                                            a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
+                                    td.data-cell.text-monospace.text-left
+                                        span
+                                            a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 45)}
+                                    td.data-cell.text-monospace.text-left
+                                        - var timestampHuman = moment.utc(item.date).unix()
+                                        include ./timestamp-human.pug
+                                        small.ml-1 utc
+                                        //- span #{moment.utc(new Date(item.date)).format('MMM D, Y, HH:MM')}
+                                    td.data-cell.text-monospace.text-right
+                                        span 
+                                            a(href=("/block/" + item.height)) #{item.height}
+                                    td.data-cell.text-monospace.text-right
+                                        span 
+                                            button.btn.btn-link.btn-sm(type='button' data-toggle='collapse' data-target='#collapseExample-'+ item.id aria-expanded='false' aria-controls='collapseExample-'+ item.id)
+                                                | View
+                                tr.collapse(id="collapseExample-"+ item.id)
+                                    td(colspan='6').data-cell
+                                        .card.card-body
+                                            .container
+                                                .row
+                                                    .col
+                                                        h5.text-bold.text-center Inputs
+                                                        each input in item.inputs
+                                                            .col.m-1.d-flex.justify-content-between
+                                                                a(href=("/address/" + input.address)) #{utils.ellipsize(input.address, 45)}
+                                                                span.badge.badge-success.p-1.m-1 #{input.groupQuantity} #{tokenObj.ticker}
+                                                    .col.d-flex.justify-content-center
+                                                        div.d-flex.flex-column.justify-content-center
+                                                            i(class="fas fa-arrow-right h4")
+                                                    .col.mr-2
+                                                        h5.text-bold.text-center Outputs
+                                                        each output in item.outputs
+                                                            .col.m-1.d-flex.justify-content-between
+                                                                a(href=("/address/" + output.address)) #{utils.ellipsize(output.address, 45)}
+                                                                span.text-right.badge.badge-danger.p-1.m-1 #{output.groupQuantity} #{tokenObj.ticker}
+                    else 
+                        tr
+                            td(colspan="5").data-cell.text-monospace.text-center
+                                span No Data Available
+        if(transfers && transfers.length > 0)
+            div.list-hidden
+                each item in transfers
+                    .card(style='width: 100%;').mb-2
+                        .card-body(style='background-color: #282d33 !important;')
+                            h5.card-title.text-center
+                                span.word-wrap #{item.type}  
+                        ul.list-group.list-group-flush
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Tx Id
+                                span.word-wrap.ml-1
+                                    a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 35)}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Tx Idem
+                                span.word-wrap.ml-1
+                                    a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 35)}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Date
+                                span.word-wrap.ml-1 #{moment.utc(new Date(item.date)).format('MMM D, Y')}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Block
+                                span
+                                    a(href=("/block/" + item.height)) #{item.height}
+
+            if (transfersCount > limit)
+                - var pageNumber = offset / limit + 1;
+                - var pageCount = Math.floor(transfersCount / limit);
+                - if (pageCount * limit < transfersCount) {
+                    - pageCount++;
+                - }
+                - var paginationUrlFunction = function(x) {
+                    - return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+                - }
+
+                hr.mt-3
+
+                include ./pagination.pug
+
+
+    div.tab-pane(id="token-holders", role="tabpanel")
+        div.card-body.tab-card.mb-3.table-hidden
+            div.table-responsive
+                table.table.table-striped.mb-0.table-hidden
+                    if(richList && richList.length > 0)
+                        thead
+                            tr
+                                th.data-header.text-right
+                                    span.font-weight-bold Amount
+                                th.data-header.text-left
+                                    span.font-weight-bold Address
+                                //- th.data-header.text-left
+                                //-     span.font-weight-bold last TX
+                                //- th.data-header.text-left
+                                //-     span.font-weight-bold Last Block
+                                th.data-header.text-right
+                                    span.font-weight-bold %
+
+                        tbody       
+                            each item in richList
+                                tr
+                                    td.data-cell.text-monospace.text-right
+                                        span #{utils.addThousandsSeparators(item.net_amount)}  #{tokenObj.ticker}
+                                    td.data-cell.text-monospace.text-left
+                                        span
+                                            a(href=("/address/" + item.address)) #{item.address, 53}
+                                    //- td.data-cell.text-monospace.text-left
+                                        span
+                                            //- a(href=("/tx/" + item.last_transfer_tx_id)) #{item.last_transfer_tx_id}
+                                    //- td.data-cell.text-monospace.text-left
+                                        span 
+                                            //- a(href=("/block/" + item.last_transfer_height)) #{item.last_transfer_height}	
+                                    td.data-cell.text-monospace.text-right
+                                        span #{item.percentage} %
+                    else 
+                        tr
+                            td(colspan="6").data-cell.text-monospace.text-center
+                                span No Data Available
+        if(richList && richList.length > 0)
+            div.list-hidden
+                each item in richList
+                        .card(style='width: 100%;').mb-2
+                            .card-body(style='background-color: #282d33 !important;')
+                                h5.card-title.text-center
+                                    span #{utils.addThousandsSeparators(item.net_amount)}  #{tokenObj.ticker}
+                                
+                                ul.list-group.list-group-flush
+                                    li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                        span Address
+                                        span.word-wrap.ml-1
+                                            a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 35)}
+                                    li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                        span Percentage of token
+                                        span #{item.percentage} %
+
+
+    div.tab-pane(id="tab-market", role="tabpanel")
+        div.card-body.tab-card.mb-3
+            div.table-responsive
+                table.table.table-striped.mb-0
+                    tr
+                        td(colspan="6").data-cell.text-monospace.text-center
+                            span No Data Available
+
+    div.tab-pane(id="tab-genesis", role="tabpanel")
+        div.card-body.tab-card.mb-3
+            h5.mb-3.text-bold Token Genesis
+
+            div.highlight
+                pre
+                    code.json.bg-light.mb-5(data-lang="json") #{JSON.stringify(tokenObj.genesis, utils.bigIntToRawJSON, 4)}
+            if (tokenObj.documentInfo != null)
+                h5.mb-3.text-bold Token Document
+                div.highlight
+                    pre
+                        code.json.bg-light(data-lang="json") #{JSON.stringify(tokenObj.document_info, utils.bigIntToRawJSON, 4)}
+            if (script != null)
+                h5.mb-3.text-bold Token Script
+                div.highlight
+                    pre
+                        code.json.bg-light(data-lang="json") #{JSON.stringify(script, utils.bigIntToRawJSON, 4)}
+                div.highlight
+                    pre
+                        code.json.bg-light(data-lang="json") #{JSON.stringify(scriptAddress, utils.bigIntToRawJSON, 4)}
+
+    div.tab-pane(id="tab-analysis", role="tabpanel")
+        div.card-body.tab-card.mb-3
+            if(authorityInfo)
+                h5.mb-3.text-bold Authority Info
+                div.highlight
+                    pre
+                        code.json.bg-light.mb-5(data-lang="json") #{JSON.stringify(authorityInfo, utils.bigIntToRawJSON, 4)}
+            else            
+                div.table-responsive
+                    table.table.table-striped.mb-0
+                        tr
+                            td(colspan="6").data-cell.text-monospace.text-center
+                                span No Data Available

@@ -11,9 +11,11 @@ import coins from "../coins.js";
 import redisCache from "../redisCache.js";
 import Decimal from "decimal.js";
 import nexaaddr from 'nexaaddrjs'
-import axios from 'axios';
 import md5 from "md5";
-import NexCore from 'nexcore-lib'
+
+
+import db from '../../models/index.js'
+var Op = db.Sequelize.Op;
 
 // choose one of the below: RPC to a node, or mock data while testing
 import rpcApi from "./rpcApi.js";
@@ -27,7 +29,6 @@ global.tokenIcons = [];
 // this value should be incremented whenever data format changes, to avoid
 // pulling old-format data from a persistent cache
 var cacheKeyVersion = "v1";
-
 
 const ONE_SEC = 1000;
 const ONE_MIN = 60 * ONE_SEC;
@@ -1239,394 +1240,25 @@ function logCacheSizes() {
 	stream.end();
 }
 
-
-function loadAddressTokenTransactions(address, tokenObjs, pageOffset, pageLimit) {
-	return new Promise(function(resolve, reject) {
-		const transfers = [];
-		electrumAddressApi.getTokenTransactionsForAddress(address).then(async function(result){
-			var txids = []
-			var txToBlockHeight = []
-			result.transactions.forEach(function (transaction){
-				txids.push(transaction.tx_hash)
-				txToBlockHeight[transaction.tx_hash] = transaction.height;
-			})
-
-			const rawTxResult = await getRawTransactionsWithInputs(txids);
-
-			var addrGainsByTx = {};
-			var addrLossesByTx = {};
-
-			var handledTxids = [];
-
-			rawTxResult.transactions.forEach((tx) => {
-				const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
-			
-				if (handledTxids.includes(tx.txid)) {
-					return;
-				}
-			
-				handledTxids.push(tx.txid);
-			
-				tx.vout.forEach((vout) => {
-					if (vout.scriptPubKey && vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && vout.scriptPubKey.groupAuthority === 0 && vout.scriptPubKey.addresses && vout.scriptPubKey.addresses.includes(address)) {
-						addrGainsByTx[tx.txid] = addrGainsByTx[tx.txid] || [];
-						addrGainsByTx[tx.txid].push({
-							group: vout.scriptPubKey.group,
-							amount: BigInt(vout.scriptPubKey.groupQuantity),
-							address: vout.scriptPubKey.addresses[0]
-						});
-					}
-				});
-			
-				tx.vin.forEach((vin, j) => {
-					const txInput = txInputs[j];
-			
-					if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group && txInput.scriptPubKey.groupQuantity > 0 && txInput.scriptPubKey.groupAuthority === 0 && txInput.scriptPubKey.addresses && txInput.scriptPubKey.addresses.includes(address)) {
-						addrLossesByTx[tx.txid] = addrLossesByTx[tx.txid] || [];
-						if (txInput.scriptPubKey.addresses && txInput.scriptPubKey.addresses.length > 0) {
-							addrLossesByTx[tx.txid].push({
-								group: txInput.scriptPubKey.group,
-								amount: BigInt(txInput.scriptPubKey.groupQuantity),
-								address: txInput.scriptPubKey.addresses[0]
-							});
-						}
-					}
-				});
-			});
-
-			
-			
-			Object.keys(addrGainsByTx).forEach((key) => {
-				addrGainsByTx[key].forEach((gain) => {
-					if (addrLossesByTx[key] && addrLossesByTx[key].length > 0) {
-						const amountNotFormatted = gain.amount;
-						const tokenInfo = tokenObjs[gain.group].genesisInfo;
-						let amount = tokenInfo.decimal_places > 0
-							? `${amountNotFormatted}`.slice(0, -tokenInfo.decimal_places) + "." + `${amountNotFormatted}`.slice(-tokenInfo.decimal_places)
-							: amountNotFormatted;
-
-						amount = utils.addThousandsSeparators(amount)
-						
-						transfers.push({
-							txId: key,
-							from: addrLossesByTx[key][0].address,
-							to: gain.address,
-							amount: amount,
-							amountNotFormatted: amountNotFormatted,
-							height: txToBlockHeight[key]
-						});
-					}
-				});
-			});
-			
-
-			let sortedResults = transfers.sort(blockHeightCompare)
-			sortedResults = sortedResults.reverse()
-			const paginatedTransfers = sortedResults.slice(pageOffset, pageOffset + pageLimit);
-			resolve([paginatedTransfers, sortedResults.length]);
-		}).catch(function(err){
-			console.log(err)
-			utils.logError("nds9fc2eg621tf3", err, {address:address});
-			reject(err)
-			reject(err)
-		})
-	});
-}
-
-function addTokenToCache(token) {
-	return new Promise(function(resolve, reject) {
-		let tokenInfo = null;
-		const transfers = [];
-		let richList = [];
-		let holders = new Set();
-		let holdersCount = 0;
-		let totalSupply = BigInt(0);
-		let circulatingSupply = BigInt(0);
-		getTokenGenesis(token).then(async function(result){
-			var promises = [];
-			if(result) {
-				tokenInfo = result;
-
-				promises.push(new Promise(function(resolve, reject) {
-					getTokenMintage(token).then(function(result) {
-						totalSupply = BigInt(result.mintage_satoshis)
-						circulatingSupply = BigInt(result.mintage_satoshis)
-						resolve();
-					}).catch(function(err) {
-						console.log(err)
-						reject(err);
-					});
-				}));
-
-				promises.push(new Promise(function(resolve, reject){
-					electrumAddressApi.getTokenTransactions(token).then(async function(result){
-						var txids = []
-						var txToBlockHeight = []
-						for (const historyItem in result) {
-							txids.push(result[historyItem].tx_hash)
-							txToBlockHeight[result[historyItem].tx_hash] = result[historyItem].height;
-						}
-
-						const rawTxResult = await getRawTransactionsWithInputs(txids);
-
-						var addrGainsByTx = {};
-						var addrLossesByTx = {};
-
-						var handledTxids = [];
-
-						rawTxResult.transactions.forEach((tx) => {
-							const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
-						
-							if (handledTxids.includes(tx.txid)) {
-								return;
-							}
-						
-							handledTxids.push(tx.txid);
-						
-							tx.vout.forEach((vout) => {
-								if (vout.scriptPubKey && vout.scriptPubKey.group && vout.scriptPubKey.group == token && vout.scriptPubKey.groupQuantity > 0 && vout.scriptPubKey.groupAuthority === 0) {
-									addrGainsByTx[tx.txid] = addrGainsByTx[tx.txid] || [];
-									addrGainsByTx[tx.txid].push({
-										amount: BigInt(vout.scriptPubKey.groupQuantity),
-										address: vout.scriptPubKey.addresses[0]
-									});
-								}
-							});
-						
-							tx.vin.forEach((vin, j) => {
-								const txInput = txInputs[j];
-						
-								if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group && txInput.scriptPubKey.group == token && txInput.scriptPubKey.groupQuantity > 0 && txInput.scriptPubKey.groupAuthority === 0) {
-									addrLossesByTx[tx.txid] = addrLossesByTx[tx.txid] || [];
-									if (txInput.scriptPubKey.addresses && txInput.scriptPubKey.addresses.length > 0) {
-										addrLossesByTx[tx.txid].push({
-											amount: BigInt(txInput.scriptPubKey.groupQuantity),
-											address: txInput.scriptPubKey.addresses[0]
-										});
-									}
-								}
-							});
-						});
-
-						const addressBalances = {};
-						Object.entries(addrGainsByTx).forEach(([txid, gains]) => {
-							gains.forEach((gain) => {
-								addressBalances[gain.address] = (addressBalances[gain.address] || BigInt(0)) + gain.amount;
-							});
-						});
-						
-						// Calculate losses
-						Object.entries(addrLossesByTx).forEach(([txid, losses]) => {
-							losses.forEach((loss) => {
-								addressBalances[loss.address] = (addressBalances[loss.address] || BigInt(0)) - loss.amount;
-							});
-						});
-						
-						Object.keys(addrGainsByTx).forEach((key) => {
-							addrGainsByTx[key].forEach((gain) => {
-								const amountNotFormatted = gain.amount;
-								let amount = tokenInfo.decimal_places > 0
-									? `${amountNotFormatted}`.slice(0, -tokenInfo.decimal_places) + "." + `${amountNotFormatted}`.slice(-tokenInfo.decimal_places)
-									: amountNotFormatted;
-					
-								if (!holders.has(gain.address)) {
-									holders.add(gain.address);
-								}
-
-								amount = utils.addThousandsSeparators(amount)
-
-								let from = null;
-								if(addrLossesByTx[key] && addrLossesByTx[key].length > 0) {
-									from = addrLossesByTx[key][0].address
-									transfers.push({
-										txId: key,
-										from: from,
-										to: gain.address,
-										amount: amount,
-										amountNotFormatted: amountNotFormatted,
-										height: txToBlockHeight[key]
-									});
-								} else {
-									from = gain.address
-								}
-
-								
-							});
-						});
-						
-						holders = [...holders];
-						
-						Object.entries(addressBalances).forEach(([address, balance]) => {
-							if(balance > BigInt(0)) {
-								const holderGains = transfers.filter((transfer) => transfer.to === address);
-								const holderLosses = transfers.filter((transfer) => transfer.from === address);
-								const allTransfers = [...holderGains, ...holderLosses];
-
-								const lastTransfer = allTransfers.reduce((latest, transfer) => {
-								  return latest.height > transfer.height ? latest : transfer;
-								}, {});
-	
-								const percentage = totalSupply ? ((Number(balance) / Number(totalSupply))) * 100 : BigInt(0);
-	
-	
-								const netAmount = tokenInfo.decimal_places > 0
-								? `${balance}`.slice(0, -tokenInfo.decimal_places) + "." + `${balance}`.slice(-tokenInfo.decimal_places)
-								: balance;
-	
-								richList.push({
-									address: address,
-									netAmount: netAmount,
-									netAmountNotFormatted: balance,
-									percentage: Number(percentage.toString()).toFixed(2), // Increase precision for percentage
-									lastTransferHeight: lastTransfer.height,
-									lastTransferTxId: lastTransfer.txId
-								});
-								holdersCount++
-							}
-						});
-						
-						richList.sort((a, b) => b.percentage - a.percentage);
-						richList = richList.slice(0, 100);
-						resolve()
-					}).catch(function(err){
-						console.log(token)
-						resolve()
-					})
-				}));
-
-				Promise.all(promises).then(async function() {
-
-					if(tokenInfo.decimal_places > 0) {
-						totalSupply = String(totalSupply).substring(0, String(totalSupply).length - tokenInfo.decimal_places) + "." + String(totalSupply).substring(String(totalSupply).length - tokenInfo.decimal_places);
-					}
-
-					totalSupply = utils.addThousandsSeparators(totalSupply)
-					let documentInfo = null;
-
-					if(tokenInfo.document_url && utils.isValidHttpUrl(tokenInfo.document_url)) {
-						try {
-							let url = tokenInfo.document_url;
-							const response = await axios.get(url, { headers: { "User-Agent": "axios", "Content-Type": "application/json"}});
-							const contentType = response.headers["content-type"];
-							if(contentType.includes("application/json")) {
-								let data = response.data;
-
-								if(data.length > 0) {
-									if(typeof data[0] == 'object') {
-										documentInfo = {}
-										documentInfo['tokenObject'] = data[0];
-										documentInfo['signature'] = data[1];
-
-										if(documentInfo['tokenObject']['icon'] != null) {
-											if(utils.isValidHttpUrl(documentInfo['tokenObject']['icon'])) {
-												const linkParts = documentInfo['tokenObject']['icon'].split('.')
-												const extension  = linkParts[linkParts.length - 1];
-												let fileTypes = ['jpg', 'JPG', 'png', 'PNG', 'svg', 'SVG'];
-												if(fileTypes.includes(extension)){
-													documentInfo['icon'] = documentInfo['tokenObject']['icon'];
-												}
-											} else {
-												documentInfo['icon'] = new URL(tokenInfo.document_url).origin + documentInfo['tokenObject']['icon'];
-											}
-											tokenCache.set('tracked-tokens-icon-' + token, documentInfo['icon'], ONE_YR);
-										}
-									}
-								}
-							}
-						} catch (err) {
-							// utils.logError("Cannot load document URL for token: ", token);
-						}
-					}
-
-					let parent = null;
-					let groupId = nexaaddr.decode(token).hash;
-					if (groupId.length > 32) {
-						// this is asubgroup which contains the parent group id in the first 32 bytes
-						parent = nexaaddr.encode('nexa', 'GROUP', groupId.slice(0, 31));
-					}
-					
-					tokenCache.updateOrAppend('tracked-tokens', {
-						groupId: token,
-						parent: parent,
-						holders: holdersCount,
-						totalTransfers: transfers.length,
-						maxSupply: totalSupply,
-						name: tokenInfo.name,
-						ticker: tokenInfo.ticker,
-						documentInfo: documentInfo
-					}, 'groupId', token, ONE_YR);
-					tokenCache.set(token + '-transfers', transfers, ONE_YR);
-					tokenCache.set(token + '-richlist', richList, ONE_YR);
-					tokenCache.set(token + '-holders', holders, ONE_YR);
-					
-					debugLog(`Added Token To Cache: ${token}`)
-					resolve(transfers)
-				}).catch(function(err) {
-					reject(err)
-				});
-			}
-		}).catch(function (err) {
-			utils.logError("cannot-load-token", err, {token:token});
-			reject(err)
-		});
-	});
-}
-
-function blockHeightCompare(a, b) {
-	if (a.height < b.height) {
-	  return -1;
-	} else if (a.height > b.height) {
-	  return 1;
-	}
-	// a must be equal to b
-	return 0;
-}
-
-function compareFn(a, b) {
-	if (a.totalTransfers < b.totalTransfers) {
-	  return -1;
-	} else if (a.totalTransfers > b.totalTransfers) {
-	  return 1;
-	}
-	// a must be equal to b
-	return 0;
-}
-
-function getAllTrackedTokens() {
-	return new Promise(function(resolve, reject){
-		tokenCache.get('tracked-tokens').then(function(results) {
-			if(!results || results.length == 0) {
-				resolve([])
-			}
-			resolve(results);
-		}).catch(function(err) {
-			utils.logError("tracked-tokens-failure", err);
-		});
-	});
-}
-
 function getStatsForToken(token) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get('tracked-tokens').then(function(results) {
-			if(!results || results.length == 0) {
-				resolve([])
+		db.Tokens.findOne({
+			include:db.Series,
+			where: {
+				group: token
 			}
-			const foundIndex = results.findIndex((element) => element.groupId == token);
-			if (foundIndex !== -1) { 
-				resolve(results[foundIndex]);
-			} else {
-				resolve[{}]
-			}
-			
+		}).then(function(result){
+			resolve(result)
 		}).catch(function(err) {
-			utils.logError("tracked-tokens-failure", err);
+			utils.logError("getStatsForToken-failure", err);
+			resolve([])
 		});
 	});
 }
   
-function getTokenStats() {
+function getTokenStats(is_nft = false) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get('tracked-tokens').then(function(results) {
+		db.Tokens.findAll({where:{ is_nft: is_nft}}).then(function(results){
 			if(!results || results.length == 0) {
 				resolve({
 					totalTokens: 0,
@@ -1634,7 +1266,7 @@ function getTokenStats() {
 					totalHolders: 0
 				})
 			}
-			let totalTransfers = results.reduce((n, {totalTransfers}) => n + totalTransfers, 0)
+			let totalTransfers = results.reduce((n, {transfers}) => n + transfers, 0)
 			let totalHolders = results.reduce((n, {holders}) => n + holders, 0)
 			resolve({
 				totalTokens: results.length,
@@ -1642,61 +1274,255 @@ function getTokenStats() {
 				totalHolders: totalHolders
 			});
 		}).catch(function(err) {
-			utils.logError("tracked-tokens-failure", err);
+			utils.logError("getTokenStats-failure", err);
+			reject(err)
 		});
 	});
 }
-function getTokens(pageLimit = 20, pageoffset = 0, sortDir = 'desc'){
+
+function getNFTsSeries (pageLimit, pageoffset) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get('tracked-tokens').then(function(results) {
-			if(!results || results.length == 0) {
-				resolve([])
+		// Skip 5 instances and fetch the 5 after that
+		db.sequelizeInstance.query(`
+			SELECT Series.id, Series.name, Series.author, Series.identifier, Series.cover_image, COUNT(Tokens.id) as tokenCount, COUNT(Tokens.transfers) as tokenTransfers
+			FROM Series
+			LEFT JOIN Tokens ON Series.id = Tokens.series_id
+			GROUP BY Series.id
+			ORDER BY tokenCount DESC
+			LIMIT :limit OFFSET :offset
+		  `, {
+			type: db.Sequelize.QueryTypes.SELECT,
+			replacements: {
+			  limit: pageLimit,
+			  offset: pageoffset
 			}
-			let sortedResults = results.sort(compareFn)
-			sortedResults = sortedResults.reverse()
-			const paginatedTokens = sortedResults.slice(pageoffset, pageoffset + pageLimit);
-			resolve(paginatedTokens);
+		  }).then(data => {
+			resolve(data);
+		  }).catch(function(err) {
+			utils.logError("getNFTsSeries-failure", err);
+			reject(err)
+		  });
+	});
+}
+
+function getNFTsInSeries (pageLimit = 24, pageoffset = 0, sortDir = 'desc', series) {
+	return new Promise(async function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.findAll({
+			offset: pageoffset,
+			limit: pageLimit,
+			where: {
+				series_id: series.id
+			},
+			order: [
+				['genesis_datetime', sortDir]
+			]
+		}).then(function(results){
+			resolve(results);
 		}).catch(function(err) {
-			utils.logError("tracked-tokens-failure", err);
+			utils.logError("getNFTsInSeries-failure", err);
+			reject(err)
 		});
 	});
 }
 
-async function getTransfersForToken(token, transferLimit, transferOffset) {
-    let cacheResult = null;
-
-    try {
-        cacheResult = await tokenCache.get(token + '-transfers');
-        
-        if (cacheResult != null) {
-            // If token transfers exist in the cache, return paginated results
-            const paginatedTransfers = cacheResult.slice(transferOffset, transferOffset + transferLimit);
-            return paginatedTransfers;
-        } else {
-            const transfers = await addTokenToCache(token);
-            const paginatedTransfers = transfers.slice(transferOffset, transferOffset + transferLimit);
-            return paginatedTransfers;
-        }
-    } catch (err) {
-        utils.logError("token-cache-failure", err, { token: token });
-        throw err;
-    }
+function getNewNFTS (pageLimit = 24, pageoffset = 0) {
+	return new Promise(function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.findAll({
+			offset: pageoffset,
+			limit: pageLimit,
+			where: {
+				is_nft: true
+			},
+			order: [
+				['genesis_datetime', 'desc']
+			]
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getNewNFTS-failure", err);
+			reject(err)
+		});
+	});
 }
 
+function getAllNFTs (pageLimit = 24, pageoffset = 0) {
+	return new Promise(function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.findAll({
+			offset: pageoffset,
+			limit: pageLimit,
+			where: {
+				is_nft: true
+			},
+			order: [
+				['genesis_datetime', 'asc']
+			]
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getAllNFTs-failure", err);
+			reject(err)
+		});
+	});
+}
+
+function getTotalNFTs(){
+	return new Promise(function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.count({
+			where: {
+				is_nft: true
+			},
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getTotalNFTs-failure", err);
+			reject(err)
+		});
+	});
+}
+
+
+function getTotalNFTsInSeriesCount(series){
+	return new Promise(async function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.count({
+			where: {
+				series_id: series.id
+			},
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getTotalNFTs-failure", err);
+			reject(err)
+		});
+	});
+}
+
+function getNFTSeriesStats(series){
+	return new Promise(async function(resolve, reject){
+		db.Tokens.findAll({
+			where: {
+				is_nft: true,
+				series_id: series.id
+			},
+			attributes: {
+				include: [
+					[db.sequelizeInstance.fn('COUNT', db.sequelizeInstance.col('holders')), 'holders_count'],
+					[db.sequelizeInstance.fn('COUNT', db.sequelizeInstance.col('transfers')), 'transfers_count']
+				],
+			},
+			raw:true
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getTotalNFTsInSeries-failure", err);
+			reject(err)
+		});
+	});
+}
+
+function getTotalNFTsSeriesCount(){
+	return new Promise(function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Series.count({
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getTotalNFTsSeriesCount-failure", err);
+			reject(err)
+		});
+	});
+}
+
+// sum the holders of all NFT's
+function getNFTsHoldersCount () {
+	return new Promise(function(resolve, reject){
+		db.Tokens.sum('holders', {
+			where: {
+				is_nft: true
+			},
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getNFTsHoldersCount-failure", err);
+			reject(err)
+		});
+	});
+}
+
+// find an NFT 
+function getNFT(group) {
+	return new Promise(function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.findOne({
+			where: {
+				is_nft: true,
+				group: group
+			}
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("Getting NFT Failure", err);
+			resolve([])
+		});
+	});
+}
+
+// get all tokens and paginate
+function getTokens(pageLimit = 24, pageoffset = 0, sortDir = 'desc'){
+	return new Promise(function(resolve, reject){
+		// Skip 5 instances and fetch the 5 after that
+		db.Tokens.findAll({
+			offset: pageoffset,
+			limit: pageLimit,
+			where: {
+				is_nft: false
+			},
+			order: [
+				['transfers', sortDir]
+			]
+		}).then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getTokens() failure: ", err);
+			reject(err)
+		});
+	});
+}
+
+// get transfers for a token / nft
+async function getTransfersForToken(token, size, page) {
+	return new Promise(function(resolve, reject){
+		utils.getReversePaginatedData(token, size, page)
+		.then(function(results){
+			resolve(results);
+		}).catch(function(err) {
+			utils.logError("getTokens() failure: ", err);
+			reject(err)
+		});
+	});
+}
+
+// get richlist / holders for an token / nft
 function getRichList(token) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get(token + '-richlist').then(function(result) {
-			resolve(result);
+		utils.fetchRichlist(token)
+		.then(function(results){
+			resolve(results);
 		}).catch(function(err) {
-			utils.logError("token-richlist-failure", err, {token:token});
+			utils.logError("getTokens() failure: ", err);
 			reject(err)
 		});
 	});
 }
 
+// get holders count for a single token / nft
 function getTokenHolders(token) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get(token + '-holders').then(function(result) {
+		utils.fetchTokenHoldersCount(token).then(function(result) {
 			resolve(result);
 		}).catch(function(err) {
 			utils.logError("token-holders-failure", err, {token:token});
@@ -1705,25 +1531,16 @@ function getTokenHolders(token) {
 	});
 }
 
-function getTokenIcon(token) {
-	return new Promise(function(resolve, reject){
-		tokenCache.get('tracked-tokens-icon-' + token).then(function(result) {
-			resolve(result);
-		}).catch(function(err) {
-			utils.logError("token-holders-failure", err, {token:token});
-			reject(err)
-		});
-	});
-}
 
-function getTokenTotalTransfers(token) {
+
+function getTokenOperations(token) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get(token + '-transfers').then(function(result) {
-			resolve(result.length);
+		utils.fetchTokenOperations(token)
+		.then(function(results){
+			resolve(results);
 		}).catch(function(err) {
-			resolve(0)
-			utils.logError("token-holders-failure", err, {token:token});
-			// reject(err)
+			utils.logError("getTokens() failure: ", err);
+			reject(err)
 		});
 	});
 }
@@ -1784,14 +1601,18 @@ function getTransactionTokens(txids) {
 		});
 		tokens = [...tokens];
 
+		let tokenDbObj = await db.Tokens.findAll({
+			where: {
+			  group: {
+				[Op.in]: tokens
+			  }
+			}
+		})
+	
 		for (const token of tokens) {
-			let tokenObj = tokensWithData[token] || {groupId: token };
-
-			// Include additional token information from getTokenGenesis
-			let genesisInfo = await getTokenGenesis(token);
-			tokenObj.genesisInfo = genesisInfo;
-			tokensWithData[token] = tokenObj;
+			tokensWithData[token] = tokenDbObj.find((tk) => tk.group == token);
 		}
+
 		resolve(tokensWithData);
 	});
 }
@@ -1800,70 +1621,95 @@ function readKnownTokensIntoCache() {
 	return new Promise(async function(resolve, reject) {
 		if(!global.processingTokens) {
 			global.processingTokens = true;
-			debugLog("loading known tokens");
 			if(global.firstRun) {
 				try {
-					global.knownTokens = await rpcApi.dumpTokenset()
-					debugLog("used token RPC");
+					var groups = []
+					var subgroups = []
+
+					try {
+						let pageResults = 500;
+						let page = 1;
+						let limit = 500
+
+						do {
+							const data = await utils.fetchGroups(page, limit)
+							pageResults = data?.results
+							const dataParsed = data?.tokens.map(item => item.token);
+							groups = groups.concat(dataParsed)
+							page++;
+						} while(pageResults != 0)
+						console.log(groups.length)
+					} catch(err) {
+						debugLog(err)
+						debugLog("cant load NFT's from eletrum for token: ", + token);
+					}
+
+					for (const token of utils.knownNFTProviders()) {
+						try {
+							let pageResults = 500;
+							let page = 1;
+							let limit = 500
+
+							do {
+								const data = await utils.fetchSubGroups(token, page, limit)
+								pageResults = data?.results
+								const dataParsed = data?.tokens.map(item => item.token);
+								subgroups = subgroups.concat(dataParsed)
+								page++;
+							} while(pageResults != 0)
+							console.log(subgroups.length)
+						} catch(err) {
+							debugLog(err)
+							debugLog("cant load NFT's from token API for token: ", token);
+						}
+
+					}
+					global.knownTokens = groups;
+					global.knownNFTs = subgroups;
+
 				} catch(err) {
-					// global.knownTokens = utils.readUTXOSetForTokens();
-					// debugLog("Used UTXO set");
+					debugLog("Unable to load tokens or NFTS")
 				}
 	
 				global.firstRun = false;
 			}
 	
-			let indexedTokens = await getAllTrackedTokens();
+			var indexedTokens = await db.Tokens.findAll({
+				where: {
+				  is_nft: false,
+				},
+			});
+			var tokenGroups = indexedTokens.map(token => token.group);
+
+			var indexedNFTs = await db.Tokens.findAll({
+				where: {
+				  is_nft: true,
+				},
+			});
+			var NFTGroups = indexedNFTs.map(token => token.group);
 			
-			if(config.slowDeviceMode) {
-				for (const token of global.knownTokens) {
-					const foundIndex = indexedTokens.findIndex((element) => element.groupId == token);
-					if (foundIndex == -1) { 
-						try {
-							debugLog("Adding token to cache: ", token);
-							await addTokenToCache(token);
-						} catch (err) {
-							debugLog(err);
-						}
-					} else {
-						// debugLog("Token already cached: ", token);
-					}
-				}
-			} else {
-				const chunkSize = 5;
-				const totalTokens = global.knownTokens.length;
-	
-				for (let i = 0; i < totalTokens; i += chunkSize) {
-					const chunkTokens = global.knownTokens.slice(i, i + chunkSize);
-	
-					const promises = chunkTokens.map(async (token) => {
-						const foundIndex = indexedTokens.findIndex((element) => element.groupId == token);
-						if (foundIndex == -1) {
-							try {
-								debugLog("Adding token to cache: ", token);
-								await addTokenToCache(token);
-							} catch (err) {
-								debugLog(err);
-							}
-						}
-					});
-	
-					try {
-						// await Promise.all(promises);
-						await Promise.all(promises.map(utils.reflectPromise))
-					}
-					catch (err) {
-						debugLog('promise failed in token indexing.')
-						debugLog(err);
-						global.processingTokens = false;
-						reject(err)
-						break;
-					}
-				}
-			}
+			//work around for dump token set dumping anything
+			global.knownTokens = global.knownTokens.map(tk => {
+				return global.knownNFTs.includes(tk) ? null : tk;
+			}).filter(tk => tk !== null);
+
+			await utils.loadGroupDataSlow(global.knownTokens, tokenGroups);
+			await utils.loadGroupDataSlow(global.knownNFTs, NFTGroups, true);
+
 			global.processingTokens = false;
 		}
 		resolve()
+	});
+}
+
+function getTokenIcon(token) {
+	return new Promise(function(resolve, reject){
+		tokenCache.get('tracked-tokens-icon-' + token).then(function(result) {
+			resolve(result);
+		}).catch(function(err) {
+			utils.logError("token-holders-failure", err, {token:token});
+			reject(err)
+		});
 	});
 }
 
@@ -1918,14 +1764,22 @@ export default {
 	getTransfersForToken,
 	getRichList,
 	getTokenHolders,
-	getTokenTotalTransfers,
-	addTokenToCache,
+	getTokenOperations,
 	getTokens,
+	getNFT,
+	getNFTsSeries,
+	getNFTsInSeries,
+	getNFTsHoldersCount,
+	getTotalNFTs,
 	getTokenStats,
 	getStatsForToken,
-	loadAddressTokenTransactions,
 	readKnownTokensIntoCache,
 	getTokenGenesis,
 	getTransactionTokens,
-	getTokenIcon
+	getTokenIcon,
+	getTotalNFTsSeriesCount,
+	getNFTSeriesStats,
+	getNewNFTS,
+	getAllNFTs,
+	getTotalNFTsInSeriesCount
 };

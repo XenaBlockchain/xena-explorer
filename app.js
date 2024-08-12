@@ -41,6 +41,8 @@ import electrumAddressApi from './app/api/electrumAddressApi.js';
 import auth from './app/auth.js';
 import jayson from 'jayson'
 import global from './app/global.js';
+
+
 const coinConfig = coins[config.coin];
 
 import { readFileSync } from "fs";
@@ -54,6 +56,7 @@ const packageJson = JSON.parse(packageJsonContents);
 
 global.appVersion = packageJson.version
 
+
 // Assuming you are in a CommonJS module, not ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,6 +64,7 @@ const __dirname = path.dirname(__filename);
 import baseActionsRouter from './routes/baseActionsRouter.js';
 import apiActionsRouter from './routes/apiRouter.js';
 import snippetActionsRouter from './routes/snippetRouter.js';
+import tokenQueue from './app/queue.js';
 
 var app = express();
 
@@ -110,18 +114,19 @@ process.on("unhandledRejection", (reason, p) => {
 	debugLog("Unhandled Rejection at: Promise", p, "reason:", reason, "stack:", (reason != null ? reason.stack : "null"));
 });
 
-process.on('SIGINT', (signal) => {
-	process.exit(0);
+process.on('SIGINT', async (signal) => {
+	// process.exit(0);
 	appStatus = 0;
 	console.log('*** Signal received ****');
 	console.log('*** App will be closed in 3 sec ****');
-	setTimeout(shutdownProcedure, 3000);
+	await shutdownProcedure()
 })
 
 async function shutdownProcedure() {
-	await electrumAddressApi.shutdown()
+	await tokenQueue.destroy()
+	// await electrumAddressApi.shutdown()
 	console.log('*** App is now closing ***');
-	process.exit(0);
+	setTimeout(process.exit(0), 3000);
 }
 
 
@@ -434,7 +439,7 @@ app.onStartup = function() {
 	}
 }
 
-app.continueStartup = function() {
+app.continueStartup = async function() {
 	let rpcCred = config.credentials.rpc;
 	debugLog(`Connecting to RPC node at [${rpcCred.host}]:${rpcCred.port}`);
 
@@ -506,19 +511,9 @@ app.continueStartup = function() {
 
 		if (config.addressApi == "electrumx") {
 			if (config.electrumXServers && config.electrumXServers.length > 0) {
-				electrumAddressApi.connectToServers().then(function() {
+				await electrumAddressApi.connectToServers().then(async function() {
 					global.electrumAddressApi = electrumAddressApi;
-					electrumAddressApi.subscribeToBlockHeaders()
-					// electrumAddressApi.getTokenGenesis('zzzzzzzzzzzzzzzzzzzzzzzzzzz')
-					// .then(function(data){
-					// 	console.log('then :' + data)
-					// }).catch(function(error){
-					// 	console.log('error: ' + error)
-					// })
-					// electrumAddressApi.getTokenNFTs('nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f')
-					// .then(function(results){
-					// 	console.log(results)
-					// })
+					await electrumAddressApi.subscribeToBlockHeaders()
 				}).catch(function(err) {
 					utils.logError("31207ugf4e0fed", err, {electrumXServers:config.electrumXServers});
 				});
@@ -536,6 +531,7 @@ app.continueStartup = function() {
 	global.processingTokens = false;
 	global.knownTokens = [];
 	global.tokenImages = [];
+	global.knownNFTs = [];
 
 	// disable projects metadat a till we
 	// find a proper API for gitlab
@@ -547,14 +543,13 @@ app.continueStartup = function() {
 	utils.logMemoryUsage();
 	setInterval(utils.logMemoryUsage, 5000);
 
-	setInterval(function(){
-		try {
-			coreApi.readKnownTokensIntoCache()
-		} catch (err){
-			console.log(err)
-		}
-		
-	}, 30000)
+	try {
+		// as this is just adding to a queue we can await it now.
+		await coreApi.readKnownTokensIntoCache();
+	} catch (err){
+		debugLog(err)
+		global.processingTokens = false
+	}
 };
 
 app.use(function(req, res, next) {

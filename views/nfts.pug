@@ -1,0 +1,86 @@
+extends layout
+
+block headContent
+	+title(`NFT Dashboard`)
+
+block content
+	if (true)
+		if (!collectionCount || collectionCount.length == 0)
+			div.alert.alert-danger.mb-huge
+				h1.h6.font-weight-bold No tokens available
+				span.text-monospace.word-wrap 
+
+		else
+			div.mt-5.mt-sm-3
+			h3.text-bold Nexa NFTs
+				br
+				small.text-monospace.word-wrap
+
+
+			.row.mt-2
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Collections
+									- var totalTokensFormatted = utils.addThousandsSeparators(collectionCount)
+									span.h2.font-weight-bold.mb-0 #{totalTokensFormatted}
+								.col-auto
+									.icon.icon-shape.bg-danger.text-white.rounded-circle.shadow
+									i.fas.fa-chart-bar
+							p.mt-3.mb-0.text-muted.text-sm
+								//- span.text-success.mr-2
+								//- 	i.fa.fa-arrow-up
+								//- 	|  3.48%
+								//- span.text-nowrap Since last month
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Total NFTs
+									- var tokenTransfersFormatted = utils.addThousandsSeparators(totalNFTs)
+									span.h2.font-weight-bold.mb-0 #{tokenTransfersFormatted}
+								.col-auto
+									.icon.icon-shape.bg-warning.text-white.rounded-circle.shadow
+									i.fas.fa-chart-pie
+							p.mt-3.mb-0.text-muted.text-sm
+								//- span.text-danger.mr-2
+								//- 	i.fas.fa-arrow-down
+								//- 	|  3.48%
+								//- span.text-nowrap Since last week
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Holders
+									- var tokenHoldersFormatted = utils.addThousandsSeparators(holdersCount)
+									span.h2.font-weight-bold.mb-0 #{tokenHoldersFormatted}
+								.col-auto
+									.icon.icon-shape.bg-yellow.text-white.rounded-circle.shadow
+										i.fas.fa-users
+							p.mt-3.mb-0.text-muted.text-sm
+							//- 	span.text-warning.mr-2
+							//- 		i.fas.fa-arrow-down
+							//- 		|  1.10%
+							//- 	span.text-nowrap Since yesterday
+				.col-xl-3.col-lg-6
+					.card.card-stats.mb-4.mb-xl-0
+						.card-body
+							.row
+								.col
+									h5.card-title.text-uppercase.text-muted.mb-0 Last BlockHeight
+									- var blocks = utils.addThousandsSeparators(blockChainInfo.blocks)
+									span.h2.font-weight-bold.mb-0 #{blocks}
+								.col-auto
+									.icon.icon-shape.bg-info.text-white.rounded-circle.shadow
+									i.fas.fa-layer-group
+							p.mt-3.mb-0.text-muted.text-sm
+								//- span.text-success.mr-2
+								//- 	i.fas.fa-arrow-up
+								//- 	|  12%
+								//- span.text-nowrap Since last month		
+									
+			include ./includes/nft-home-partial.pug

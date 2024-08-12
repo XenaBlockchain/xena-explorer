@@ -11,6 +11,11 @@ import config from "./config.js";
 import coins from "./coins.js";
 import redisCache from "./redisCache.js";
 import global from "./global.js";
+import JSZip from "jszip";
+import coreApi from './api/coreApi.js';
+import tokenQueue from './queue.js';
+import db from '../models/index.js'
+var Op = db.Sequelize.Op;
 
 const debugLog = debug("nexexp:utils");
 const debugErrorLog = debug("nexexp:error");
@@ -1111,12 +1116,19 @@ function knownTokens() {
 			'nexa:tztnyazksgqpkphrx2m2fgxapllufqmuwp6k07xtlc8k4xcjpqqqq99lxywr8',
 			'nexa:tp0jg4h6gj5gcj5rrf9h6xclxstk52dr72yyttmrn6umrjyd6sqqqsy86tk9q',
 			'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f',
-			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9'
+			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9',
+			'nexa:tzjntmuvat5px5fp44auwpcjuqk4dkxz5wtysal4e3wmmut08yqqqy2ltpmwz'
 		];
 	} else {
 		//testnet
 	}
 	return tokens;
+}
+
+function knownNFTProviders() {
+	return [
+		'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f'
+	]
 }
 
 function isValidHttpUrl(string) {
@@ -1129,8 +1141,478 @@ function isValidHttpUrl(string) {
 	}
 
 	return url.protocol === "http:" || url.protocol === "https:";
-  }
-  
+}
+
+function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup){
+	const groupSizeInBytes = decodedAddress.hash.length;
+							
+	//Assume its a token
+	if (groupSizeInBytes == 32) {
+		if (!tokenSet.has(inOutGroup)) {
+			tokenSet.add(inOutGroup);
+		}
+	}
+	// Assume that this "Could" be an NFT
+	else if (groupSizeInBytes > 32 && groupSizeInBytes <= 64) {
+		var parentGroupInBytes = decodedAddress.hash.slice(0, 32);
+		var encodedGroup = nexaaddr.encode('nexa', 'GROUP', parentGroupInBytes)
+		if(knownNFTProviders().includes(encodedGroup)){
+			if(!NFTSet.has(inOutGroup)) {
+				NFTSet.add(inOutGroup)
+			}
+			// we have an NFT lets add it to the collection
+		} else {
+			console.log('we shouldnt be here with an NFT')
+		}
+	} else {
+		// Just handle this like a normal token for now.
+		if (!tokenSet.has(inOutGroup)) {
+			tokenSet.add(inOutGroup);
+		}
+	}
+}
+function isNullOrEmpty(arg) {
+    return !arg || arg.length === 0;
+}
+
+function collapseLicense(jsonString) {
+    // Regular expression to find the license field
+    const licenseRegex = /("license":\s*")([\s\S]*?)(")/;
+
+    // Function to replace newlines and escape quotes within the license field
+    const fixedJson = jsonString.replace(licenseRegex, function(match, p1, p2, p3) {
+        // Collapse the license field into one line and escape double quotes
+        const collapsedLicense = p2.replace(/\n/g, ' ').replace(/"/g, '\\"');
+        return p1 + collapsedLicense + p3;
+    });
+
+    return fixedJson;
+}
+
+
+async function loadNFTData(zipData) {
+	let files = [];
+	let data = {};
+
+	let zip = await JSZip.loadAsync(zipData, {base64: true});
+	
+	try {
+		let info = zip.file('info.json');
+		if (info) {
+			let infoJson = await info.async('string');
+			let myEscapedJSONString = collapseLicense(infoJson)
+			let infoObj = JSON.parse(myEscapedJSONString);
+
+			data = {
+				niftyVer: infoObj?.niftyVer ?? '', 
+				title: infoObj?.title ?? '',
+				series: infoObj?.series ?? '',
+				author: infoObj?.author ?? '',
+				keywords: infoObj?.keywords ?? '',
+				category: infoObj?.category ?? [],
+				appuri: infoObj?.appuri ?? '',
+				info: infoObj?.info ?? '',
+				data: infoObj?.data ?? {},
+				license: infoObj?.license ?? ''
+			};
+		}
+	} catch(err){
+		debugLog("cannot parse NFT json data", err)
+	}
+	
+
+	let pubImg = zip.file(/^public\./);
+	if (!isNullOrEmpty(pubImg)) {
+	  let img = await pubImg[0].async('base64');
+	  files.push({ title: 'Public', image: img });
+	}
+
+	let frontImg = zip.file(/^cardf\./);
+	if (!isNullOrEmpty(frontImg)) {
+	  let img = await frontImg[0].async('base64');
+	  files.push({ title: 'Front', image: img });
+	}
+
+	let backImg = zip.file(/^cardb\./);
+	if (!isNullOrEmpty(backImg)) {
+	  let img = await backImg[0].async('base64');
+	  files.push({ title: 'Back', image: img });
+	}
+
+	let ownImg = zip.file(/^owner\./);
+	if (!isNullOrEmpty(ownImg)) {
+	  let img = await ownImg[0].async('base64');
+	  files.push({ title: 'Owner', image: img });
+	}
+	return {
+		nftMetadata: data,
+		nftFiles: files
+	}
+}
+async function loadGroupDataSlow(knownTokens, indexedTokens, isNfts = false){
+	for (const token of knownTokens) {
+		const foundIndex = indexedTokens.findIndex((element) => element.groupId == token);
+		if (foundIndex == -1) { 
+			try {
+				tokenQueue.createJob({token: token, isNFT:isNfts})
+				.timeout(30000)
+				.retries(2)
+				.save()
+			} catch (err) {
+				debugLog(err);
+			}
+		}
+	}
+}
+
+// Fetch total number of token transfers from the API
+async function fetchTokenOperations(token) {
+    const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/operations`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    return data;
+}
+
+async function fetchTokenHoldersCount(token) {
+    const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/holders`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    return data;
+}
+
+// Fetch paginated data from the API using page and size
+async function fetchTransfers(token, page, size) {
+    const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/transactions?page=${page}&size=${size}`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+}
+
+async function fetchRichlist(token) {
+	const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/richlist?max=100`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+}
+
+
+async function fetchGroups(page = 1, size = 500, includeSubGroups = false) {
+	const response = await fetch(`${config.tokenApi}/api/v1/tokens/all?page=${page}&size=${size}&includeSubgroups=${includeSubGroups}`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+}
+
+async function fetchSubGroups(token, page = 1, size = 500) {
+	const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/subgroups?page=${page}&size=${size}`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+}
+
+async function fetchTopTokens(size = 20) {
+	const response = await fetch(`${config.tokenApi}/api/v1/tokens/top?max=${size}`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+}
+
+async function fetchAuthories(token) {
+	const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/authorities?includeSpent=false`);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+}
+
+// Calculate the forward page number based on total items, page size, and reverse page number
+function calculateForwardPage(totalItems, pageSize, reversePage) {
+	const totalTransfers = totalItems.transfer
+	const totalPages = Math.ceil(totalTransfers / pageSize);
+    const forwardPage = totalPages - reversePage + 1;
+    return Math.max(forwardPage, 1); 
+}
+
+// Main function to get reverse paginated data
+async function getReversePaginatedData(token, pageSize, reversePage) {
+    try {
+        const totalTransfers = await fetchTokenOperations(token);
+
+        const forwardPage = calculateForwardPage(totalTransfers, pageSize, reversePage);
+
+        const data = await fetchTransfers(token, forwardPage, pageSize);
+
+		if(data.transactions.length > 0) {
+			for(var i = 0; i < data.transactions.length; i++) {
+
+				const rawTxResult = await coreApi.getRawTransactionsWithInputs([data.transactions[i].txId]);
+
+				var inputs = [];
+				var outputs = [];
+		
+				rawTxResult.transactions.forEach((tx) => {
+					const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
+				
+					tx.vout.forEach((vout) => {
+						if (vout.scriptPubKey && vout.scriptPubKey.group) {
+							try {
+								let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
+								
+								if(decodedAddress['type'] == 'GROUP') {
+									outputs.push({group: vout.scriptPubKey.group, groupQuantity: vout.scriptPubKey.groupQuantity, groupAuthority: vout.scriptPubKey.groupAuthority, address: vout.scriptPubKey.addresses[0]})
+								}
+							} catch (err) {
+								debugLog("vout electrum error", err)
+							}
+						}
+					});
+				
+					tx.vin.forEach((vin, j) => {
+						const txInput = txInputs[j];
+				
+						if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
+							try {
+								let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
+								
+								if(decodedAddress['type'] == 'GROUP') {
+									inputs.push({group: txInput.scriptPubKey.group, groupQuantity: txInput.scriptPubKey.groupQuantity, groupAuthority: txInput.scriptPubKey.groupAuthority, address: txInput.scriptPubKey.addresses[0]})
+								}
+								
+							} catch (err) {
+								debugLog("vin electrum error", err)
+							}
+						}
+					});
+				});
+				data.transactions[i].inputs = inputs;
+				data.transactions[i].outputs = outputs;
+			}
+
+			return data.transactions.reverse()
+		} else {
+			return []
+		}
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+function getBadgeForType(type){
+	switch(type){
+		case "TRANSFER":
+			return "badge-primary";
+		case "MELT":
+			return "badge-danger";
+		case "MINT":
+			return "badge-success";
+		case "CREATE":
+			return "badge-info";
+		default:
+			return "badge-primary"
+	}
+}
+
+function removePublicFromFile(filePath) {
+    if (filePath.startsWith("public/")) {
+        // Remove the "public/" prefix
+        return filePath.substring(6);
+    }
+    return filePath;
+}
+
+const fileTypes = {
+    images: ['avif', 'webp', 'svg', 'gif', 'png', 'apng', 'jpg', 'jpeg', 'AVIF', 'WEBP', 'SVG', 'GIF', 'PNG', 'APNG', 'JPG', 'JPEG'],
+    audio: ['ogg', 'OGG', 'mp3', 'MP3'],
+    video: ['mp4', 'mpeg', 'mpg', 'webm', 'MP4', 'MPEG', 'MPG', 'WEBM']
+};
+
+function getFileType(extension) {
+    if (fileTypes.images.includes(extension)) {
+        return 'image';
+    } else if (fileTypes.audio.includes(extension)) {
+        return 'audio';
+    } else if (fileTypes.video.includes(extension)) {
+        return 'video';
+    } else {
+        return 'unknown';
+    }
+}
+
+function searchResponse(req, res, query, data, wantsJson = false) {
+	if(wantsJson) {
+		res.set('Content-Type', 'text/json')
+		res.send(data)
+	} else {
+		if(data.length > 0) {
+			res.redirect(data[0].value);
+		}
+		req.session.userMessage = "No results found for query: " + query;
+		res.redirect("/");
+	}
+}
+
+async function search(req, res, wantsJson = false) {
+	if(wantsJson) {
+		var query = req.query.q.toLowerCase().trim();
+		var rawCaseQuery = req.query.q.trim();
+	
+		req.session.query = req.query.q;
+	}else {
+		var query = req.body.query.toLowerCase().trim();
+		var rawCaseQuery = req.body.query.trim();
+	
+		req.session.query = req.body.query;
+	}
+
+	if (query.length == 64) {
+		// this could be a successful retrieve produced
+		// by a seach vy txid, txidem or outpoint
+		coreApi.getRawTransaction(query).then(function(tx) {
+			if (tx) {
+				// always use txidem as query param independently
+				// by which mean we searched in the first place
+				const data = [{value: "/tx/" + query, text: query}]
+				searchResponse(req, res, query, data, wantsJson)
+			}
+
+			coreApi.getBlockHeader(query).then(function(blockHeader) {
+				if (blockHeader) {
+					const data = [{value: "/block/" + query, text: query}]
+					searchResponse(req, res, query, data, wantsJson)
+				}
+
+				coreApi.getAddress(rawCaseQuery).then(function(validateaddress) {
+					if (validateaddress && validateaddress.isvalid) {
+						const data = [{value: "/address/" + rawCaseQuery, text: query}]
+						searchResponse(req, res, query, data, wantsJson)
+					}
+				});
+
+				try {
+					let decodedAddress = nexaaddr.decode(query);
+			
+					if(decodedAddress['type'] == 'GROUP') {
+						const data = [{value: "/token/" + query, text: query}]
+						searchResponse(req, res, query, data, wantsJson)
+					}
+				} catch (err) {}
+
+				const data = []
+				searchResponse(req, res, query, data, wantsJson)
+
+			}).catch(function(err) {
+				const data = []
+				searchResponse(req, res, query, data, wantsJson)
+			});
+
+		}).catch(function(err) {
+			coreApi.getBlockHeader(query).then(function(blockHeader) {
+				if (blockHeader) {
+					const data = [{value: "/block/" + query, text: query}]
+					searchResponse(req, res, query, data, wantsJson)
+				}
+
+				const data = []
+				searchResponse(req, res, query, data, wantsJson)
+
+			}).catch(function(err) {
+				const data = []
+				searchResponse(req, res, query, data, wantsJson)
+			});
+		});
+
+	} else if (!isNaN(query)) {
+		coreApi.getBlockHeaderByHeight(parseInt(query)).then(function(blockHeader) {
+			if (blockHeader) {
+				const data = [{value: "/block-height/" + query, text: query}]
+				searchResponse(req, res, query, data, wantsJson)
+			}
+
+			const data = []
+			searchResponse(req, res, query, data, wantsJson)
+		}).catch(function (err) {
+			const data = []
+			searchResponse(req, res, query, data, wantsJson)
+		});
+
+	} else {
+		
+		try {
+			const validatedAddress = await coreApi.getAddress(rawCaseQuery);
+			if (validatedAddress && validatedAddress.isvalid) {
+				const data = [{value: "/address/" + rawCaseQuery, text: query}]
+				searchResponse(req, res, query, data, wantsJson)
+			}
+
+			
+			let decodedAddress = nexaaddr.decode(query);
+	
+			if(decodedAddress['type'] == 'GROUP') {
+				const data = [{value: "/token/" + query, text: query}]
+				searchResponse(req, res, query, data, wantsJson)
+			}
+		} catch (err) {
+			debugLog(err)
+		}
+		let data = []
+		try {
+			const dbresult = await db.Tokens.findAll({
+				where: {
+					[Op.or]: [
+					  { group: { [Op.like]: `%${query}%` } },
+					  { name: { [Op.like]: `%${query}%` } },
+					  { ticker: { [Op.like]: `%${query}%` } },
+					  { series: { [Op.like]: `%${query}%` } },
+					  { author: { [Op.like]: `%${query}%` } }
+					]
+				  }
+			})
+			if(dbresult.length > 0) {
+				const mappedResult = dbresult.map(token => ({
+					value: `/token/${token.group}`,
+					text: `${token.is_nft ? 'NFT' : 'Token'}: ${token.name ?? token.group}`
+				}));
+
+				// Concatenate mappedResult onto data array
+  				data = data.concat(mappedResult);
+			}
+		} catch(err) {
+			debugLog(err)
+		}
+
+		try {
+			const dbresult = await db.Series.findAll({
+				where: {
+					[Op.or]: [
+					  { author: { [Op.like]: `%${query}%` } },
+					  { name: { [Op.like]: `%${query}%` } },
+					]
+				  }
+			})
+			if(dbresult.length > 0) {
+				const mappedResult = dbresult.map(series => ({
+					value: `/series/${series.identifier}`,
+					text: "NFT Series: " + series.name
+				}));
+
+				// Concatenate mappedResult onto data array
+  				data = data.concat(mappedResult);
+			}
+		} catch(err) {}
+		
+		searchResponse(req, res, query, data, wantsJson)
+	}
+}
+
 
 
 export default {
@@ -1138,7 +1620,7 @@ export default {
 	reflectPromise,
 	redirectToConnectPageIfNeeded,
 	hex2ascii,
-	 hex2array,
+	hex2array,
 	hex2string,
 	splitArrayIntoChunks,
 	splitArrayIntoChunksByChunkCount,
@@ -1186,6 +1668,22 @@ export default {
 	tokenAuthToFlags,
 	tokenID2HexString,
 	knownTokens,
+	knownNFTProviders,
+	loadNFTData,
 	readUTXOSetForTokens,
-	isValidHttpUrl
+	isValidHttpUrl,
+	parseGroupData,
+	loadGroupDataSlow,
+	getReversePaginatedData,
+	getBadgeForType,
+	fetchTokenOperations,
+	fetchRichlist,
+	fetchGroups,
+	fetchSubGroups,
+	fetchTopTokens,
+	fetchAuthories,
+	fetchTokenHoldersCount,
+	removePublicFromFile,
+	getFileType,
+	search
 };

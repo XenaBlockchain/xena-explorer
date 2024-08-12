@@ -1,25 +1,22 @@
-version: '3'
-
-
 networks:
   explorer-dev:
 
 services:
   explorer:
-    build:
-      context: .
-      dockerfile: ./docker/explorer/Dockerfile
-    image: nodejs
-    container_name: nodejs
+    image: "node:20"
+    user: "node"
+    working_dir: /home/node/app
+    volumes:
+      - ./:/home/node/app
     restart: unless-stopped
     env_file: .env
     networks:
-      - explorer-dev  
-    ports:
+      - explorer-dev 
+    expose:
+      - "3002"
+    ports: # use if it is necessary to expose the container to the host machine
       - "3002:3002"
-    volumes:
-      - .:/home/node/app
-
+    command: "npm start"
   nexad:
     build:
       context: ./docker/nexad

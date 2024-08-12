@@ -9,10 +9,7 @@ let redisClient = null;
 if (config.redisUrl) {
   bluebird.promisifyAll(redis.RedisClient.prototype);
 
-  redisClient = redis.createClient({
-    url: config.redisUrl,
-    return_buffers: true,
-  });
+  redisClient = redis.createClient(config.redisUrl,{return_buffers: true})
 }
 
 function createCache(keyPrefix, onCacheEvent) {

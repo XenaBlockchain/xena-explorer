@@ -109,8 +109,9 @@ div.row.text-monospace
 											- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
 											- var hexEncodedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
 											div.mb-tiny
+												- var shortenedGroup = utils.ellipsize(tokenGroup.group, 33)
 												small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;margin-left:3px;cursor:pointer;`)
-													span(title="Token Infomation" data-content=`<ul> <li> ${hexEncodedTokenID} </li> <li> <a href="/token/${tokenGroup.groupId}"> ${tokenGroup.groupId} </a> </li></ul>`, data-toggle="popover", data-trigger="click") #{tokenGroup.genesisInfo.name}
+													span(title="Token Infomation" data-content=`<ul> <li> ${hexEncodedTokenID} </li> <li> <a href="/token/${tokenGroup.group}"> ${tokenGroup.group} </a> </li></ul>`, data-toggle="popover", data-trigger="click") #{tokenGroup.name ? tokenGroup.name : shortenedGroup}
 											div(style="display:flex")
 												if (vout.scriptPubKey.groupAuthority > 0)
 													- var activeFlags = utils.tokenAuthToFlags(vout.scriptPubKey.groupAuthority);
@@ -142,11 +143,17 @@ div.row.text-monospace
 											include ./value-display.pug
 											if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData[vout.scriptPubKey.group] != null)
 													- var tokenGroup = tokenData[vout.scriptPubKey.group];
-													- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
-													- var formattedBalance = tokenGroup.genesisInfo.decimal_places > 0 ? String(vout.scriptPubKey.groupQuantity).slice(0, - tokenGroup.genesisInfo.decimal_places) + "." + String(vout.scriptPubKey.groupQuantity).slice(- tokenGroup.genesisInfo.decimal_places) : vout.scriptPubKey.groupQuantity
-													div.mb-tiny
-														small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;`)
-															span(title=`Token Amount`, data-toggle="tooltip") #{utils.addThousandsSeparators(formattedBalance)} #{tokenGroup.genesisInfo.ticker}
+													if (tokenGroup.is_nft)
+														- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
+														div.mb-tiny
+															small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;`)
+																span(title=`Token Amount`, data-toggle="tooltip") NFT Send
+													else
+														- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
+														- var formattedBalance = tokenGroup.genesis.decimal_places > 0 ? String(vout.scriptPubKey.groupQuantity).slice(0, - tokenGroup.genesis.decimal_places) + "." + String(vout.scriptPubKey.groupQuantity).slice(- tokenGroup.genesis.decimal_places) : vout.scriptPubKey.groupQuantity
+														div.mb-tiny
+															small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;`)
+																span(title=`Token Amount`, data-toggle="tooltip") #{utils.addThousandsSeparators(formattedBalance)} #{tokenGroup.genesis.ticker}
 
 					hr
 
@@ -237,8 +244,9 @@ div.row.text-monospace
 												- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
 												- var hexEncodedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
 												div.mb-tiny
-													small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;margin-left:3px;cursor:pointer;`)
-														span(title="Token Infomation" data-content=`<ul> <li> ${hexEncodedTokenID} </li> <li> <a href="/token/${tokenGroup.groupId}"> ${tokenGroup.groupId} </a> </li></ul>`, data-toggle="popover", data-trigger="click") #{tokenGroup.genesisInfo.name}
+												- var shortenedGroup = utils.ellipsize(tokenGroup.group, 33)
+												small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;margin-left:3px;cursor:pointer;`)
+													span(title="Token Infomation" data-content=`<ul> <li> ${hexEncodedTokenID} </li> <li> <a href="/token/${tokenGroup.group}"> ${tokenGroup.group} </a> </li></ul>`, data-toggle="popover", data-trigger="click") #{tokenGroup.name ? tokenGroup.name : shortenedGroup}
 											div(style="display:flex")
 													if (vout.scriptPubKey.groupAuthority > 0)
 														- var activeFlags = utils.tokenAuthToFlags(vout.scriptPubKey.groupAuthority);
@@ -307,10 +315,16 @@ div.row.text-monospace
 								if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData[vout.scriptPubKey.group] != null)
 									- var tokenGroup = tokenData[vout.scriptPubKey.group];
 									- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
-									- var formattedBalance = tokenGroup.genesisInfo.decimal_places > 0 ? String(vout.scriptPubKey.groupQuantity).slice(0, - tokenGroup.genesisInfo.decimal_places) + "." + String(vout.scriptPubKey.groupQuantity).slice(- tokenGroup.genesisInfo.decimal_places) : vout.scriptPubKey.groupQuantity
-									div.mb-tiny
-										small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;`)
-											span(title=`Token Amount`, data-toggle="tooltip") #{utils.addThousandsSeparators(formattedBalance)} #{tokenGroup.genesisInfo.ticker}
+									if(tokenGroup.is_nft)
+										div.mb-tiny
+											small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;`)
+												span(title=`Token Amount ${vout.scriptPubKey.groupQuantity}`, data-toggle="tooltip") NFT Receive
+									else
+										- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
+										- var formattedBalance = tokenGroup.genesis.decimal_places > 0 ? String(vout.scriptPubKey.groupQuantity).slice(0, - tokenGroup.genesis.decimal_places) + "." + String(vout.scriptPubKey.groupQuantity).slice(- tokenGroup.genesis.decimal_places) : vout.scriptPubKey.groupQuantity
+										div.mb-tiny
+											small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;`)
+												span(title=`Token Amount`, data-toggle="tooltip") #{utils.addThousandsSeparators(formattedBalance)} #{tokenGroup.genesis.ticker}
 
 				hr
 
