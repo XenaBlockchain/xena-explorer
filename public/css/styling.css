@@ -421,13 +421,13 @@ footer a:hover {
 
 @media (min-width: 350px) {
 	.card-nft {
-		max-width:25rem;
-		max-height:20rem;
+		max-width:22rem !important;
+		max-height:18rem !important;
 	}
 	#nft img {
 		object-fit: cover;
-		height    : 25rem;
-		width    : 25rem;
+		height    : 22rem !important;
+		width    : 18rem !important;
 		transition: transform 0.2s;
 	}
 	
@@ -437,8 +437,8 @@ footer a:hover {
 	
 	#nft video {
 		object-fit: cover;
-		height    : 25rem;
-		width    : 25rem;
+		height    : 22rem !important;
+		width    : 18rem !important;
 		transition: transform 0.2s;
 	}
 	
@@ -448,8 +448,8 @@ footer a:hover {
 	
 	#nft audio {
 		object-fit: cover;
-		height    : 15rem;
-		width    : 20rem;
+		height    : 15rem !important;
+		width    : 20rem !important;
 		padding-bottom: 90px;
 		transition: transform 0.2s;
 	}
@@ -467,13 +467,13 @@ footer a:hover {
 
 @media (min-width: 992px) {
 	.card-nft {
-		max-width:15rem;
-		max-height:20rem;
+		max-width:15rem !important;
+		max-height:20rem !important;
 	}
 	#nft img {
 		object-fit: cover;
-		height    : 15rem;
-		width    : 15rem;
+		height    : 15rem !important;
+		width    : 15rem !important;
 		transition: transform 0.2s;
 	}
 	
@@ -483,8 +483,8 @@ footer a:hover {
 	
 	#nft video {
 		object-fit: cover;
-		height    : 15rem;
-		width    : 15rem;
+		height    : 15rem !important;
+		width    : 15rem !important;
 		transition: transform 0.2s;
 	}
 	
@@ -494,8 +494,8 @@ footer a:hover {
 	
 	#nft audio {
 		object-fit: cover;
-		height    : 15rem;
-		width    : 12rem;
+		height    : 15rem !important;
+		width    : 12rem !important;
 		padding-bottom: 90px;
 		transition: transform 0.2s;
 	}

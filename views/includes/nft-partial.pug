@@ -1,340 +1,319 @@
 div.d-flex.justify-content-start
-    - var filepath = tokenObj.files.length > 0 ? utils.removePublicFromFile(tokenObj.files[0].path) : null
-    if(filepath)
-        - var ext = utils.getFileType(tokenObj.files[0].ext)
-        if(ext == 'image') 
-            img.mt-4.mr-1.rounded(src=filepath, alt="", width=35, height=35)
-            h1.h3.word-wrap.mt-4.ml-1.text-bold #{tokenObj.name}
-        else
-            h1.h3.word-wrap.mt-4.ml-1.text-bold #{tokenObj.name}
-    else
-        h1.h3.word-wrap.mt-4.ml-1.text-bold #{tokenObj.name}
+	- var filepath = tokenObj.files.length > 0 ? utils.removePublicFromFile(tokenObj.files[0].path) : null
+	if(filepath)
+		- var ext = utils.getFileType(tokenObj.files[0].ext)
+		if(ext == 'image')
+			img.mt-4.mr-1.rounded(src=filepath, alt="", width=35, height=35)
+			h1.h3.word-wrap.mt-4.ml-1.text-bold #{tokenObj.name}
+		else
+			h1.h3.word-wrap.mt-4.ml-1.text-bold #{tokenObj.name}
+	else
+		h1.h3.word-wrap.mt-4.ml-1.text-bold #{tokenObj.name}
 
 
 div.row.mt-3
-    div.col-12.col-xl-6
-        div(id="nft").card.stats-card.mb-3
-            div.card-header(style="background:transparent;")
-                div.row.mb-10
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            h3.h6.mb-0.text-bold NFT Overview
-                        
-            div.row.d-flex.m-3.justify-content-center.justify-content-lg-between
-                div.justify-start
-                    - var filepath = tokenObj.files.length > 0 ? utils.removePublicFromFile(tokenObj.files[0].path) : null
-                    if(filepath)
-                        case utils.getFileType(tokenObj.files[0].ext)
-                            when "audio"
-                                audio(controls='yes' muted)
-                                    source(src=filepath, type=tokenObj.files[0].mime)
-                                    | Your browser does not support the audio element.
-                            when "video"
-                                video(height='175', autoplay='yes', loop='true' muted)
-                                    source(src=filepath, type=tokenObj.files[0].mime)
-                            default
-                                a(target="blank", href=filepath)
-                                    img.rounded(src=filepath, alt="",height=175)
-                    else
-                        img.rounded(src="https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg", alt="",height=175)
+	div.col-12.col-xl-6
+		div(id="nft").card.stats-card.mb-3
+			div.card-header(style="background:transparent;")
+				div.row.mb-10
+					div.col-md-12
+						div.d-flex.justify-content-between
+							h3.h6.mb-0.text-bold NFT Overview
 
-                div.d-flex-1.mx-1.my-3.ml-md-4.flex-fill
-                    div.row
-                        div.col-md-12
-                            div.d-flex.justify-content-between
-                                span NFT Name
-                                span.text-monospace.text-truncate #{tokenObj.name}
-                    div.row.mt-3
-                        div.col-md-12
-                            div.d-flex.justify-content-between
-                                span Keywords
-                                if tokenObj.nft_data && tokenObj.nft_data.keywords
-                                    div.d-flex.justify-content-between
-                                        each val in tokenObj.nft_data.keywords
-                                            span.badge.badge-info.mx-1.p-1 #{val}
-                        
-                    div.row.mt-3
-                        div.col-md-12
-                            div.d-flex.justify-content-between
-                                span Series
-                                span.text-monospace.text-truncate
-                                    if(tokenObj.Series != null)
-                                        - var url = encodeURIComponent(tokenObj.Series.identifier)
-                                        a(href=("/series/" + url)) #{tokenObj.Series.name}
-                    
-                    div.row.mt-3
-                        div.col-md-12
-                            div.d-flex.justify-content-between
-                                span Author
-                                span.text-monospace.word-wrap(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
-                                    span(title="Author Information" data-content=`<ul> <li> ${tokenObj.author} </li> </ul>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(tokenObj.author, 30)}
-                    
-                    div.row.mt-3
-                        div.col-md-12
-                            div.d-flex.justify-content-between
-                                span NFT Provider
-                                span.text-monospace.text-truncate
-                                    a(href=("https://niftyart.cash/nft/"+ tokenObj.group)) Nifty Art
-                        
-    div.col-12.col-xl-6
-        div.card.stats-card.mb-3
-            div.card-header(style="background:transparent;")
-                h3.h6.mb-0.text-bold NFT Summary
-            div.m-3
-                div.row
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            span NFT Group Identifier
-                            span.text-monospace.word-wrap.ml-1
-                                a(href=("/token/" + tokenInfo.group)) #{utils.ellipsize(tokenInfo.group, 45)}
-                div.row.mt-3
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            span Mint Time
-                            span.text-monospace.word-wrap.ml-1
-                                - var timestampHuman = moment.utc(tokenObj.genesis_datetime).unix()
-                                include ./timestamp-human.pug
-                                small.ml-1 utc
-                            //- span.text-monospace.word-wrap.ml-1 #{moment.utc(new Date(tokenObj.genesis_datetime)).format('MMM D, Y, HH:MM')}
-                div.row.mt-3
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            span Transfers
-                            span.text-monospace #{tokenObj.transfers}
-                div.row.mt-3
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            span App URI
-                            span.text-monospace
-                                if tokenObj.nft_data && tokenObj.nft_data.appuri
-                                    a(href=(tokenObj.nft_data.appuri)) #{tokenObj.nft_data.appuri}
-                div.row.mt-3
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            span Current Supply
-                            span.text-monospace #{circulatingSupply}
-                div.row.mt-3.mb-3
-                    div.col-md-12
-                        div.d-flex.justify-content-between
-                            span Current Supply
-                            span.text-monospace #{circulatingSupply}
-                    
+			div.d-flex.m-3.justify-content-center.justify-content-lg-between.flex-column.flex-md-row
+				div.align-self-center
+					- var filepath = tokenObj.files.length > 0 ? utils.removePublicFromFile(tokenObj.files[0].path) : null
+					if(filepath)
+						case utils.getFileType(tokenObj.files[0].ext)
+							when "audio"
+								audio(controls='yes' muted)
+									source(src=filepath, type=tokenObj.files[0].mime)
+									| Your browser does not support the audio element.
+							when "video"
+								video(height='175', autoplay='yes', loop='true' muted)
+									source(src=filepath, type=tokenObj.files[0].mime)
+							default
+								a(target="blank", href=filepath)
+									img.rounded(src=filepath, alt="")
+					else
+						img.rounded(src="https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg", alt="",height=175)
 
-                    
+				div.d-flex-1.mx-1.my-3.ml-md-4.flex-fill
+					div.d-flex.justify-content-between
+						span NFT Name
+						span.text-monospace.text-wrap #{tokenObj.name}
+					div.d-flex.justify-content-between.mt-3
+						span Keywords
+						if tokenObj.nft_data && tokenObj.nft_data.keywords
+							div.d-flex.justify-content-between
+								each val in tokenObj.nft_data.keywords
+									span.badge.badge-info.mx-1.p-1 #{val}
+
+					
+					div.d-flex.justify-content-between.mt-3
+						span Series
+						span.text-monospace.text-truncate
+							if(tokenObj.Series != null)
+								- var url = encodeURIComponent(tokenObj.Series.identifier)
+								a(href=("/series/" + url)) #{tokenObj.Series.name}
+
+					div.d-flex.justify-content-between.mt-3
+						span Author
+						span.text-monospace.word-wrap(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
+							span(title="Author Information" data-content=`<ul> <li> ${tokenObj.author} </li> </ul>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(tokenObj.author, 30)}
+
+					div.d-flex.justify-content-between.mt-3
+						span NFT Provider
+						span.text-monospace.text-truncate
+							a(href=("https://niftyart.cash/nft/" + tokenObj.group)) Nifty Art
+
+	div.col-12.col-xl-6
+		div.card.stats-card.mb-3
+			div.card-header(style="background:transparent;")
+				h3.h6.mb-0.text-bold NFT Summary
+			div.m-3
+				div.d-flex.justify-content-between
+					span NFT Group Identifier
+					span.text-monospace.word-wrap.ml-1
+						a(href=("/token/" + tokenInfo.group)) #{utils.ellipsize(tokenInfo.group, 45)}
+				div.d-flex.justify-content-between.mt-3
+					span Mint Time
+					span.text-monospace.word-wrap.ml-1
+						- var timestampHuman = moment.utc(tokenObj.genesis_datetime).unix()
+						include ./timestamp-human.pug
+						small.ml-1 utc
+					//- span.text-monospace.word-wrap.ml-1 #{moment.utc(new Date(tokenObj.genesis_datetime)).format('MMM D, Y, HH:MM')}
+				div.d-flex.justify-content-between.mt-3
+					span Transfers
+					span.text-monospace #{tokenObj.transfers}
+				div.d-flex.justify-content-between.mt-3
+					span App URI
+					span.text-monospace
+						if tokenObj.nft_data && tokenObj.nft_data.appuri
+							a(href=(tokenObj.nft_data.appuri)) #{tokenObj.nft_data.appuri}
+				div.d-flex.justify-content-between.mt-3
+					span Current Supply
+					span.text-monospace #{circulatingSupply}
+				div.d-flex.justify-content-between.mt-3.mb-3
+					span Current Supply
+					span.text-monospace #{circulatingSupply}
+
+
+
 ul.nav.nav-tabs
-    li.nav-item
-        a.nav-link.text-bold.active(data-toggle="tab", href="#token-transfers", role="tab") Transfers
-    li.nav-item
-        a.nav-link.text-bold(data-toggle="tab", href="#token-holders", role="tab") Holders
-    li.nav-item
-        a.nav-link.text-bold(data-toggle="tab", href="#tab-market", role="tab") Markets
-    li.nav-item
-        a.nav-link.text-bold(data-toggle="tab", href="#tab-genesis", role="tab") Genesis
-    li.nav-item
-        a.nav-link.text-bold(data-toggle="tab", href="#tab-analysis", role="tab") Analysis
+	li.nav-item
+		a.nav-link.text-bold.active(data-toggle="tab", href="#token-transfers", role="tab") Transfers
+	li.nav-item
+		a.nav-link.text-bold(data-toggle="tab", href="#token-holders", role="tab") Holders
+	li.nav-item
+		a.nav-link.text-bold(data-toggle="tab", href="#tab-market", role="tab") Markets
+	li.nav-item
+		a.nav-link.text-bold(data-toggle="tab", href="#tab-genesis", role="tab") Genesis
+	li.nav-item
+		a.nav-link.text-bold(data-toggle="tab", href="#tab-analysis", role="tab") Analysis
 
 div.tab-content
-    div.tab-pane.active(id="token-transfers", role="tabpanel")
-        div.card-body.tab-card.mb-3.table-hidden
-            div.table-responsive
-                table.table.table-striped.mb-0.table-hidden
-                    if(transfers && transfers.length > 0)
-                        thead 
-                            tr
-                                th.data-header.text-right
-                                    span.font-weight-bold Type
-                                th.data-header.text-left
-                                    span.font-weight-bold Tx Id
-                                th.data-header.text-left
-                                    span.font-weight-bold Tx Idem
-                                th.data-header.text-left
-                                    span.font-weight-bold Date
-                                th.data-header.text-left
-                                    span.font-weight-bold Block
-                                th.data-header.text-right
-                                    span.font-weight-bold Actions
+	div.tab-pane.active(id="token-transfers", role="tabpanel")
+		div.card-body.tab-card.mb-3.table-hidden
+			div.table-responsive
+				table.table.table-striped.mb-0.table-hidden
+					if(transfers && transfers.length > 0)
+						thead
+							tr
+								th.data-header.text-right
+									span.font-weight-bold Type
+								th.data-header.text-left
+									span.font-weight-bold Tx Id
+								th.data-header.text-left
+									span.font-weight-bold Tx Idem
+								th.data-header.text-left
+									span.font-weight-bold Date
+								th.data-header.text-left
+									span.font-weight-bold Block
+								th.data-header.text-right
+									span.font-weight-bold Actions
 
-                        tbody
-                            each item in transfers
-                                tr
-                                    td.data-cell.text-monospace.text-right
-                                        - var className = utils.getBadgeForType(item.type)
-                                        span.badge(class=`p-1 m-1 ${className}`) #{item.type}
-                                    td.data-cell.text-monospace.text-left
-                                        span 
-                                            a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
-                                    td.data-cell.text-monospace.text-left
-                                        span
-                                            a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 45)}
-                                    td.data-cell.text-monospace.text-left
-                                        span 
-                                            - var timestampHuman = moment.utc(item.date).unix()
-                                            include ./timestamp-human.pug
-                                            small.ml-1 utc
-                                        //- span #{moment.utc(new Date(item.date)).format('MMM D, Y, HH:MM')}
-                                    td.data-cell.text-monospace.text-right
-                                        span 
-                                            a(href=("/block/" + item.height)) #{item.height}
-                                    td.data-cell.text-monospace.text-right
-                                        span 
-                                            button.btn.btn-link.btn-sm(type='button' data-toggle='collapse' data-target='#collapseExample-'+ item.id aria-expanded='false' aria-controls='collapseExample-'+ item.id)
-                                                | View
-                                tr.collapse(id="collapseExample-"+ item.id)
-                                    td(colspan='6').data-cell
-                                        .card.card-body
-                                            .container
-                                                .row
-                                                    .col
-                                                        h5.text-bold.text-center Inputs
-                                                        each input in item.inputs
-                                                            .col.m-1.d-flex.justify-content-between
-                                                                a(href=("/address/" + input.address)) #{utils.ellipsize(input.address, 45)}
-                                                                - var className = utils.getBadgeForType(item.type)
-                                                                if(item.type == "TRANSFER")
-                                                                    span.text-right.badge.badge-success(class=`p-1 m-1 ${className}`) NFT Send  
-                                                                else
-                                                                    span.text-right.badge(class=`p-1 m-1 ${className}`) #{item.type}
-                                                    .col.d-flex.justify-content-center
-                                                        div.d-flex.flex-column.justify-content-center
-                                                            i(class="fas fa-arrow-right h4")
-                                                    .col.mr-2
-                                                        h5.text-bold.text-center Outputs
-                                                        each output in item.outputs
-                                                            .col.m-1.d-flex.justify-content-between
-                                                                a(href=("/address/" + output.address)) #{utils.ellipsize(output.address, 45)}
-                                                                - var className = utils.getBadgeForType(item.type)
-                                                                if(item.type == "TRANSFER")
-                                                                    span.text-right.badge.badge-danger(class=`p-1 m-1 ${className}`) NFT Receive  
-                                                                else
-                                                                    span.text-right.badge(class=`p-1 m-1 ${className}`) #{item.type}    
+						tbody
+							each item in transfers
+								tr
+									td.data-cell.text-monospace.text-right
+										- var className = utils.getBadgeForType(item.type)
+										span.badge(class=`p-1 m-1 ${className}`) #{item.type}
+									td.data-cell.text-monospace.text-left
+										span
+											a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
+									td.data-cell.text-monospace.text-left
+										span
+											a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 45)}
+									td.data-cell.text-monospace.text-left
+										span
+											- var timestampHuman = moment.utc(item.date).unix()
+											include ./timestamp-human.pug
+											small.ml-1 utc
+										//- span #{moment.utc(new Date(item.date)).format('MMM D, Y, HH:MM')}
+									td.data-cell.text-monospace.text-right
+										span
+											a(href=("/block/" + item.height)) #{item.height}
+									td.data-cell.text-monospace.text-right
+										span
+											button.btn.btn-link.btn-sm(type='button' data-toggle='collapse' data-target='#collapseExample-' + item.id aria-expanded='false' aria-controls='collapseExample-' + item.id)
+												| View
+								tr.collapse(id="collapseExample-" + item.id)
+									td(colspan='6').data-cell
+										.card.card-body
+											.container
+												.row
+													.col
+														h5.text-bold.text-center Inputs
+														each input in item.inputs
+															.col.m-1.d-flex.justify-content-between
+																a(href=("/address/" + input.address)) #{utils.ellipsize(input.address, 45)}
+																- var className = utils.getBadgeForType(item.type)
+																if(item.type == "TRANSFER")
+																	span.text-right.badge.badge-success(class=`p-1 m-1 ${className}`) NFT Send  
+																else
+																	span.text-right.badge(class=`p-1 m-1 ${className}`) #{item.type}
+													.col.d-flex.justify-content-center
+														div.d-flex.flex-column.justify-content-center
+															i(class="fas fa-arrow-right h4")
+													.col.mr-2
+														h5.text-bold.text-center Outputs
+														each output in item.outputs
+															.col.m-1.d-flex.justify-content-between
+																a(href=("/address/" + output.address)) #{utils.ellipsize(output.address, 45)}
+																- var className = utils.getBadgeForType(item.type)
+																if(item.type == "TRANSFER")
+																	span.text-right.badge.badge-danger(class=`p-1 m-1 ${className}`) NFT Receive  
+																else
+																	span.text-right.badge(class=`p-1 m-1 ${className}`) #{item.type}    
 
-                    else 
-                        tr
-                            td(colspan="5").data-cell.text-monospace.text-center
-                                span No Data Available
-        if(transfers && transfers.length > 0)
-            div.list-hidden
-                each item in transfers
-                    .card(style='width: 100%;').mb-2
-                        .card-body(style='background-color: #282d33 !important;')
-                            h5.card-title.text-center
-                                span.word-wrap #{item.type}  
-                        ul.list-group.list-group-flush
-                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                span Tx Id
-                                span.word-wrap.ml-1
-                                    a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 35)}
-                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                span Tx Idem
-                                span.word-wrap.ml-1
-                                    a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 35)}
-                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                span Date
-                                span.word-wrap.ml-1
-                                    - var timestampHuman = moment.utc(item.date).unix()
-                                    include ./timestamp-human.pug
-                                    small.ml-1 utc
-                                //- span.word-wrap.ml-1 #{moment.utc(new Date(item.date)).format('MMM D, Y')}
-                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                span Block
-                                span
-                                    a(href=("/block/" + item.height)) #{item.height}
+					else
+						tr
+							td(colspan="5").data-cell.text-monospace.text-center
+								span No Data Available
+		if(transfers && transfers.length > 0)
+			div.list-hidden
+				each item in transfers
+					.card(style='width: 100%;').mb-2
+						.card-body(style='background-color: #282d33 !important;')
+							h5.card-title.text-center
+								span.word-wrap #{item.type}  
+						ul.list-group.list-group-flush
+							li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+								span Tx Id
+								span.word-wrap.ml-1
+									a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 35)}
+							li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+								span Tx Idem
+								span.word-wrap.ml-1
+									a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 35)}
+							li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+								span Date
+								span.word-wrap.ml-1
+									- var timestampHuman = moment.utc(item.date).unix()
+									include ./timestamp-human.pug
+									small.ml-1 utc
+								//- span.word-wrap.ml-1 #{moment.utc(new Date(item.date)).format('MMM D, Y')}
+							li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+								span Block
+								span
+									a(href=("/block/" + item.height)) #{item.height}
 
-            if (transfersCount > limit)
-                - var pageNumber = offset / limit + 1;
-                - var pageCount = Math.floor(transfersCount / limit);
-                - if (pageCount * limit < transfersCount) {
-                    - pageCount++;
-                - }
-                - var paginationUrlFunction = function(x) {
-                    - return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
-                - }
+			if (transfersCount > limit)
+				- var pageNumber = offset / limit + 1;
+				- var pageCount = Math.floor(transfersCount / limit);
+				- if (pageCount * limit < transfersCount) {
+				- pageCount++;
+				- }
+				- var paginationUrlFunction = function(x) {
+				- return paginationBaseUrl + "&limit=" + limit + "&offset=" + ((x - 1) * limit);
+				- }
 
-                hr.mt-3
+				hr.mt-3
 
-                include ./pagination.pug
+				include ./pagination.pug
 
-    div.tab-pane(id="token-holders", role="tabpanel")
-        div.card-body.tab-card.mb-3.table-hidden
-            div.table-responsive
-                table.table.table-striped.mb-0.table-hidden
-                    thead
-                        tr
-                            th.data-header.text-left
-                                span.font-weight-bold Address
-                            th.data-header.text-left
-                                span.font-weight-bold Receive Tx
-                            th.data-header.text-right
-                                span.font-weight-bold Quantity
+	div.tab-pane(id="token-holders", role="tabpanel")
+		div.card-body.tab-card.mb-3.table-hidden
+			div.table-responsive
+				table.table.table-striped.mb-0.table-hidden
+					thead
+						tr
+							th.data-header.text-left
+								span.font-weight-bold Address
+							th.data-header.text-left
+								span.font-weight-bold Receive Tx
+							th.data-header.text-right
+								span.font-weight-bold Quantity
 
-                    tbody
-                        if(richList && richList.length > 0)
-                                each item in richList
-                                    tr
-                                        td.data-cell.text-monospace.text-left
-                                            span
-                                                a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 53)}
-                                        td.data-cell.text-monospace.text-left
-                                            span
-                                                a(href=("/tx/" + transfers.length > 0 ? transfers[0].txId : null)) #{transfers.length > 0 ? transfers[0].txId : null}
-                                        td.data-cell.text-monospace.text-right
-                                            span #{utils.addThousandsSeparators(item.net_amount)}
-                        else 
-                            tr
-                                td(colspan="6").data-cell.text-monospace.text-center
-                                    span No Data Available
-        if(richList && richList.length > 0)
-            div.list-hidden
-                each item in richList
-                        .card(style='width: 100%;').mb-2
-                            .card-body(style='background-color: #282d33 !important;')
-                                h5.card-title.text-center
-                                    span #{utils.addThousandsSeparators(item.net_amount)}
-                                
-                                p.card-text
-                                    span
-                                        a(href=("/token/" + token.group)) #{token.group}
-                            ul.list-group.list-group-flush
-                                li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                    span Address
-                                    span.word-wrap.ml-1
-                                        a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 35)}
-                                li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                    span Last Tx
-                                    span.word-wrap.ml-1
-                                        if(transfers.length > 0 )
-                                            a(href=("/tx/" + transfers.length > 0 ? transfers[0].txId : null)) #{transfers.length > 0 ? transfers[0].txId : null}
+					tbody
+						if(richList && richList.length > 0)
+							each item in richList
+								tr
+									td.data-cell.text-monospace.text-left
+										span
+											a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 53)}
+									td.data-cell.text-monospace.text-left
+										span
+											a(href=("/tx/" + transfers.length > 0 ? transfers[0].txId : null)) #{transfers.length > 0 ? transfers[0].txId : null}
+									td.data-cell.text-monospace.text-right
+										span #{utils.addThousandsSeparators(item.net_amount)}
+						else
+							tr
+								td(colspan="6").data-cell.text-monospace.text-center
+									span No Data Available
+		if(richList && richList.length > 0)
+			div.list-hidden
+				each item in richList
+					.card(style='width: 100%;').mb-2
+						.card-body(style='background-color: #282d33 !important;')
+							h5.card-title.text-center
+								span #{utils.addThousandsSeparators(item.net_amount)}
+
+							p.card-text
+								span
+									a(href=("/token/" + token.group)) #{token.group}
+						ul.list-group.list-group-flush
+							li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+								span Address
+								span.word-wrap.ml-1
+									a(href=("/address/" + item.address)) #{utils.ellipsize(item.address, 35)}
+							li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+								span Last Tx
+								span.word-wrap.ml-1
+									if(transfers.length > 0)
+										a(href=("/tx/" + transfers.length > 0 ? transfers[0].txId : null)) #{transfers.length > 0 ? transfers[0].txId : null}
 
 
-    div.tab-pane(id="tab-market", role="tabpanel")
-        div.card-body.tab-card.mb-3
-            div.table-responsive
-                table.table.table-striped.mb-0
-                    tr
-                        td(colspan="6").data-cell.text-monospace.text-center
-                            span No Data Available
+	div.tab-pane(id="tab-market", role="tabpanel")
+		div.card-body.tab-card.mb-3
+			div.table-responsive
+				table.table.table-striped.mb-0
+					tr
+						td(colspan="6").data-cell.text-monospace.text-center
+							span No Data Available
 
-    div.tab-pane(id="tab-genesis", role="tabpanel")
-            div.card-body.tab-card.mb-3
-                h5.mb-3.text-bold NFT Genesis
+	div.tab-pane(id="tab-genesis", role="tabpanel")
+		div.card-body.tab-card.mb-3
+			h5.mb-3.text-bold NFT Genesis
 
-                div.highlight
-                    pre
-                        code.json.bg-light.mb-5(data-lang="json") #{rawtransaction_parsed}
-                if (tokenObj.documentInfo != null)
-                    h5.mb-3.text-bold Token Document
-                    div.highlight
-                        pre
-                            code.json.bg-light(data-lang="json") #{JSON.stringify(tokenObj.documentInfo.tokenObject, utils.bigIntToRawJSON, 4)}
+			div.highlight
+				pre
+					code.json.bg-light.mb-5(data-lang="json") #{rawtransaction_parsed}
+			if (tokenObj.documentInfo != null)
+				h5.mb-3.text-bold Token Document
+				div.highlight
+					pre
+						code.json.bg-light(data-lang="json") #{JSON.stringify(tokenObj.documentInfo.tokenObject, utils.bigIntToRawJSON, 4)}
 
-    div.tab-pane(id="tab-analysis", role="tabpanel")
-        div.card.shadow-sm.mb-3
-            div.card-body
-                h4.h6.mb-0 Token Analysis
-                hr
+	div.tab-pane(id="tab-analysis", role="tabpanel")
+		div.card.shadow-sm.mb-3
+			div.card-body
+				h4.h6.mb-0 Token Analysis
+				hr
 
-                div.table-responsive
-                    table.table.table-striped.mb-0
-                        tr
-                            td(colspan="6").data-cell.text-monospace.text-center
-                                span No Data Available
+				div.table-responsive
+					table.table.table-striped.mb-0
+						tr
+							td(colspan="6").data-cell.text-monospace.text-center
+								span No Data Available
