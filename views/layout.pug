@@ -91,7 +91,7 @@ html(lang="en")
 													span #{dropdownLink.name}
 
 
-						form.form-inline.mr-3.search-main-hidden(method="post", action="/search")
+						form.form-inline.mr-3.search-main-hidden.w-100(method="post", action="/search")
 							input(type="hidden", name="_csrf", value=csrfToken)
 							div(class="input-group input-group-sm")
 								input(type="text", class="form-control form-control-sm query", name="query", autocomplete="off" data-url="/api/search" placeholder="Search transactions, blocks, addresses and tokens", value=(query), style="opacity:0.7;width:350px;")
