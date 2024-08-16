@@ -1145,7 +1145,7 @@ function isValidHttpUrl(string) {
 
 function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup){
 	const groupSizeInBytes = decodedAddress.hash.length;
-							
+
 	//Assume its a token
 	if (groupSizeInBytes == 32) {
 		if (!tokenSet.has(inOutGroup)) {
@@ -1162,7 +1162,7 @@ function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup){
 			}
 			// we have an NFT lets add it to the collection
 		} else {
-			console.log('we shouldnt be here with an NFT')
+			debugLog("We shouldnt be here with an NFT");
 		}
 	} else {
 		// Just handle this like a normal token for now.
