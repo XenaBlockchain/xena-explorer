@@ -12,6 +12,7 @@ const __dirname = path.dirname('../');
 import moment from "moment";
 import fs from 'fs';
 import axios from 'axios';
+import JSZip from "jszip";
 const debugLog = debug("nexexp:queue");
 
 const tokenQueue = new BeeQueue('tokenQueue',{
@@ -121,10 +122,30 @@ tokenQueue.process(async (job) => {
 				if(isNFT) {
 					try{
 						var nftPath = path.join(__dirname, "public", "img", "nfts");
-						var response = await axios.get('https://niftyart.cash/_public/' + token, {
-							responseType: 'arraybuffer'
-						});
-						var zipData = Buffer.from(response.data, 'binary').toString('base64');
+						const nftZipPath = path.join(__dirname, "public", "nfts");
+						let zipData = null
+
+						if(!fs.existsSync(nftZipPath + '/'+ token + '.zip')){
+							const response = await axios.get('https://niftyart.cash/_public/' + token, {
+								responseType: 'arraybuffer'
+							});
+							zipData = Buffer.from(response.data, 'binary').toString('base64');
+							let zip = await JSZip.loadAsync(zipData, {base64: true});
+							await zip
+								.generateNodeStream({type:'nodebuffer',streamFiles:true})
+								.pipe(fs.createWriteStream(nftZipPath + '/'+ token + '.zip'))
+								.on('finish', function () {
+									// JSZip generates a readable stream with a "end" event,
+									// but is piped here in a writable stream which emits a "finish" event.
+									debugLog("Saving: " + nftZipPath + '/'+ token + '.zip')
+								});
+						} else {
+							zipData = fs.readFileSync(nftZipPath + '/' + token + '.zip', {
+								encoding: "base64"
+							})
+							debugLog("Reading Stored file")
+						}
+
 						nftData = await utils.loadNFTData(zipData);
 						tokenName = nftData?.nftMetadata?.title ?? null;
 						tokenSeries = nftData?.nftMetadata?.series ?? null;
@@ -137,14 +158,14 @@ tokenQueue.process(async (job) => {
 						tokenTicker = null;
 						for (let i = 0; i < nftData.nftFiles.length; i++) {
 							var file = nftData.nftFiles[i]
-							if(file.title != 'Owner') {
+							if(file.title !== 'Owner') {
 								try {
 									let b =  Buffer.from(file.image, 'base64');
 									const fileType =  await fileTypeFromBuffer(b);
 									var filePath = nftPath + '/' + token + '/' + file.title + '.'+ fileType.ext
 									fs.writeFileSync(filePath, b);
 									let fileStore = {title: file.title, path: filePath, ext: fileType.ext, mime: fileType.mime}
-									if(file.title == "Front") {
+									if(file.title === "Front") {
 										frontFile = fileStore
 									}
 									files.push(fileStore)
@@ -159,7 +180,7 @@ tokenQueue.process(async (job) => {
 					} catch(err){
 						debugLog(`cannot load NFT data: ${err}`)
 					}
-					if (tokenSeries && (tokenSeries != ' ' || tokenSeries != '')) {
+					if (tokenSeries && (tokenSeries !== ' ' || tokenSeries !== '')) {
 						const [seriesModel, seriesCreated] = await db.Series.findOrCreate({
 							where: { name: tokenSeries},
 							defaults: {
