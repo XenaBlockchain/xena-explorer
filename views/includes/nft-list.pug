@@ -1,31 +1,41 @@
 div.card-body.mb-3(id="nft")
-    div.nft-container.row.d-flex.justify-content-space-betweeen
-        each token in tokens
-            div.col-md-6.col-sm-12.col-lg-3.col-xl-2
-                .card.card-nft.rounded.mb-4
-                    .overflow-hidden.d-flex.justify-content-center
-                        - var filepath = token.files.length > 0 ? utils.removePublicFromFile(token.files[0].path) : null
-                        if(filepath)
-                            case utils.getFileType(token.files[0].ext)
-                                when "audio"
-                                    a(href="/token/"+token.group)
-                                        audio.rounded.object-fit-fill(controls='yes' muted)
-                                            source(src=filepath, type=token.files[0].mime)
-                                            | Your browser does not support the audio element.
-                                when "video"
-                                    a(href="/token/"+token.group)
-                                        video.rounded.object-fit-fill(height='250', autoplay='yes', loop='true' muted)
-                                            source(src=filepath, type=token.files[0].mime)
-                                default
-                                    a(href="/token/"+token.group)
-                                        img.rounded(src=filepath, alt='...')
-                    .card-body
-                        a.text-decoration-none.body-text(href="/token/"+token.group)
-                            h5.card-title.text-center #{token.name}
-                    .card-footer
-                        small.text-muted
-                            .d-flex.justify-content-between
-                                spanspan(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
-                                    span(title="Series Information" data-content=`<p> ${token.series} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.series, 15)}
-                                span(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
-                                    span(title="Author Information" data-content=`<p> ${token.author} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.author, 15)}
+	div.nft-container.row.d-flex.justify-content-space-betweeen
+		if (tokens != null && tokens.length > 0)
+			each token in tokens
+				div.col-md-6.col-sm-12.col-lg-3.col-xl-2
+					.card.card-nft.rounded.mb-4
+						.overflow-hidden.d-flex.justify-content-center
+							- var filepath = token.files.length > 0 ? utils.removePublicFromFile(token.files[0].path) : null
+							if(filepath)
+								case utils.getFileType(token.files[0].ext)
+									when "audio"
+										a(href="/token/" + token.group)
+											audio.rounded.object-fit-fill(controls='yes' muted)
+												source(src=filepath, type=token.files[0].mime)
+												| Your browser does not support the audio element.
+									when "video"
+										a(href="/token/" + token.group)
+											video.rounded.object-fit-fill(height='250', autoplay='yes', loop='true' muted)
+												source(src=filepath, type=token.files[0].mime)
+									default
+										a(href="/token/" + token.group)
+											img.rounded(src=filepath, alt='...')
+						.card-body
+							a.text-decoration-none.body-text(href="/token/" + token.group)
+								h5.card-title.text-center #{token.name}
+						.card-footer
+							small.text-muted
+								.d-flex.justify-content-between
+									if(token.series)
+										span(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
+											span(title="Series Information" data-content=`<p> ${token.series} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.series, 15)}
+									if(token.author)
+										span(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
+											span(title="Author Information" data-content=`<p> ${token.author} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.author, 15)}
+		else
+			div.card-body.tab-card.mb-3
+				div.table-responsive
+					table.table.table-striped.mb-0
+						tr
+							td(colspan="6").data-cell.text-monospace.text-center
+								span No Data Available
