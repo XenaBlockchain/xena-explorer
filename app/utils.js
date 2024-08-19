@@ -1431,7 +1431,7 @@ function removePublicFromFile(filePath) {
 
 const fileTypes = {
     images: ['avif', 'webp', 'svg', 'gif', 'png', 'apng', 'jpg', 'jpeg', 'AVIF', 'WEBP', 'SVG', 'GIF', 'PNG', 'APNG', 'JPG', 'JPEG'],
-    audio: ['ogg', 'OGG', 'mp3', 'MP3'],
+    audio: ['ogg', 'OGG', 'mp3', 'MP3', 'wav', 'WAV', 'flac', 'FLAC'],
     video: ['mp4', 'mpeg', 'mpg', 'webm', 'MP4', 'MPEG', 'MPG', 'WEBM']
 };
 
