@@ -122,6 +122,8 @@ block content
 									thead 
 										tr
 											th.data-header.text-left
+												span.font-weight-bold Icon
+											th.data-header.text-left
 												span.font-weight-bold Name
 											th.data-header.text-left
 												span.font-weight-bold Transfers
@@ -132,6 +134,10 @@ block content
 									tbody
 										each token in topTenTokens
 											tr
+												td.data-cell.text-monospace.text-left
+													- var isTokenTrusted = utils.knownTokens().includes(token.group);
+													if(isTokenTrusted)
+														img.rounded(src="img/tokens/" + token.group.substring(5) + ".png", alt="", width=24)
 												td.data-cell.text-monospace.text-left
 													span
 														a(href=("/token/" + token.group))(title=token.group, data-toggle="tooltip") #{token.name} (#{token.ticker})
