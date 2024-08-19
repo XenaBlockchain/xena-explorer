@@ -1556,45 +1556,47 @@ function getTransactionTokens(txids) {
 
 		rawTxResult.transactions.forEach((tx) => {
 			const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
-		
+
 			if (handledTxids.includes(tx.txid)) {
 				return;
 			}
-		
+
 			handledTxids.push(tx.txid);
-		
+
 			tx.vout.forEach((vout) => {
 				if (vout.scriptPubKey && vout.scriptPubKey.group) {
 					try {
 						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-						
+
 						if(decodedAddress['type'] == 'GROUP') {
 							if (!tokens.has(vout.scriptPubKey.group)) {
 								tokens.add(vout.scriptPubKey.group);
 							}
 						}
 					} catch (err) {
-						console.log(err)
+						debugLog("An error occured while parsing transaction " + tx.txidem + " outputs searching for tokens");
+						debugLog(err);
 					}
 				}
 			});
-		
+
 			tx.vin.forEach((vin, j) => {
 				const txInput = txInputs[j];
-		
+
 				if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
 					try {
 						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-						
+
 						if(decodedAddress['type'] == 'GROUP') {
 
 							if (!tokens.has(txInput.scriptPubKey.group)) {
 								tokens.add(txInput.scriptPubKey.group);
 							}
 						}
-						
+
 					} catch (err) {
-						console.log(err)
+						debugLog("An error occured while parsing transaction " + tx.txidem + " inputs searching for tokens");
+						debugLog(err)
 					}
 				}
 			});
@@ -1608,7 +1610,7 @@ function getTransactionTokens(txids) {
 			  }
 			}
 		})
-	
+
 		for (const token of tokens) {
 			tokensWithData[token] = tokenDbObj.find((tk) => tk.group == token);
 		}
@@ -1638,10 +1640,10 @@ function readKnownTokensIntoCache() {
 							groups = groups.concat(dataParsed)
 							page++;
 						} while(pageResults != 0)
-						console.log(groups.length)
+						debugLog("Total number of cached tokens: " + groups.length)
 					} catch(err) {
 						debugLog(err)
-						debugLog("cant load NFT's from eletrum for token: ", + token);
+						debugLog("Can't load NFTs from electrum for token: " + token);
 					}
 
 					for (const token of utils.knownNFTProviders()) {
@@ -1657,7 +1659,7 @@ function readKnownTokensIntoCache() {
 								subgroups = subgroups.concat(dataParsed)
 								page++;
 							} while(pageResults != 0)
-							console.log(subgroups.length)
+							debugLog("Total number of cached NFTs: " + subgroups.length)
 						} catch(err) {
 							debugLog(err)
 							debugLog("cant load NFT's from token API for token: ", token);

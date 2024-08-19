@@ -40,7 +40,7 @@ tokenQueue.process(async (job) => {
 					circulatingSupply = BigInt(result.mintage_satoshis)
 					resolve();
 				}).catch(function(err) {
-					console.log(err)
+					debugLog(err);
 					reject(err);
 				});
 			}));
@@ -215,12 +215,12 @@ tokenQueue.process(async (job) => {
 						},
 						{
 							where: {
-								group: token 
+								group: token
 							},
 						},
 						);
 				}
-				
+
 				debugLog(`Added Token To Cache: ${token}`)
 				resolve(transfers)
 			}).catch(function(err) {
@@ -233,11 +233,11 @@ tokenQueue.process(async (job) => {
 
 
 tokenQueue.on('error', (err) => {
-    console.log(`A queue error happened: ${err.message}`);
+	debugLog(`A queue error happened: ${err.message}`);
 });
 
 tokenQueue.on('succeeded', (job, result) => {
-    console.log(`Job ${job.id} succeeded with result: ${result}`);
+	debugLog(`Job ${job.id} succeeded with result: ${result}`);
 });
 
 
