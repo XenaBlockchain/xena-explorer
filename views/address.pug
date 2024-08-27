@@ -195,7 +195,7 @@ block content
 							.list-group(style="max-height: 295px;overflow-y:scroll;height:295px;")
 								if(tokenData)
 									each token in tokenData
-										if(token.confirmedBalance > 0)
+										if(token.group && token.confirmedBalance > 0)
 											list-group-item.card-header
 												.d-flex.w-100.justify-content-between.row
 													col-md-6
@@ -211,9 +211,15 @@ block content
 																a(href=("/token/" + token.group)) #{token.name} (#{token.genesis.ticker})
 													col-md-6
 														if (token.confirmedBalance >= 0)
-															p.mb-1 #{utils.addThousandsSeparators(token.confirmedBalance)} 
+															if(token.confirmedBalanceFormatted)
+																p.mb-1 #{utils.addThousandsSeparators(token.confirmedBalanceFormatted)} 
+															else
+																p.mb-1 #{utils.addThousandsSeparators(token.confirmedBalance)}
 														if(token.unconfirmedBalance > 0)
-															small Unconfirmed: #{utils.addThousandsSeparators(token.unconfirmedBalance)} 
+															if(token.unconfirmedBalanceFormatted)
+																small Unconfirmed: #{utils.addThousandsSeparators(token.unconfirmedBalanceFormatted)}
+															else
+																small Unconfirmed: #{utils.addThousandsSeparators(token.unconfirmedBalance)}
 								else
 									list-group-item.card-header
 										.d-flex.w-100.justify-content-center.row

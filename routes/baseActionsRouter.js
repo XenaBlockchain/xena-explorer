@@ -28,6 +28,7 @@ import global from "../app/global.js";
 import v8 from 'v8';
 
 import electrumAddressApi from "../app/api/electrumAddressApi.js";
+import * as net from "node:net";
 const { forceCsrf } = csurf;
 var Op = db.Sequelize.Op;
 
@@ -296,7 +297,7 @@ router.get("/tokens", function(req, res, next){
 	promises.push(new Promise(function(resolve, reject){
 		coreApi.getBlockchainInfo().then(function(result) {
 			res.locals.blockChainInfo = result
-			resolve()	
+			resolve()
 		}).catch(function(err){
 			resolve()
 		})
@@ -377,7 +378,7 @@ router.get("/nfts", function(req, res, next){
 
 	promises.push(new Promise(function(resolve, reject){
 		coreApi.getNFTsHoldersCount().then(function(result) {
-			resolve(result)	
+			resolve(result)
 		}).catch(function(err){
 			resolve()
 		})
@@ -385,14 +386,14 @@ router.get("/nfts", function(req, res, next){
 
 	promises.push(new Promise(function(resolve, reject){
 		coreApi.getTotalNFTs().then(function(result) {
-			resolve(result)	
+			resolve(result)
 		}).catch(function(err){
 			resolve()
 		})
 	}));
 	promises.push(new Promise(function(resolve, reject){
 		coreApi.getTotalNFTsSeriesCount().then(function(result) {
-			resolve(result)	
+			resolve(result)
 		}).catch(function(err){
 			resolve()
 		})
@@ -407,7 +408,7 @@ router.get("/nfts", function(req, res, next){
 			localOffset = 0
 		}
 		coreApi.getNewNFTS(localLimit, localOffset).then(function(results) {
-			resolve(results)	
+			resolve(results)
 		}).catch(function(err){
 			resolve()
 		})
@@ -421,7 +422,7 @@ router.get("/nfts", function(req, res, next){
 			localOffset = 0
 		}
 		coreApi.getAllNFTs(localLimit, localOffset).then(function(results) {
-			resolve(results)	
+			resolve(results)
 		}).catch(function(err){
 			resolve()
 		})
@@ -429,7 +430,7 @@ router.get("/nfts", function(req, res, next){
 
 	promises.push(new Promise(function(resolve, reject){
 		coreApi.getBlockchainInfo().then(function(result) {
-			resolve(result)	
+			resolve(result)
 		}).catch(function(err){
 			resolve()
 		})
@@ -464,7 +465,7 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 	if(!seriesIdentifier) {
 		res.redirect("/");
 	}
-	
+
 	if (req.query.limit) {
 		limit = parseInt(req.query.limit);
 
@@ -501,7 +502,7 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 		res.redirect("/");
 	}
 
-	
+
 
 	let promises = [];
 	promises.push(new Promise(function(resolve, reject) {
@@ -915,7 +916,7 @@ router.get("/block-height/:blockHeight", function(req, res, next) {
 				const TxIds = res.locals.result.transactions.map(elem => elem.txid)
 				res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
 			} catch (err){}
-			
+
 			res.render("block");
 
 			utils.perfMeasure(req);
@@ -968,14 +969,14 @@ router.get("/block/:blockHash", function(req, res, next) {
 	promises.push(new Promise(async (resolve, reject) => {
 		try {
 			const result = await coreApi.getBlockByHashWithTransactions(blockHash, limit, offset);
-			
+
 			res.locals.result.getblock = result.getblock;
 			res.locals.result.transactions = result.transactions;
 			res.locals.result.txInputsByTransaction = result.txInputsByTransaction;
-	
+
 			const TxIds = result.transactions.map(elem => elem.txid);
 			res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
-	
+
 			resolve();
 		} catch (err) {
 			res.locals.pageErrors.push(utils.logError("238h38sse", err));
@@ -1292,7 +1293,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 router.get("/token/:token", async function(req, res, next) {
 
 	res.locals.isSafari = req.headers["user-agent"].includes("Safari") > 0
-	
+
 	var limit = config.site.tokenTransferPageSize;
 	var offset = 0;
 	var sort = "desc";
@@ -1398,8 +1399,8 @@ router.get("/token/:token", async function(req, res, next) {
 			} catch(err){
 				debugLog("Cannot parse Script:", err)
 			}
-			
-			
+
+
 			// Get mintage data of token
 			promises.push(new Promise(function(resolve, reject) {
 				coreApi.getTokenMintage(token).then(function(result) {
@@ -1416,7 +1417,7 @@ router.get("/token/:token", async function(req, res, next) {
 
 					res.locals.totalSupply = utils.addThousandsSeparators(res.locals.totalSupply)
 					res.locals.circulatingSupply = utils.addThousandsSeparators(res.locals.circulatingSupply)
-					
+
 					resolve();
 				}).catch(function(err) {
 					// console.log(err)
@@ -1424,7 +1425,7 @@ router.get("/token/:token", async function(req, res, next) {
 				});
 			}));
 
-			// Get transaction string 
+			// Get transaction string
 			promises.push(new Promise(function(resolve, reject) {
 				coreApi.getRawTransaction(res.locals.tokenInfo.txid).then(function(tx) {
 					if (tx) {
@@ -1458,7 +1459,7 @@ router.get("/token/:token", async function(req, res, next) {
 				} else {
 					page = Math.floor(res.locals.offset / res.locals.limit) + 1;
 				}
-				
+
 				coreApi.getTransfersForToken(token, res.locals.limit, page).then(async function(result){
 					res.locals.transfers = result;
 					resolve()
@@ -1474,15 +1475,15 @@ router.get("/token/:token", async function(req, res, next) {
 				for(var i = 0; i < result.length; i++){
 					let item = result[i]
 					const percentage = res.locals.totalSupplyUnformatted ? ((Number(item.amount) / Number(res.locals.totalSupplyUnformatted))) * 100 : BigInt(0);
-	
-	
-					const netAmount = res.locals.tokenInfo.decimal_places > 0
-					? `${item.amount}`.slice(0, - res.locals.tokenInfo.decimal_places) + "." + `${item.amount}`.slice(-res.locals.tokenInfo.decimal_places)
-					: item.amount;
+					const formattedBalance = res.locals.tokenInfo.decimal_places > 0
+						? String(item.amount).slice(0, - res.locals.tokenInfo.decimal_places) +
+						"." + String(item.amount).slice(- res.locals.tokenInfo.decimal_places)
+						: item.amount
+
 					item.percentage =  new Intl.NumberFormat('en-us', { maximumSignificantDigits: 2 }).format(
 						percentage,
 					  );
-					item.net_amount = netAmount
+					item.net_amount = formattedBalance
 				}
  					res.locals.richList = result;
 					resolve()
@@ -1581,7 +1582,7 @@ router.get("/address/:address", function(req, res, next) {
 	res.locals.tokens = new Set();
 	res.locals.tokenGenesisList = [];
 	res.locals.tokenData = [];
-	
+
 
 	res.locals.result = {};
 	try {
@@ -1829,7 +1830,7 @@ router.get("/address/:address", function(req, res, next) {
 				reject(err);
 			});
 		}));
-		
+
 
 		Promise.all(promises.map(utils.reflectPromise)).then(function() {
 			res.render("address");
@@ -2082,12 +2083,12 @@ router.get("/unconfirmed-tx", function(req, res, next) {
 
 	coreApi.getTxpoolDetails(offset, limit).then(async function(txpoolDetails) {
 		res.locals.txpoolDetails = txpoolDetails
-		
+
 		try {
 			const TxIds = txpoolDetails.transactions.map(elem => elem.txid)
 			res.locals.tokenData = await coreApi.getTransactionTokens(TxIds);
 		} catch (err){}
-		
+
 
 		res.render("unconfirmed-transactions");
 		utils.perfMeasure(req);
