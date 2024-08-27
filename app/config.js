@@ -183,6 +183,7 @@ export default {
 
   corsAllowedServers: corsAllowedServers,
   tokenApi: tokenApiPath,
+  syncTokens: !(process.env.NEXEXP_DONT_SYNC_TOKENS == "true"),
 
   redisUrl:process.env.NEXEXP_REDIS_URL,
 

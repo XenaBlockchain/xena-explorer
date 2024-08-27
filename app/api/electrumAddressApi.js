@@ -12,6 +12,7 @@ import global from "../global.js";
 import db from '../../models/index.js';
 const debugLog = debug("nexexp:electrumx");
 import tokenQueue from '../queue.js';
+var Op = db.Sequelize.Op;
 
 const coinConfig = coins[config.coin];
 
@@ -24,7 +25,7 @@ const handleNotifications = async function (data) {
 	{
 		let blockHash = await rpcApi.getBlockHash(data.params[0].height);
 		let block = await coreApi.getBlockByHashWithTransactions(blockHash, 1000, 0);
-				
+
 		let txIds =  block.transactions.map(x => x.txid);
 		let tokens = new Set();
 		let NFTs = new Set();
@@ -34,18 +35,18 @@ const handleNotifications = async function (data) {
 
 		rawTxResult.transactions.forEach((tx) => {
 			const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
-		
+
 			if (handledTxids.includes(tx.txid)) {
 				return;
 			}
-		
+
 			handledTxids.push(tx.txid);
-		
+
 			tx.vout.forEach((vout) => {
 				if (vout.scriptPubKey && vout.scriptPubKey.group) {
 					try {
 						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-						
+
 						if(decodedAddress['type'] == 'GROUP') {
 							utils.parseGroupData(tokens, NFTs, decodedAddress, vout.scriptPubKey.group);
 						}
@@ -54,18 +55,18 @@ const handleNotifications = async function (data) {
 					}
 				}
 			});
-		
+
 			tx.vin.forEach((vin, j) => {
 				const txInput = txInputs[j];
-		
+
 				if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
 					try {
 						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-						
+
 						if(decodedAddress['type'] == 'GROUP') {
 							utils.parseGroupData(tokens, NFTs, decodedAddress, txInput.scriptPubKey.group);
 						}
-						
+
 					} catch (err) {
 						debugLog("vin electrum error", err)
 					}
@@ -384,27 +385,40 @@ async function mergeBalances(balanceResults) {
 	for (const type of ['confirmed', 'unconfirmed']) {
 		for (const key of Object.keys(balanceResults[type])) {
 			let group = nexaaddr.encode('nexa', 'GROUP', utils.hex2array(key));
-			const dbToken = await db.Tokens.findOne({
-				where:{
-					group: group
-				}
-			})
-
-			let token = mergedBalances[group] || dbToken;
-
-			// Format confirmed and unconfirmed balances
-			let amountNotFormatted = balanceResults[type][key].toString();
-			if(!token.is_nft) {
-				token[type + 'BalanceFormatted'] = formatBalance(amountNotFormatted, token.genesis.decimal_places);
-			} else {
-				token[type + 'BalanceFormatted'] = amountNotFormatted;
+			let token = {}
+			if(mergedBalances[group] == null) {
+				mergedBalances[group] = {}
+			} else{
+				token = mergedBalances[group]
 			}
-
 			token[type + 'Balance'] = balanceResults[type][key];
-
 			token.tokenImageUrl = await handleKnownToken(group);
 			mergedBalances[group] = token;
 		}
+	}
+
+	const dbTokens = await db.Tokens.findAll({
+		where:{
+			group: {
+				[Op.in]: Object.keys(mergedBalances)
+			}
+		},
+	})
+	for(let i = 0; i < dbTokens.length; i++){
+		const data = dbTokens[i];
+		const mergedData = mergedBalances[data.group]
+		const keys = Object.keys(mergedData);
+		if(!data.is_nft){
+			if(keys.includes('confirmedBalance')){
+				mergedData['confirmedBalanceFormatted'] = formatBalance(mergedData['confirmedBalance'], data.genesis.decimal_places);
+			}
+			if(keys.includes('unconfirmedBalance')){
+				mergedData['unconfirmedBalanceFormatted'] = formatBalance(mergedData['confirmedBalance'], data.genesis.decimal_places);
+			}
+		}
+		let token = {}
+		Object.assign(token, data.dataValues, mergedData);
+		mergedBalances[data.group] = token
 	}
 	return mergedBalances;
 }

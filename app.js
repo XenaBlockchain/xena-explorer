@@ -542,13 +542,14 @@ app.continueStartup = async function() {
 
 	utils.logMemoryUsage();
 	setInterval(utils.logMemoryUsage, 5000);
-
-	try {
-		// as this is just adding to a queue we can await it now.
-		await coreApi.readKnownTokensIntoCache();
-	} catch (err){
-		debugLog(err)
-		global.processingTokens = false
+	if(config.syncTokens){
+		try {
+			// as this is just adding to a queue we can await it now.
+			await coreApi.readKnownTokensIntoCache();
+		} catch (err){
+			debugLog(err)
+			global.processingTokens = false
+		}
 	}
 };
 
