@@ -1464,12 +1464,12 @@ async function search(req, res, wantsJson = false) {
 	if(wantsJson) {
 		var query = req.query.q.toLowerCase().trim();
 		var rawCaseQuery = req.query.q.trim();
-	
+
 		req.session.query = req.query.q;
 	}else {
 		var query = req.body.query.toLowerCase().trim();
 		var rawCaseQuery = req.body.query.trim();
-	
+
 		req.session.query = req.body.query;
 	}
 
@@ -1499,7 +1499,7 @@ async function search(req, res, wantsJson = false) {
 
 				try {
 					let decodedAddress = nexaaddr.decode(query);
-			
+
 					if(decodedAddress['type'] == 'GROUP') {
 						const data = [{value: "/token/" + query, text: query}]
 						searchResponse(req, res, query, data, wantsJson)
@@ -1545,7 +1545,7 @@ async function search(req, res, wantsJson = false) {
 		});
 
 	} else {
-		
+
 		try {
 			const validatedAddress = await coreApi.getAddress(rawCaseQuery);
 			if (validatedAddress && validatedAddress.isvalid) {
@@ -1553,15 +1553,14 @@ async function search(req, res, wantsJson = false) {
 				searchResponse(req, res, query, data, wantsJson)
 			}
 
-			
 			let decodedAddress = nexaaddr.decode(query);
-	
+
 			if(decodedAddress['type'] == 'GROUP') {
 				const data = [{value: "/token/" + query, text: query}]
 				searchResponse(req, res, query, data, wantsJson)
 			}
 		} catch (err) {
-			debugLog(err)
+			logError("2237badAddress",err);
 		}
 		let data = []
 		try {

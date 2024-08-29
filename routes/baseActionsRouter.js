@@ -1184,7 +1184,7 @@ function getInputPayloadContractPayload(tx) {
 router.get("/tx/:transactionIdentifier", function(req, res, next) {
 	var txIdentifier = req.params.transactionIdentifier;
 	if (txIdentifier.length != 64) {
-		res.locals.pageErrors.push(utils.logError("2237y4ewssgt", err));
+		res.locals.pageErrors.push(utils.logError("2237y4ewssgt", "Wrong transaction indetifier length"));
 
 		res.render("transaction");
 	} else {
