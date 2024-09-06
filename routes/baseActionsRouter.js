@@ -10,7 +10,7 @@ import nexaaddrjs from 'nexaaddrjs';
 import crypto from 'crypto-js';
 const {sha256, hexEnc} = crypto;
 import Decimal from "decimal.js";
-import Nexcore from 'nexcore-lib'
+import libnexa from 'libnexa-js'
 import db from "../models/index.js";
 
 
@@ -1393,9 +1393,9 @@ router.get("/token/:token", async function(req, res, next) {
 			res.locals.token = token;
 			res.locals.tokenInfo = result
 			try {
-				res.locals.script = new Nexcore.Script(result.op_return).toString()
+				res.locals.script = new libnexa.Script(result.op_return).toString()
 				var bytes = nexaaddrjs.decode(token)
-				res.locals.scriptAddress = Nexcore.Script.fromHex(bytes.hash).toString()
+				res.locals.scriptAddress = libnexa.Script.fromHex(bytes.hash).toString()
 			} catch(err){
 				debugLog("Cannot parse Script:", err)
 			}
