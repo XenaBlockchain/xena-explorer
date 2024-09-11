@@ -16,22 +16,24 @@ import JSZip from "jszip";
 const debugLog = debug("nexexp:queue");
 
 const tokenQueue = new BeeQueue('tokenQueue',{
-    redis: createClient(config.redisUrl)
+	redis: createClient(config.redisUrl),
+	activateDelayedJobs: true,
+	removeOnSuccess: true
 });
 
 
-tokenQueue.process(async (job) => {
-    debugLog(`Processing job ${job.id}, token: ${job.data.token}`);
+tokenQueue.process(3,async (job) => {
+	debugLog(`Processing job ${job.id}, token: ${job.data.token}`);
 	let token = job.data.token;
 	let isNFT = job.data.isNFT
-    return new Promise(async function(resolve, reject) {
+	return new Promise(async function(resolve, reject) {
 		let tokenInfo = null;
 		const transfers = [];
 		let totalSupply = BigInt(0);
 		let genesisTxTime = null;
 		let circulatingSupply = BigInt(0);
 		const result = await coreApi.getTokenGenesis(token);
-		var promises = [];
+		let promises = [];
 		if(result) {
 			tokenInfo = result;
 
@@ -151,7 +153,7 @@ tokenQueue.process(async (job) => {
 						tokenSeries = nftData?.nftMetadata?.series ?? null;
 						tokenAuthor = nftData?.nftMetadata?.author ?? null;
 						nftMetadata = nftData?.nftMetadata ?? null;
-						
+
 						if (!fs.existsSync(nftPath + '/' + token)){
 							fs.mkdirSync(nftPath + '/' + token);
 						}
@@ -176,7 +178,7 @@ tokenQueue.process(async (job) => {
 
 							}
 						}
-						
+
 					} catch(err){
 						debugLog(`cannot load NFT data: ${err}`)
 					}
@@ -192,9 +194,20 @@ tokenQueue.process(async (job) => {
 						tokenSeriesId = seriesModel.id;
 					}
 				}
+				let operations = 0;
+				let holders = 0;
+				try {
+					operations = await utils.fetchTokenOperations(token);
+				} catch (e) {
+					debugLog("Unable to get operations count for token: " + token)
+				}
+				try {
+					holders = await utils.fetchTokenHoldersCount(token);
+				} catch (e) {
+					debugLog("Unable to get token holders count for token: " + token)
+				}
 
-				const operations = await utils.fetchTokenOperations(token);
-				const holders = await utils.fetchTokenHoldersCount(token);
+
 				const [tokenModel, created] = await db.Tokens.findOrCreate({
 					where: { group: token  },
 					defaults: {
@@ -219,7 +232,7 @@ tokenQueue.process(async (job) => {
 
 				if(!created && tokenModel) {
 					await db.Tokens.update(
-						{ 
+						{
 							parent: parent,
 							is_nft: isNFT,
 							nft_data: nftMetadata,

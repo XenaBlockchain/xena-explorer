@@ -1249,18 +1249,16 @@ async function loadNFTData(zipData) {
 		nftFiles: files
 	}
 }
-async function loadGroupDataSlow(knownTokens, indexedTokens, isNfts = false){
-	for (const token of knownTokens) {
-		const foundIndex = indexedTokens.findIndex((element) => element.groupId == token);
-		if (foundIndex == -1) { 
-			try {
-				tokenQueue.createJob({token: token, isNFT:isNfts})
+async function loadGroupDataSlow(filteredTokens, isNfts = false){
+	for (const token of filteredTokens) {
+		try {
+			await tokenQueue.createJob({token: token, isNFT: isNfts})
 				.timeout(30000)
 				.retries(2)
+				.delayUntil(Date.now() + 120000)
 				.save()
-			} catch (err) {
-				debugLog(err);
-			}
+		} catch (err) {
+			debugLog(err);
 		}
 	}
 }

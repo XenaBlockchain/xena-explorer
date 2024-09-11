@@ -1,3 +1,6 @@
+import debug from "debug";
+const debugLog = debug("nexexp:sql");
+
 import fs from 'fs';
 import path from 'path';
 import { Sequelize } from 'sequelize';
@@ -13,11 +16,18 @@ const config = configFile[env];
 const db = {};
 
 let sequelize;
+
+// add concurency testing to the config hash
+config.transactionType =  'IMMEDIATE';
+config.logging =  msg => debugLog(msg);
+
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
+
+sequelize.query('PRAGMA journal_mode=WAL;')
 
 const files = fs
   .readdirSync(__dirname)
