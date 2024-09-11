@@ -529,9 +529,7 @@ app.continueStartup = async function() {
 	//load known tokens
 	global.firstRun = true;
 	global.processingTokens = false;
-	global.knownTokens = [];
 	global.tokenImages = [];
-	global.knownNFTs = [];
 
 	// disable projects metadat a till we
 	// find a proper API for gitlab
@@ -543,13 +541,18 @@ app.continueStartup = async function() {
 	utils.logMemoryUsage();
 	setInterval(utils.logMemoryUsage, 5000);
 	if(config.syncTokens){
-		try {
-			// as this is just adding to a queue we can await it now.
-			await coreApi.readKnownTokensIntoCache();
-		} catch (err){
-			debugLog(err)
-			global.processingTokens = false
-		}
+		// first run on boot up
+		await coreApi.readKnownTokensIntoCache()
+		// run every 30 mins incase we miss a block notification
+		setInterval(async function () {
+			try {
+				await coreApi.readKnownTokensIntoCache()
+			} catch (err) {
+				debugLog(err)
+				global.processingTokens = false
+			}
+
+		}, 1800000)
 	}
 };
 

@@ -345,9 +345,6 @@ router.get("/nfts", function(req, res, next){
 		filterBy = req.query.filterBy;
 	}
 
-	console.log(req.query)
-	console.log(offset)
-
 	res.locals.limit = limit;
 	res.locals.offset = offset;
 	res.locals.sort = sort;
@@ -1267,7 +1264,7 @@ router.get("/tx/:transactionIdentifier", function(req, res, next) {
 					res.locals.tokenData = result;
 					resolve();
 				}).catch(function(err) {
-					res.locals.pageErrors.push(utils.logError("132r80h32rh", err));
+					res.locals.pageErrors.push(utils.logError("132r80h32rh-a", err));
 
 					reject(err);
 				});
@@ -1801,7 +1798,7 @@ router.get("/address/:address", function(req, res, next) {
 					resolve();
 
 				}).catch(function(err) {
-					res.locals.pageErrors.push(utils.logError("132r80h32rh", err));
+					res.locals.pageErrors.push(utils.logError("132r80h32rh-b", err));
 
 					reject(err);
 				});
@@ -1825,7 +1822,7 @@ router.get("/address/:address", function(req, res, next) {
 				res.locals.tokenData = result;
 				resolve();
 			}).catch(function(err) {
-				res.locals.pageErrors.push(utils.logError("132r80h32rh", err));
+				res.locals.pageErrors.push(utils.logError("132r80h32rh-c", err));
 
 				reject(err);
 			});

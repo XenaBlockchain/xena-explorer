@@ -47,7 +47,7 @@ const handleNotifications = async function (data) {
 					try {
 						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
 
-						if(decodedAddress['type'] == 'GROUP') {
+						if(decodedAddress['type'] === 'GROUP') {
 							utils.parseGroupData(tokens, NFTs, decodedAddress, vout.scriptPubKey.group);
 						}
 					} catch (err) {
@@ -63,7 +63,7 @@ const handleNotifications = async function (data) {
 					try {
 						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
 
-						if(decodedAddress['type'] == 'GROUP') {
+						if(decodedAddress['type'] === 'GROUP') {
 							utils.parseGroupData(tokens, NFTs, decodedAddress, txInput.scriptPubKey.group);
 						}
 
@@ -78,28 +78,30 @@ const handleNotifications = async function (data) {
 		NFTs = [...NFTs]
 		debugLog('NFTS caught by electrum: ', NFTs)
 
-		tokens.forEach(async function(token){
+		for (const token of tokens) {
 			try {
-				tokenQueue.createJob({token: token, isNFT:false})
+				await tokenQueue.createJob({token: token, isNFT: false})
 					.timeout(30000)
 					.retries(2)
+					.delayUntil(Date.now() + 120000)
 					.save()
 			} catch (err) {
 				debugLogError(err)
 			}
-		})
+		}
 
-		NFTs.forEach(async function(nft){
+		for (const nft of NFTs) {
 			debugLog("Updating NFT in cache: ",nft)
 			try {
-				tokenQueue.createJob({token: nft, isNFT:true})
-				.timeout(30000)
-				.retries(2)
-				.save()
+				await tokenQueue.createJob({token: nft, isNFT: true})
+					.timeout(30000)
+					.retries(2)
+					.delayUntil(Date.now() + 120000)
+					.save()
 			} catch (err) {
 				debugLogError(err)
 			}
-		})
+		}
 	}
 }
 

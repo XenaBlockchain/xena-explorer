@@ -1621,82 +1621,83 @@ function getTransactionTokens(txids) {
 
 function readKnownTokensIntoCache() {
 	return new Promise(async function(resolve, reject) {
+		let tokenApiGroups = [];
+		let tokenApiSubGroups = [];
 		if(!global.processingTokens) {
 			global.processingTokens = true;
-			if(global.firstRun) {
-				try {
-					var groups = []
-					var subgroups = []
 
+			try {
+				let groups = [];
+				let subgroups = [];
+
+				try {
+					let pageResults = 500;
+					let page = 1;
+					let limit = 500
+
+					do {
+						const data = await utils.fetchGroups(page, limit)
+						pageResults = data?.results
+						const dataParsed = data?.tokens.map(item => item.token);
+						groups = groups.concat(dataParsed)
+						page++;
+					} while(pageResults != 0)
+					debugLog("Total number of cached tokens: " + groups.length)
+				} catch(err) {
+					debugLog(err)
+					debugLog("Can't load NFTs from electrum for token: " + token);
+				}
+
+				for (const token of utils.knownNFTProviders()) {
 					try {
 						let pageResults = 500;
 						let page = 1;
 						let limit = 500
 
 						do {
-							const data = await utils.fetchGroups(page, limit)
+							const data = await utils.fetchSubGroups(token, page, limit)
 							pageResults = data?.results
 							const dataParsed = data?.tokens.map(item => item.token);
-							groups = groups.concat(dataParsed)
+							subgroups = subgroups.concat(dataParsed)
 							page++;
 						} while(pageResults != 0)
-						debugLog("Total number of cached tokens: " + groups.length)
+						debugLog("Total number of cached NFTs: " + subgroups.length)
 					} catch(err) {
 						debugLog(err)
-						debugLog("Can't load NFTs from electrum for token: " + token);
+						debugLog("cant load NFT's from token API for token: ", token);
 					}
 
-					for (const token of utils.knownNFTProviders()) {
-						try {
-							let pageResults = 500;
-							let page = 1;
-							let limit = 500
-
-							do {
-								const data = await utils.fetchSubGroups(token, page, limit)
-								pageResults = data?.results
-								const dataParsed = data?.tokens.map(item => item.token);
-								subgroups = subgroups.concat(dataParsed)
-								page++;
-							} while(pageResults != 0)
-							debugLog("Total number of cached NFTs: " + subgroups.length)
-						} catch(err) {
-							debugLog(err)
-							debugLog("cant load NFT's from token API for token: ", token);
-						}
-
-					}
-					global.knownTokens = groups;
-					global.knownNFTs = subgroups;
-
-				} catch(err) {
-					debugLog("Unable to load tokens or NFTS")
 				}
-	
-				global.firstRun = false;
+				tokenApiGroups = groups;
+				tokenApiSubGroups = subgroups;
+
+			} catch(err) {
+				debugLog("Unable to load tokens or NFTS")
 			}
-	
-			var indexedTokens = await db.Tokens.findAll({
+
+
+			const dbIndexedTokens = await db.Tokens.findAll({
+				attributes: ['group'],
 				where: {
-				  is_nft: false,
+					is_nft: false,
 				},
 			});
-			var tokenGroups = indexedTokens.map(token => token.group);
+			const cachedTokenGroups = dbIndexedTokens.map(token => token.group);
 
-			var indexedNFTs = await db.Tokens.findAll({
+			const dbIndexedNFTs = await db.Tokens.findAll({
+				attributes: ['group'],
 				where: {
-				  is_nft: true,
+					is_nft: true,
 				},
 			});
-			var NFTGroups = indexedNFTs.map(token => token.group);
-			
-			//work around for dump token set dumping anything
-			global.knownTokens = global.knownTokens.map(tk => {
-				return global.knownNFTs.includes(tk) ? null : tk;
-			}).filter(tk => tk !== null);
 
-			await utils.loadGroupDataSlow(global.knownTokens, tokenGroups);
-			await utils.loadGroupDataSlow(global.knownNFTs, NFTGroups, true);
+			const cachedNFTGroups = dbIndexedNFTs.map(token => token.group);
+
+			const notIndexedGroups = tokenApiGroups.filter(item => !cachedTokenGroups.includes(item));
+			const notIndexedSubGroups = tokenApiSubGroups.filter(item => !cachedNFTGroups.includes(item));
+
+			await utils.loadGroupDataSlow(notIndexedGroups);
+			await utils.loadGroupDataSlow(notIndexedSubGroups, true);
 
 			global.processingTokens = false;
 		}
