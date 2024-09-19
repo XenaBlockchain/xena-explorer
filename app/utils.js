@@ -486,6 +486,16 @@ function getTxTotalInputOutputValues(tx, txInputs, blockHeight) {
 	return {input:totalInputValue, output:totalOutputValue};
 }
 
+// returns block reward for a given height
+function getBlockReward(nHeight) {
+	const nSubsidyHalvingInterval = 1050000;
+	const halvings = Math.floor(nHeight / nSubsidyHalvingInterval);
+	let initialBlockSubsidy = 10 * 1000000 * 100; // 10 mil nex in satoshis
+	let blockRewardSat=Math.floor(initialBlockSubsidy/(halvings+1));
+	var to_return = blockRewardSat / 100;
+	return to_return.toFixed(2);
+}
+
 // returns the amount of minted NEX (100 satoshis) for a given height
 function getCoinsMinted(nHeight = -1) {
 	let totalMinted = 0;
@@ -1635,6 +1645,7 @@ export default {
 	logMemoryUsage,
 	getMinerFromCoinbaseTx,
 	getMinerCustomData,
+	getBlockReward,
 	getBlockTotalFeesFromCoinbaseTxAndBlockHeight,
 	getCoinsMinted,
 	getDifficulty,

@@ -26,10 +26,10 @@ const limiter = rateLimit({
 
 const corsOptions = {
 
-	origin: function(origin, callback){    // allow requests with no origin 
+	origin: function(origin, callback){ // allow requests with no origin
 		// (like mobile apps or curl requests)
 		if(!origin) return callback(null, true);
-		
+
 		if(config.corsAllowedServers.indexOf(origin) === -1){
 		  var msg = 'The CORS policy for this site does not ' +
 					'allow access from the specified Origin.';
@@ -38,7 +38,7 @@ const corsOptions = {
 		return callback(null, true);
 	},
 	optionsSuccessStatus: 200
-  }
+}
 
 router.use(limiter);
 
@@ -267,6 +267,16 @@ router.get("/block-tx-summaries/:blockHeight/:txids", function(req, res, next) {
 router.get("/coinsupply", function(req, res, next) {
 	coreApi.getBlockCount().then(function(blocks) {
 		const data = utils.getCoinsMinted(parseInt(blocks));
+		res.set('Content-Type', 'text/json')
+		res.send(data)
+		//res.json(new Number(data).toFixed(2));
+		utils.perfMeasure(req);
+	});
+});
+// returns the current block reward
+router.get("/current-block-reward", function(req, res, next) {
+	coreApi.getBlockCount().then(function(blocks) {
+		const data = utils.getBlockReward(parseInt(blocks));
 		res.set('Content-Type', 'text/json')
 		res.send(data)
 		//res.json(new Number(data).toFixed(2));
