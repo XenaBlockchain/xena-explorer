@@ -26,10 +26,10 @@ const limiter = rateLimit({
 
 const corsOptions = {
 
-	origin: function(origin, callback){    // allow requests with no origin 
+	origin: function(origin, callback){ // allow requests with no origin
 		// (like mobile apps or curl requests)
 		if(!origin) return callback(null, true);
-		
+
 		if(config.corsAllowedServers.indexOf(origin) === -1){
 		  var msg = 'The CORS policy for this site does not ' +
 					'allow access from the specified Origin.';
@@ -38,7 +38,7 @@ const corsOptions = {
 		return callback(null, true);
 	},
 	optionsSuccessStatus: 200
-  }
+}
 
 router.use(limiter);
 
@@ -268,8 +268,18 @@ router.get("/coinsupply", function(req, res, next) {
 	coreApi.getBlockCount().then(function(blocks) {
 		const data = utils.getCoinsMinted(parseInt(blocks));
 		res.set('Content-Type', 'text/json')
-		res.send(data)
-		//res.json(new Number(data).toFixed(2));
+		// from http://expressjs.com/4x/api.html#res.send
+		// The body parameter can be a Buffer object, a String, an object, or an Array.
+		res.send(String(data))
+		utils.perfMeasure(req);
+	});
+});
+// returns the current block reward
+router.get("/current-block-reward", function(req, res, next) {
+	coreApi.getBlockCount().then(function(blocks) {
+		const data = utils.getBlockReward(parseInt(blocks));
+		res.set('Content-Type', 'text/json')
+		res.send(String(data))
 		utils.perfMeasure(req);
 	});
 });
