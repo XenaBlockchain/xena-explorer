@@ -268,8 +268,9 @@ router.get("/coinsupply", function(req, res, next) {
 	coreApi.getBlockCount().then(function(blocks) {
 		const data = utils.getCoinsMinted(parseInt(blocks));
 		res.set('Content-Type', 'text/json')
-		res.send(data)
-		//res.json(new Number(data).toFixed(2));
+		// from http://expressjs.com/4x/api.html#res.send
+		// The body parameter can be a Buffer object, a String, an object, or an Array.
+		res.send(String(data))
 		utils.perfMeasure(req);
 	});
 });
@@ -278,8 +279,7 @@ router.get("/current-block-reward", function(req, res, next) {
 	coreApi.getBlockCount().then(function(blocks) {
 		const data = utils.getBlockReward(parseInt(blocks));
 		res.set('Content-Type', 'text/json')
-		res.send(data)
-		//res.json(new Number(data).toFixed(2));
+		res.send(String(data))
 		utils.perfMeasure(req);
 	});
 });
