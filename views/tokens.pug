@@ -111,7 +111,7 @@ block content
 												td.data-cell.text-monospace.text-left
 													- var isTokenTrusted = utils.knownTokens().includes(token.group);
 													if(isTokenTrusted)
-														img.rounded(src="img/tokens/"+ token.group.substring(5) + ".png", alt="", width=24)
+														img.rounded(src="img/tokens/"+ token.group.split(":")[1] + ".png", alt="", width=24)
 												td.data-cell.text-monospace.text-left
 													if token.name && token.ticker
 														span #{token.name} (#{token.ticker})
@@ -119,7 +119,7 @@ block content
 														span #{token.group}
 												td.data-cell.text-monospace.text-left.word-wrap
 													span
-														a(href=("/token/" + token.group)) #{token.group.substring(5)}
+														a(href=("/token/" + token.group)) #{token.group.split(":")[1]}
 												td.data-cell.text-monospace.text-left
 													span #{token.transfers}
 												td.data-cell.text-monospace.text-left
@@ -133,9 +133,9 @@ block content
 									h5.card-title
 										- var isTokenTrusted = utils.knownTokens().includes(token.group);
 										if(isTokenTrusted)
-											img.m-1.rounded(src="img/tokens/"+ token.group.substring(5) + ".png", alt="", width=24)
+											img.m-1.rounded(src="img/tokens/"+ token.group.split(":")[1] + ".png", alt="", width=24)
 										span #{token.name}
-									
+
 									p.card-text
 										span
 											a(href=("/token/" + token.group)) #{utils.ellipsize(token.group, 66)}
