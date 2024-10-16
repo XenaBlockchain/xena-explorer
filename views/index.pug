@@ -119,7 +119,7 @@ block content
 					div.card-body.px-2.px-sm-3
 						table.table.table-striped.table-responsive.mb-0.table-hidden.table-responsive
 								if(topTenTokens && topTenTokens.length >0)
-									thead 
+									thead
 										tr
 											th.data-header.text-left
 												span.font-weight-bold Icon
@@ -137,7 +137,7 @@ block content
 												td.data-cell.text-monospace.text-left
 													- var isTokenTrusted = utils.knownTokens().includes(token.group);
 													if(isTokenTrusted)
-														img.rounded(src="img/tokens/" + token.group.substring(5) + ".png", alt="", width=24)
+														img.rounded(src="img/tokens/" + token.group.split(":")[1] + ".png", alt="", width=24)
 												td.data-cell.text-monospace.text-left
 													span
 														a(href=("/token/" + token.group))(title=token.group, data-toggle="tooltip") #{token.name} (#{token.ticker})
@@ -161,7 +161,7 @@ block content
 										if(isTokenTrusted && token.document_info)
 											img.m-1.rounded(src=token.document_info.icon, alt="", width=24)
 										span #{token.name} 
-									
+
 									p.card-text
 										span
 											a(href=("/token/" + token.group)) #{token.group}
