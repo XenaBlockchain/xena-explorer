@@ -30,11 +30,11 @@ const corsOptions = {
 		// (like mobile apps or curl requests)
 		if(!origin) return callback(null, true);
 
-		if(config.corsAllowedServers.indexOf(origin) === -1){
-		  var msg = 'The CORS policy for this site does not ' +
-					'allow access from the specified Origin.';
-		  return callback(new Error(msg), false);
-		}
+		// if(config.corsAllowedServers.indexOf(origin) === -1){
+		//   var msg = 'The CORS policy for this site does not ' +
+		// 			'allow access from the specified Origin.';
+		//   return callback(new Error(msg), false);
+		// }
 		return callback(null, true);
 	},
 	optionsSuccessStatus: 200
@@ -111,7 +111,7 @@ router.get("/getrecentblocks", function(req, res, next) {
 	});
 });
 
-router.get("/blocks", function(req, res, next) {
+router.get("/blocks", cors(), function(req, res, next){
 	var args = {}
 	if (req.query.limit)
 		args.limit = parseInt(req.query.limit);
