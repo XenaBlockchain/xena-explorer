@@ -23,7 +23,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Leave this here for future, just in case we want cors.
 const corsOptions = {
 
 	origin: function(origin, callback){ // allow requests with no origin
@@ -110,7 +109,7 @@ router.get("/getrecentblocks", function(req, res, next) {
 		next();
 	});
 });
-
+router.options("/blocks", cors())
 router.get("/blocks", cors(), function(req, res, next){
 	var args = {}
 	if (req.query.limit)
