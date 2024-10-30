@@ -781,6 +781,7 @@ router.post("/decoder", function(req, res, next) {
 		res.redirect("/decoder");
 		return;
 	}
+	res.locals.tokenData = [];
 
 	var promises = [];
 	// Clean up the input in a variety of ways that a cut-paste might have

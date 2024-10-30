@@ -106,7 +106,7 @@ div.row.text-monospace
 												span )
 										if (vout.scriptPubKey.group)
 											- var shortenedGroup = utils.ellipsize(vout.scriptPubKey.group, 33)
-											if(tokenData[vout.scriptPubKey.group] != null)
+											if(tokenData.includes(vout.scriptPubKey.group))
 												- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
 												- var hexEncodedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
 												- var tokenGroup = tokenData[vout.scriptPubKey.group];
@@ -134,7 +134,7 @@ div.row.text-monospace
 										if (vout && vout.value)
 											- var currencyValue = vout.value;
 											include ./value-display.pug
-											if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData[vout.scriptPubKey.group] != null)
+											if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData.includes(vout.scriptPubKey.group))
 													- var tokenGroup = tokenData[vout.scriptPubKey.group];
 													if(tokenGroup.id)
 														if (tokenGroup.is_nft)
@@ -236,7 +236,7 @@ div.row.text-monospace
 										each addr in vout.scriptPubKey.addresses
 											a(id=("outpoint-" + vout.outpoint), href=("/address/" + addr))
 												span.text-monospace.word-wrap(class=(highlightRow ? "font-weight-bold" : "")) #{addr}
-											if (vout.scriptPubKey.group && tokenData[vout.scriptPubKey.group] != null)
+											if (vout.scriptPubKey.group && tokenData.includes(vout.scriptPubKey.group))
 												- var shortenedGroup = utils.ellipsize(vout.scriptPubKey.group, 33)
 												- var tokenGroup = tokenData[vout.scriptPubKey.group];
 												- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
@@ -249,6 +249,14 @@ div.row.text-monospace
 													div.mb-tiny
 														small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;cursor:pointer;`)
 															span(title="Token Infomation" data-content=`<ul> <li> ${hexEncodedTokenID} </li> <li> <a href="/token/${vout.scriptPubKey.group}"> ${vout.scriptPubKey.group} </a> </li></ul>`, data-toggle="popover", data-trigger="click") #{shortenedGroup}
+											else if(vout.scriptPubKey.group)
+												- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
+												- var hexEncodedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
+												- var shortenedGroup = utils.ellipsize(vout.scriptPubKey.group, 33)
+												div.mb-tiny
+													small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;cursor:pointer;`)
+														span(title="Token Infomation" data-content=`<ul> <li> ${hexEncodedTokenID} </li> <li> <a href="/token/${vout.scriptPubKey.group}"> ${vout.scriptPubKey.group} </a> </li></ul>`, data-toggle="popover", data-trigger="click") #{shortenedGroup}
+												
 											div(style="display:flex")
 													if (vout.scriptPubKey.groupAuthority > 0)
 														- var activeFlags = utils.tokenAuthToFlags(vout.scriptPubKey.groupAuthority);
@@ -314,7 +322,7 @@ div.row.text-monospace
 								- var currencyValue = vout.value;
 								include ./value-display.pug
 
-								if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData[vout.scriptPubKey.group] != null)
+								if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData.includes(vout.scriptPubKey.group))
 									- var tokenGroup = tokenData[vout.scriptPubKey.group];
 									- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
 									if(tokenGroup.id)
