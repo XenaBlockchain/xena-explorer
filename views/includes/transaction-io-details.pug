@@ -106,11 +106,11 @@ div.row.text-monospace
 												span )
 										if (vout.scriptPubKey.group)
 											- var shortenedGroup = utils.ellipsize(vout.scriptPubKey.group, 33)
-											if(tokenData.includes(vout.scriptPubKey.group))
+											if (vout.scriptPubKey.group in tokenData)
 												- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
 												- var hexEncodedTokenID = utils.tokenID2HexString(vout.scriptPubKey.group);
 												- var tokenGroup = tokenData[vout.scriptPubKey.group];
-	
+
 												div.mb-tiny
 													if(tokenGroup.id)
 														small.data-tag.font-weight-bold(style=`display:inline-block;background-color:${tokenColor}!important;margin-left:3px;cursor:pointer;`)
@@ -134,7 +134,7 @@ div.row.text-monospace
 										if (vout && vout.value)
 											- var currencyValue = vout.value;
 											include ./value-display.pug
-											if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData.includes(vout.scriptPubKey.group))
+											if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && (vout.scriptPubKey.group in tokenData))
 													- var tokenGroup = tokenData[vout.scriptPubKey.group];
 													if(tokenGroup.id)
 														if (tokenGroup.is_nft)
@@ -236,7 +236,7 @@ div.row.text-monospace
 										each addr in vout.scriptPubKey.addresses
 											a(id=("outpoint-" + vout.outpoint), href=("/address/" + addr))
 												span.text-monospace.word-wrap(class=(highlightRow ? "font-weight-bold" : "")) #{addr}
-											if (vout.scriptPubKey.group && tokenData.includes(vout.scriptPubKey.group))
+											if (vout.scriptPubKey.group && (vout.scriptPubKey.group in tokenData))
 												- var shortenedGroup = utils.ellipsize(vout.scriptPubKey.group, 33)
 												- var tokenGroup = tokenData[vout.scriptPubKey.group];
 												- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
@@ -321,8 +321,7 @@ div.row.text-monospace
 
 								- var currencyValue = vout.value;
 								include ./value-display.pug
-
-								if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && tokenData.includes(vout.scriptPubKey.group))
+								if (vout.scriptPubKey.group && vout.scriptPubKey.groupQuantity > 0 && (vout.scriptPubKey.group in tokenData))
 									- var tokenGroup = tokenData[vout.scriptPubKey.group];
 									- var tokenColor = `hsl(${utils.tokenID2HueSaturation(vout.scriptPubKey.group)},${session.uiTheme && session.uiTheme == "dark" ?'67%':'40%'})`;
 									if(tokenGroup.id)
