@@ -2,7 +2,7 @@
 
 if(isTokenTrusted)
     div.d-flex.justify-content-start
-        img.rounded(src=tokenObj.document_info.icon, alt="", width=100)
+        img.rounded(src="/img/tokens/"+ tokenObj.group.split(":")[1] + ".png", alt="", width=100)
         h1.h3.word-wrap.mt-4.ml-1.text-bold(style="color:gray;") #{tokenObj.name} (#{tokenObj.ticker})
 else
     div.d-flex.justify-content-start
