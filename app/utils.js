@@ -1127,7 +1127,9 @@ function knownTokens() {
 			'nexa:tp0jg4h6gj5gcj5rrf9h6xclxstk52dr72yyttmrn6umrjyd6sqqqsy86tk9q',
 			'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f',
 			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9',
-			'nexa:tzjntmuvat5px5fp44auwpcjuqk4dkxz5wtysal4e3wmmut08yqqqy2ltpmwz'
+			'nexa:tzjntmuvat5px5fp44auwpcjuqk4dkxz5wtysal4e3wmmut08yqqqy2ltpmwz',
+			'nexa:tpjkhlhuazsgskkt5hyqn3d0e7l6vfvfg97cf42pprntks4x7vqqqcavzypmt',
+            'nexa:trm9zcajh900a02t8fmqklw99uflcvcd6antut98asxfxlq4rcqqqdw80lls5'
 		];
 	} else {
 		//testnet
