@@ -266,6 +266,13 @@ function addThousandsSeparators(x) {
 	return parts.join(".");
 }
 
+function padSatoshiValues (quantity, decimalPlaces) {
+	let satoshis = String(quantity).padStart(decimalPlaces, '0');
+	let integerPart = satoshis.slice(0, - decimalPlaces);
+	let fractionalPart = satoshis.slice(- decimalPlaces);
+	return integerPart + "." + fractionalPart;
+}
+
 function formatValueInActiveCurrency(amount) {
 	if (global.currencyFormatType && global.exchangeRates[global.currencyFormatType.toLowerCase()]) {
 		return formatExchangedCurrency(amount, global.currencyFormatType);
@@ -1695,5 +1702,6 @@ export default {
 	fetchTokenHoldersCount,
 	removePublicFromFile,
 	getFileType,
-	search
+	search,
+	padSatoshiValues
 };
