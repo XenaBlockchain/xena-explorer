@@ -1123,9 +1123,9 @@ function tokenAuthToFlags(groupAuth) {
 	return activeFlags;
 }
 
-function knownTokens() {
+function knownTokens(chain) {
 	let tokens = [];
-	if (global.activeBlockchain === "nexa") {
+	if (chain === "nexa") {
 		tokens = [
 			'nexa:tqcr5dzhetyyughy9uwgsc35altfmhwuk9t5vyn7yjzw9pc0pqqqqyz68skt0',
 			'nexa:tptlgmqhvmwqppajq7kduxenwt5ljzcccln8ysn9wdzde540vcqqqcra40x0x',
@@ -1136,7 +1136,7 @@ function knownTokens() {
 			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9',
 			'nexa:tzjntmuvat5px5fp44auwpcjuqk4dkxz5wtysal4e3wmmut08yqqqy2ltpmwz',
 			'nexa:tpjkhlhuazsgskkt5hyqn3d0e7l6vfvfg97cf42pprntks4x7vqqqcavzypmt',
-            'nexa:trm9zcajh900a02t8fmqklw99uflcvcd6antut98asxfxlq4rcqqqdw80lls5'
+			'nexa:trm9zcajh900a02t8fmqklw99uflcvcd6antut98asxfxlq4rcqqqdw80lls5'
 		];
 	} else {
 		//testnet
@@ -1144,10 +1144,14 @@ function knownTokens() {
 	return tokens;
 }
 
-function knownNFTProviders() {
-	return [
-		'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f'
-	]
+function knownNFTProviders(chain) {
+	if (chain === "nexa") {
+		return [
+			'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f'
+		]
+	} else {
+		return [];
+	}
 }
 
 function isValidHttpUrl(string) {
@@ -1162,7 +1166,7 @@ function isValidHttpUrl(string) {
 	return url.protocol === "http:" || url.protocol === "https:";
 }
 
-function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup){
+function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup, chain){
 	const groupSizeInBytes = decodedAddress.hash.length;
 
 	//Assume its a token
@@ -1175,7 +1179,7 @@ function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup){
 	else if (groupSizeInBytes > 32 && groupSizeInBytes <= 64) {
 		var parentGroupInBytes = decodedAddress.hash.slice(0, 32);
 		var encodedGroup = nexaaddr.encode('nexa', 'GROUP', parentGroupInBytes)
-		if(knownNFTProviders().includes(encodedGroup)){
+		if(knownNFTProviders(chain).includes(encodedGroup)){
 			if(!NFTSet.has(inOutGroup)) {
 				NFTSet.add(inOutGroup)
 			}
