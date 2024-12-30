@@ -1648,7 +1648,7 @@ function readKnownTokensIntoCache() {
 					debugLog("Can't load NFTs from electrum for token: " + token);
 				}
 
-				for (const token of utils.knownNFTProviders()) {
+				for (const token of utils.knownNFTProviders(global.activeBlockchain)) {
 					try {
 						let pageResults = 500;
 						let page = 1;

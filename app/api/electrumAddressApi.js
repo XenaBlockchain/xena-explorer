@@ -48,7 +48,7 @@ const handleNotifications = async function (data) {
 						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
 
 						if(decodedAddress['type'] === 'GROUP') {
-							utils.parseGroupData(tokens, NFTs, decodedAddress, vout.scriptPubKey.group);
+							utils.parseGroupData(tokens, NFTs, decodedAddress, vout.scriptPubKey.group, global.activeBlockchain);
 						}
 					} catch (err) {
 						debugLog("vout electrum error", err)
@@ -64,7 +64,7 @@ const handleNotifications = async function (data) {
 						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
 
 						if(decodedAddress['type'] === 'GROUP') {
-							utils.parseGroupData(tokens, NFTs, decodedAddress, txInput.scriptPubKey.group);
+							utils.parseGroupData(tokens, NFTs, decodedAddress, txInput.scriptPubKey.group, global.activeBlockchain);
 						}
 
 					} catch (err) {
@@ -375,7 +375,7 @@ async function executeElectrumRequest(method, ...params) {
 
 
 async function handleKnownToken(token) {
-	if (utils.knownTokens().includes(token)) {
+	if (utils.knownTokens(global.activeBlockchain).includes(token)) {
 		return await coreApi.getTokenIcon(token);
 	}
 }
