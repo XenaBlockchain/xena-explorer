@@ -171,8 +171,8 @@ div.tab-content
                             each item in transfers
                                 tr
                                     td.data-cell.text-monospace.text-right
-                                        - var className = utils.getBadgeForType(item.type)
-                                        span.badge(class=`p-1 m-1 ${className}`) #{item.type}
+                                        - var className = utils.getBadgeForType(item.operation)
+                                        span.badge(class=`p-1 m-1 ${className}`) #{item.operation}
                                     td.data-cell.text-monospace.text-left
                                         span 
                                             a(href=("/tx/" + item.txId)) #{utils.ellipsize(item.txId, 45)}
@@ -186,7 +186,7 @@ div.tab-content
                                         //- span #{moment.utc(new Date(item.date)).format('MMM D, Y, HH:MM')}
                                     td.data-cell.text-monospace.text-right
                                         span 
-                                            a(href=("/block/" + item.height)) #{item.height}
+                                            a(href=("/block/" + item.blockHeight)) #{item.blockHeight}
                                     td.data-cell.text-monospace.text-right
                                         span 
                                             button.btn.btn-link.btn-sm(type='button' data-toggle='collapse' data-target='#collapseExample-'+ item.id aria-expanded='false' aria-controls='collapseExample-'+ item.id)
@@ -221,7 +221,7 @@ div.tab-content
                     .card(style='width: 100%;').mb-2
                         .card-body(style='background-color: #282d33 !important;')
                             h5.card-title.text-center
-                                span.word-wrap #{item.type}  
+                                span.word-wrap #{item.operation}  
                         ul.list-group.list-group-flush
                             li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
                                 span Tx Id
@@ -237,7 +237,7 @@ div.tab-content
                             li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
                                 span Block
                                 span
-                                    a(href=("/block/" + item.height)) #{item.height}
+                                    a(href=("/block/" + item.blockHeight)) #{item.blockHeight}
 
             if (transfersCount > limit)
                 - var pageNumber = offset / limit + 1;
