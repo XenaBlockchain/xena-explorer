@@ -1,3 +1,10 @@
+/**
+ * This file is used to import and configure the sequelize database setting up params, with the ability to use a remote
+ * database rather than a sqlite db
+ * importing the ORM models and association of models and relationships.
+ * finally it exports the database model to be used by the explorer application
+ *
+ * **/
 import debug from "debug";
 const debugLog = debug("nexexp:sql");
 
