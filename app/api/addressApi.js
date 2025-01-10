@@ -8,18 +8,11 @@ import electrumAddressApi from "./electrumAddressApi.js";
 import blockchairAddressApi from "./blockchairAddressApi.js";
 
 function getSupportedAddressApis() {
-	return ["blockchair.com", "electrumx"];
+	return ["electrumx"];
 }
 
 function getCurrentAddressApiFeatureSupport() {
-	if (config.addressApi == "blockchair.com") {
-		return {
-			pageNumbers: true,
-			sortDesc: true,
-			sortAsc: false
-		};
-
-	} else if (config.addressApi == "electrumx") {
+	if (config.addressApi == "electrumx") {
 		return {
 			pageNumbers: true,
 			sortDesc: true,
@@ -32,10 +25,7 @@ function getAddressDetails(address, scriptPubkey, sort, limit, offset) {
 	return new Promise(function(resolve, reject) {
 		var promises = [];
 
-		if (config.addressApi == "blockchair.com") {
-			promises.push(blockchairAddressApi.getAddressDetails(address, scriptPubkey, sort, limit, offset));
-
-		} else if (config.addressApi == "electrumx") {
+		if (config.addressApi == "electrumx") {
 			promises.push(electrumAddressApi.getAddressDetails(address, scriptPubkey, sort, limit, offset));
 
 		} else {
