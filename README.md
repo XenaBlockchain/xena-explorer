@@ -3,9 +3,9 @@
 [![npm version][npm-ver-img]][npm-ver-url] [![NPM downloads][npm-dl-img]][npm-dl-url]
 
 
-Simple, database-free Bitcoin Cash blockchain explorer, via RPC. Built with Node.js, express, bootstrap-v4.
+Simple, database-free* Nexa blockchain explorer, via RPC. Built with Node.js, express, bootstrap-v4.
 
-This tool is intended to be a simple, self-hosted explorer for the Bitcoin blockchain, driven by RPC calls to your own bitcoind node. This tool is easy to run but currently lacks features compared to database-backed explorers.
+This tool is intended to be a simple, self-hosted explorer for the Nexa blockchain, driven by RPC calls to your own nexad node. This tool is easy to run but currently lacks features compared to database-backed explorers.
 
 Whatever reasons one might have for running a full node (trustlessness, technical curiosity, supporting the network, etc) it's helpful to appreciate the "fullness" of your node. With this explorer, you can not only explore the blockchain (in the traditional sense of the term "explorer"), but also explore the functional capabilities of your own node.
 
@@ -18,7 +18,7 @@ Live demo available at: [https://explorer.nexa.org/](https://explorer.nexa.org/)
 * Analysis tools for viewing stats on blocks, transactions, and miner activity
 * View JSON content used to generate most pages
 * Search by transaction ID, block hash/height, and address
-* Optional transaction history for addresses by querying from ElectrumX and blockchair.com
+* Optional transaction history for addresses by querying from ElectrumX (Rostrum)
 * Txpool summary, with fee, size, and age breakdowns
 * RPC command browser and terminal
 
