@@ -5,7 +5,6 @@ import utils from "../utils.js";
 const coinConfig = coins[config.coin];
 
 import electrumAddressApi from "./electrumAddressApi.js";
-import blockchairAddressApi from "./blockchairAddressApi.js";
 
 function getSupportedAddressApis() {
 	return ["electrumx"];
