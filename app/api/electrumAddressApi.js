@@ -289,66 +289,41 @@ function getAddressBalance(addrScripthash) {
 }
 
 async function getTokenBalanceForAddress(address, token) {
-	try {
-		let results;
-		if (token) {
-			results = await executeElectrumRequest('token.address.get_balance', address, null, token);
-		} else {
-			results = await executeElectrumRequest('token.address.get_balance', address);
-		}
-		return mergeBalances(results);
-	} catch (error) {
-		throw error;
+	let results;
+	if (token) {
+		results = await executeElectrumRequest('token.address.get_balance', address, null, token);
+	} else {
+		results = await executeElectrumRequest('token.address.get_balance', address);
 	}
+	return mergeBalances(results);
 }
 
 async function getTokenTransactionsForAddress(address) {
-	try {
-		const results = await executeElectrumRequest('token.address.get_history', address);
-		return results;
-	} catch (error) {
-		throw error;
-	}
+	return await executeElectrumRequest('token.address.get_history', address)
 }
 
 async function getTokenTransactions(token) {
-	try {
-		const results = await executeElectrumRequest('token.transaction.get_history', token, null);
-		debugLog(`getTokenTransactions=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
-		return results.history;
-	} catch (error) {
-		throw error;
-	}
+	const results = await executeElectrumRequest('token.transaction.get_history', token, null);
+	debugLog(`getTokenTransactions=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+	return results.history;
 }
 
 async function getTokenGenesis(tokenID) {
-	try {
-		const results = await executeElectrumRequest('token.genesis.info', tokenID);
-		debugLog(`tokenGenesisInfo=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
-		return results;
-	} catch (error) {
-		throw error;
-	}
+	const results = await executeElectrumRequest('token.genesis.info', tokenID);
+	debugLog(`tokenGenesisInfo=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+	return results;
 }
 
 async function getTx(tx) {
-	try {
-		const results = await executeElectrumRequest('blockchain.transaction.get', tx,true);
-		debugLog(`getTx=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
-		return results;
-	} catch (error) {
-		throw error;
-	}
+	const results = await executeElectrumRequest('blockchain.transaction.get', tx,true);
+	debugLog(`getTx=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+	return results;
 }
 
 async function getTokenNFTs(tokenID) {
-	try {
-		const results = await executeElectrumRequest('token.nft.list', tokenID);
-		debugLog(`getTokenNFTs=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
-		return results;
-	} catch (error) {
-		throw error;
-	}
+	const results = await executeElectrumRequest('token.nft.list', tokenID);
+	debugLog(`getTokenNFTs=${JSON.stringify(results, utils.bigIntToRawJSON)}`);
+	return results;
 }
 
 async function subscribeToBlockHeaders() {
