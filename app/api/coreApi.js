@@ -79,26 +79,26 @@ function createTieredCache(cacheObjs) {
 		get: async function (key) {
 			return await tryCache(key, cacheObjs, 0);
 		},
-		
+
 		set: function (key, obj, maxAge) {
 			for (let i = 0; i < cacheObjs.length; i++) {
 				cacheObjs[i].set(key, obj, maxAge);
 			}
 		},
-		
+
 		append: async function (key, obj, maxAge) {
 			let result = await tryCache(key, cacheObjs, 0);
 			result = Array.isArray(result) && result.length > 0 ? [...result, obj] : [obj];
-		
+
 			for (let i = 0; i < cacheObjs.length; i++) {
 				cacheObjs[i].set(key, result, maxAge);
 			}
 		},
-		
+
 		prepend: async function (key, obj, maxAge) {
 			let result = await tryCache(key, cacheObjs, 0);
 			result = Array.isArray(result) && result.length > 0 ? [obj, ...result] : [obj];
-		
+
 			for (let i = 0; i < cacheObjs.length; i++) {
 				cacheObjs[i].set(key, result, maxAge);
 			}
@@ -116,7 +116,7 @@ function createTieredCache(cacheObjs) {
 				result = [];
 				result.push(obj);
 			}
-		
+
 			for (let i = 0; i < cacheObjs.length; i++) {
 				cacheObjs[i].set(cacheKey, result, maxAge);
 			}
@@ -130,7 +130,6 @@ function createTieredCache(cacheObjs) {
 var miscCaches = [];
 var blockCaches = [];
 var txCaches = [];
-var tokenCaches = [];
 
 if (!config.noInmemoryRpcCache) {
 	global.cacheStats.memory = {
@@ -153,7 +152,6 @@ if (!config.noInmemoryRpcCache) {
 	miscCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	blockCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	txCaches.push(createMemoryLruCache(new LRU(10000), onMemoryCacheEvent));
-	tokenCaches.push(createMemoryLruCache(new LRU (10000), onMemoryCacheEvent));
 }
 
 if (redisCache.active) {
@@ -186,13 +184,11 @@ if (redisCache.active) {
 	miscCaches.push(redisCacheObj);
 	blockCaches.push(redisCacheObj);
 	txCaches.push(redisCacheObj);
-	tokenCaches.push(redisCacheObj);
 }
 
 var miscCache = createTieredCache(miscCaches);
 var blockCache = createTieredCache(blockCaches);
 var txCache = createTieredCache(txCaches);
-var tokenCache = createTieredCache(tokenCaches);
 
 
 
@@ -206,7 +202,7 @@ function getGenesisCoinbaseTransactionId() {
 }
 
 function getTokenGenesis(token) {
-	return tryCacheThenElectrum(tokenCache, "getTokenGenesis-" + token, ONE_YR, electrumAddressApi.getTokenGenesis(token));
+	return tryCacheThenElectrum(miscCache, "getTokenGenesis-" + token, ONE_YR, electrumAddressApi.getTokenGenesis(token));
 }
 
 async function tryCacheThenElectrum(cache, cacheKey, cacheMaxAge, electrumApiFunction, cacheConditionFunction) {
@@ -218,7 +214,7 @@ async function tryCacheThenElectrum(cache, cacheKey, cacheMaxAge, electrumApiFun
 
     try {
         const cacheResult = await cache.get(cacheKey);
-        
+
         if (cacheResult != null) {
             return cacheResult;
         }
@@ -378,7 +374,7 @@ function getTransactions(txids, cacheSpan=ONE_HR) {
 function getTransaction(tx) {
 	return tryCacheThenRpcApi(miscCache, "gettransaction-" + tx, 1000 * 60 * 1000, function() {
 		return rpcApi.getTransaction(tx);
-	}); 
+	});
 }
 
 function decodeRawTransaction(hex) {
@@ -453,7 +449,7 @@ function getTxCountStats(dataPtCount, blockStart, blockEnd) {
 						txStats.txLabels.push(i);
 					}
 				}
-				
+
 				resolve({txCountStats:txStats, getblockchaininfo:getblockchaininfo, totalTxCount:results[0].txcount});
 
 			}).catch(function(err) {
@@ -1255,7 +1251,7 @@ function getStatsForToken(token) {
 		});
 	});
 }
-  
+
 function getTokenStats(is_nft = false) {
 	return new Promise(function(resolve, reject){
 		db.Tokens.findAll({where:{ is_nft: is_nft}}).then(function(results){
@@ -1453,7 +1449,7 @@ function getNFTsHoldersCount () {
 	});
 }
 
-// find an NFT 
+// find an NFT
 function getNFT(group) {
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
@@ -1707,7 +1703,7 @@ function readKnownTokensIntoCache() {
 
 function getTokenIcon(token) {
 	return new Promise(function(resolve, reject){
-		tokenCache.get('tracked-tokens-icon-' + token).then(function(result) {
+		miscCache.get('tracked-tokens-icon-' + token).then(function(result) {
 			resolve(result);
 		}).catch(function(err) {
 			utils.logError("token-holders-failure", err, {token:token});
