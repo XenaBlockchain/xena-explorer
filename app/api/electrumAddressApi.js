@@ -16,7 +16,7 @@ var Op = db.Sequelize.Op;
 
 const coinConfig = coins[config.coin];
 
-const electrum = new ElectrumCluster('nexa-rpc-explorer', '1.4.3', 1, 1, ClusterOrder.PRIORITY, 30000);
+let electrum;
 
 var noConnectionsErrorText = "No ElectrumX connection available. This could mean that the connection was lost or that ElectrumX is processing transactions and therefore not accepting requests. This tool will try to reconnect. If you manage your own ElectrumX server you may want to check your ElectrumX logs.";
 
@@ -108,30 +108,38 @@ const handleNotifications = async function (data) {
 function connectToServers() {
 	debugLog('Connecting to Electrum...')
 	return new Promise(async function(resolve, reject) {
-		for (var i = 0; i < config.electrumXServers.length; i++) {
-			var { host, port, protocol } = config.electrumXServers[i];
-			var defaultProtocol;
-			switch (protocol) {
-				case "tcp":
-					defaultProtocol = ElectrumTransport.TCP.Scheme;
-					break;
-				case "tcp_tls":
-					defaultProtocol = ElectrumTransport.TCP_TLS.Scheme;
-					break;
-				case "ws":
-					defaultProtocol = ElectrumTransport.WS.Scheme;
-					break;
-				case "wss":
-					defaultProtocol = ElectrumTransport.WSS.Scheme;
-					break;
+		try {
+			electrum = new ElectrumCluster('nexa-rpc-explorer', '1.4.3', 1, config.electrumXServers.length, ClusterOrder.PRIORITY, 30000);
+			for (let i = 0; i < config.electrumXServers.length; i++) {
+				const {host, port, protocol} = config.electrumXServers[i];
+				let defaultProtocol;
+				switch (protocol) {
+					case "tcp":
+						defaultProtocol = ElectrumTransport.TCP.Scheme;
+						break;
+					case "tcp_tls":
+						defaultProtocol = ElectrumTransport.TCP_TLS.Scheme;
+						break;
+					case "ws":
+						defaultProtocol = ElectrumTransport.WS.Scheme;
+						break;
+					case "wss":
+						defaultProtocol = ElectrumTransport.WSS.Scheme;
+						break;
+				}
+				await electrum.addServer(host, port, defaultProtocol);
 			}
-			electrum.addServer(host, port, defaultProtocol);
+			await electrum.startup()
+			if(electrum.connections === 0) {
+				reject("Not connected to enough electrum servers")
+			}
+			electrum.on('notification', handleNotifications);
+			debugLog(`Connected to ElectrumX with ${electrum.connections} connections`);
+			resolve()
+		} catch (e) {
+			reject(e)
 		}
-		await electrum.startup()
-		await electrum.ready()
-		debugLog(`Connected to ElectrumX`);
-		electrum.on('notification', handleNotifications);
-		resolve()
+
 	});
 }
 
