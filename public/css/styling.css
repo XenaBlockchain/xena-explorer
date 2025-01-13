@@ -422,7 +422,6 @@ footer a:hover {
 @media (min-width: 350px) {
 	.card-nft {
 		max-width:22rem !important;
-		max-height:18rem !important;
 	}
 	#nft img {
 		object-fit: cover;

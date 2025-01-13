@@ -4,7 +4,7 @@ div.card-body.mb-3(id="nft")
 			each token in tokens
 				div.col-md-6.col-sm-12.col-lg-3.col-xl-2
 					.card.card-nft.rounded.mb-4
-						.overflow-hidden.d-flex.justify-content-center
+						.overflow-hidden.d-flex.justify-content-center.pt-4
 							- var filepath = token.files.length > 0 ? utils.removePublicFromFile(token.files[0].path) : null
 							if(filepath)
 								case utils.getFileType(token.files[0].ext)
