@@ -33,6 +33,7 @@ var cacheKeyVersion = "v1";
 const ONE_SEC = 1000;
 const ONE_MIN = 60 * ONE_SEC;
 const ONE_HR = 60 * ONE_MIN;
+const FIVE_MINUTES = 5 * ONE_MIN;
 const ONE_DAY = 24 * ONE_HR;
 const ONE_YR = 265 * ONE_DAY;
 
@@ -130,6 +131,7 @@ function createTieredCache(cacheObjs) {
 var miscCaches = [];
 var blockCaches = [];
 var txCaches = [];
+var marketDataCaches = [];
 
 if (!config.noInmemoryRpcCache) {
 	global.cacheStats.memory = {
@@ -152,6 +154,7 @@ if (!config.noInmemoryRpcCache) {
 	miscCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	blockCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	txCaches.push(createMemoryLruCache(new LRU(10000), onMemoryCacheEvent));
+	marketDataCaches.push(createMemoryLruCache(new LRU( 10000), onMemoryCacheEvent));
 }
 
 if (redisCache.active) {
@@ -184,12 +187,13 @@ if (redisCache.active) {
 	miscCaches.push(redisCacheObj);
 	blockCaches.push(redisCacheObj);
 	txCaches.push(redisCacheObj);
+	marketDataCaches.push(redisCacheObj)
 }
 
 var miscCache = createTieredCache(miscCaches);
 var blockCache = createTieredCache(blockCaches);
 var txCache = createTieredCache(txCaches);
-
+var marketCache = createTieredCache(marketDataCaches)
 
 
 
@@ -201,36 +205,39 @@ function getGenesisCoinbaseTransactionId() {
 	return coins[config.coin].genesisCoinbaseTransactionIdsByNetwork[global.activeBlockchain];
 }
 
+function getMarketDataForToken(token, exchange, loadFunction) {
+	return tryCacheThenCallFunction(marketCache, "getMarketInfo-" + token + '-' + exchange, FIVE_MINUTES, loadFunction);
+}
+
 function getTokenGenesis(token) {
-	return tryCacheThenElectrum(miscCache, "getTokenGenesis-" + token, ONE_YR, electrumAddressApi.getTokenGenesis(token));
+	return tryCacheThenCallFunction(miscCache, "getTokenGenesis-" + token, ONE_YR, electrumAddressApi.getTokenGenesis(token));
 }
 
-async function tryCacheThenElectrum(cache, cacheKey, cacheMaxAge, electrumApiFunction, cacheConditionFunction) {
-    if (cacheConditionFunction == null) {
-        cacheConditionFunction = function(obj) {
-            return true;
-        };
-    }
+async function tryCacheThenCallFunction(cache, cacheKey, cacheMaxAge, functionToCall, cacheConditionFunction) {
+	if (cacheConditionFunction == null) {
+		cacheConditionFunction = function(obj) {
+			return true;
+		};
 
-    try {
-        const cacheResult = await cache.get(cacheKey);
+		try {
+			const cacheResult = await cache.get(cacheKey);
 
-        if (cacheResult != null) {
-            return cacheResult;
-        }
+			if (cacheResult != null) {
+				return cacheResult;
+			}
 
-        const electrumResult = await electrumApiFunction;
+			const functionResult = await functionToCall;
 
-        if (electrumResult != null && cacheConditionFunction(electrumResult)) {
-            cache.set(cacheKey, electrumResult, cacheMaxAge);
-        }
+			if (functionResult != null && cacheConditionFunction(functionResult)) {
+				cache.set(cacheKey, functionResult, cacheMaxAge);
+			}
 
-        return electrumResult;
-    } catch (err) {
-        throw err;
-    }
+			return functionResult;
+		} catch (err) {
+			throw err;
+		}
+	}
 }
-
 
 
 function tryCacheThenRpcApi(cache, cacheKey, cacheMaxAge, rpcApiFunction, cacheConditionFunction) {
@@ -1780,5 +1787,6 @@ export default {
 	getNFTSeriesStats,
 	getNewNFTS,
 	getAllNFTs,
-	getTotalNFTsInSeriesCount
+	getTotalNFTsInSeriesCount,
+	getMarketDataForToken
 };

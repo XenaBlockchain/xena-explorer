@@ -29,6 +29,7 @@ import v8 from 'v8';
 
 import electrumAddressApi from "../app/api/electrumAddressApi.js";
 import * as net from "node:net";
+import marketDataApi from "../app/api/marketDataApi.js";
 const { forceCsrf } = csurf;
 var Op = db.Sequelize.Op;
 
@@ -1443,6 +1444,17 @@ router.get("/token/:token", async function(req, res, next) {
 				coreApi.getTokenOperations(token).then(async function(result){
 					res.locals.tokenOperations = result
 					res.locals.transfersCount = result.transfer
+					resolve()
+				}).catch(function(err){
+					resolve()
+				})
+			}));
+
+			// Get market info
+			promises.push(new Promise(function(resolve, reject){
+				marketDataApi.loadMarketDataForTicker(res.locals.tokenInfo.ticker).then(async function(result){
+					res.locals.marketInfo = result.marketData ?? []
+					res.locals.priceInfo = result.priceData ?? 'N/A'
 					resolve()
 				}).catch(function(err){
 					resolve()
