@@ -18,24 +18,24 @@ div.row.mt-3
                             h3.h6.mb-0.text-bold Overview
                             if (config.addressApi)
                                 small.text-muted.border-dotted.ml-2(title=`Some details for this address were queried from ${config.addressApi}` data-toggle="tooltip") Trust Note
-                
+
                 div.row.mt-3
                     div.col-md-12
                         div.d-flex.justify-content-between
                             span Price
-                            span.text-monospace.text-truncate N/A
+                            span.text-monospace.text-truncate #{priceInfo}
                 div.row.mt-3
                     div.col-md-12
                         div.d-flex.justify-content-between
                             span Total Supply
                             span.text-monospace.text-truncate #{totalSupply} #{tokenObj.ticker}
-                
+
                 div.row.mt-3
                     div.col-md-12
                         div.d-flex.justify-content-between
                             span Circulating Supply
                             span.text-monospace.text-truncate #{circulatingSupply} #{tokenObj.ticker}
-                
+
                 div.row.mt-3
                     div.col-md-12
                         div.d-flex.justify-content-between
@@ -44,7 +44,7 @@ div.row.mt-3
                                 span.badge.badge-info.mx-1.p-1 Yes
                             else
                                 span.badge.badge-danger.mx-1.p-1 No
-                
+
                 div.row.mt-3
                     div.col-md-12
                         div.d-flex.justify-content-between
@@ -53,7 +53,7 @@ div.row.mt-3
                                 span.badge.badge-info.mx-1.p-1 Yes
                             else
                                 span.badge.badge-danger.mx-1.p-1 No
-                        
+
 
     div.col-12.col-xl-4
         div.card.stats-card.mb-3
@@ -131,9 +131,9 @@ div.row.mt-3
                         div.d-flex.justify-content-between
                             span Circulating Market Cap
                             span.text-monospace 0
-                        
 
-                    
+
+
 ul.nav.nav-tabs
     li.nav-item
         a.nav-link.text-bold.active(data-toggle="tab", href="#token-transfers", role="tab") Transfers
@@ -152,7 +152,7 @@ div.tab-content
             div.table-responsive
                 table.table.table-striped.mb-0.table-hidden
                     if(transfers && transfers.length > 0)
-                        thead 
+                        thead
                             tr
                                 th.data-header.text-right
                                     span.font-weight-bold Type
@@ -211,7 +211,7 @@ div.tab-content
                                                             .col.m-1.d-flex.justify-content-between
                                                                 a(href=("/address/" + output.address)) #{utils.ellipsize(output.address, 45)}
                                                                 span.text-right.badge.badge-danger.p-1.m-1 #{output.groupQuantity} #{tokenObj.ticker}
-                    else 
+                    else
                         tr
                             td(colspan="5").data-cell.text-monospace.text-center
                                 span No Data Available
@@ -265,14 +265,10 @@ div.tab-content
                                     span.font-weight-bold Amount
                                 th.data-header.text-left
                                     span.font-weight-bold Address
-                                //- th.data-header.text-left
-                                //-     span.font-weight-bold last TX
-                                //- th.data-header.text-left
-                                //-     span.font-weight-bold Last Block
                                 th.data-header.text-right
                                     span.font-weight-bold %
 
-                        tbody       
+                        tbody
                             each item in richList
                                 tr
                                     td.data-cell.text-monospace.text-right
@@ -280,15 +276,9 @@ div.tab-content
                                     td.data-cell.text-monospace.text-left
                                         span
                                             a(href=("/address/" + item.address)) #{item.address, 53}
-                                    //- td.data-cell.text-monospace.text-left
-                                        span
-                                            //- a(href=("/tx/" + item.last_transfer_tx_id)) #{item.last_transfer_tx_id}
-                                    //- td.data-cell.text-monospace.text-left
-                                        span 
-                                            //- a(href=("/block/" + item.last_transfer_height)) #{item.last_transfer_height}	
                                     td.data-cell.text-monospace.text-right
                                         span #{item.percentage} %
-                    else 
+                    else
                         tr
                             td(colspan="6").data-cell.text-monospace.text-center
                                 span No Data Available
@@ -299,7 +289,7 @@ div.tab-content
                             .card-body(style='background-color: #282d33 !important;')
                                 h5.card-title.text-center
                                     span #{utils.addThousandsSeparators(item.net_amount)}  #{tokenObj.ticker}
-                                
+
                                 ul.list-group.list-group-flush
                                     li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
                                         span Address
@@ -311,12 +301,73 @@ div.tab-content
 
 
     div.tab-pane(id="tab-market", role="tabpanel")
-        div.card-body.tab-card.mb-3
+        div.card-body.tab-card.mb-3.table-hidden
             div.table-responsive
-                table.table.table-striped.mb-0
-                    tr
-                        td(colspan="6").data-cell.text-monospace.text-center
-                            span No Data Available
+                table.table.table-striped.mb-0.table-hidden
+                    if(marketInfo && marketInfo.length > 0)
+                        thead
+                            tr
+                                th.data-header.text-right
+                                    span.font-weight-bold #
+                                th.data-header.text-left
+                                    span.font-weight-bold Exchange
+                                th.data-header.text-left
+                                    span.font-weight-bold Pair
+                                th.data-header.text-left
+                                    span.font-weight-bold Price
+                                th.data-header.text-left
+                                    span.font-weight-bold Change
+                                th.data-header.text-left
+                                    span.font-weight-bold Volume
+
+                        tbody
+                            each item, key in marketInfo
+                                tr
+                                    td.data-cell.text-monospace.text-right
+                                        span #{key}
+                                    td.data-cell.text-monospace.text-left
+                                        img.rounded(src=item.logo, alt="", width=24)
+                                        span.ml-1.font-weight-bold #{item.key}
+                                    td.data-cell.text-monospace.text-left
+                                        span
+                                            a(href=(item.marketUrl), target="_blank")
+                                                span #{item.base_currency_id} / #{item.quote_currency_id}
+                                    td.data-cell.text-monospace.text-left
+                                        - var price = item.marketDynamics.lastPrice
+                                        - if (item.marketDynamics.lastPrice == 0) {
+                                            - price = "N/A"
+                                        - }
+                                        span #{price}
+                                    td.data-cell.text-monospace.text-left
+                                        span #{item.marketDynamics.change24} %
+                                    td.data-cell.text-monospace.text-left
+                                        span #{item.marketDynamics.volume24h}
+                    else
+                        tr
+                            td(colspan="5").data-cell.text-monospace.text-center
+                                span No Data Available
+        if(marketInfo && marketInfo.length > 0)
+            div.list-hidden
+                each item in marketInfo
+                    .card(style='width: 100%;').mb-2
+                        .card-body(style='background-color: #282d33 !important;')
+                            h5.card-title.text-center
+                                span.word-wrap
+                                    img.rounded(src=item.logo, alt="", width=24)
+                                    span.ml-1.font-weight-bold #{item.key}
+                        ul.list-group.list-group-flush
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Pair
+                                span.word-wrap.ml-1 #{item.id}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Price
+                                span.word-wrap.ml-1 #{item.marketDynamics.lastPrice}
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Change 
+                                span.word-wrap.ml-1 #{item.marketDynamics.change24} %
+                            li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
+                                span Volume
+                                span #{item.marketDynamics.volume24h}
 
     div.tab-pane(id="tab-genesis", role="tabpanel")
         div.card-body.tab-card.mb-3
@@ -346,7 +397,7 @@ div.tab-content
                 div.highlight
                     pre
                         code.json.bg-light.mb-5(data-lang="json") #{JSON.stringify(authorityInfo, utils.bigIntToRawJSON, 4)}
-            else            
+            else
                 div.table-responsive
                     table.table.table-striped.mb-0
                         tr

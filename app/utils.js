@@ -144,23 +144,23 @@ function splitArrayIntoChunksByChunkCount(array, chunkCount) {
 
 function getRandomString(length, chars) {
 	var mask = '';
-	
+
 	if (chars.indexOf('a') > -1) {
 		mask += 'abcdefghijklmnopqrstuvwxyz';
 	}
-	
+
 	if (chars.indexOf('A') > -1) {
 		mask += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	}
-	
+
 	if (chars.indexOf('#') > -1) {
 		mask += '0123456789';
 	}
-	
+
 	if (chars.indexOf('!') > -1) {
 		mask += '~`!@#$%^&*()_+-={}[]:";\'<>?,./|\\';
 	}
-	
+
 	var result = '';
 	for (var i = length; i > 0; --i) {
 		result += mask[Math.floor(Math.random() * mask.length)];
@@ -955,11 +955,11 @@ function readUTXOSetForTokens() {
 		let lineArray = line.split(',');
 		try {
 			let decodedAddress = nexaaddr.decode(lineArray[5]);
-			
+
 			if(decodedAddress['type'] == 'GROUP') {
 				tokens.add(lineArray[5]);
 			}
-			
+
 		} catch (err) {
 		}
 	});
@@ -1218,7 +1218,7 @@ async function loadNFTData(zipData) {
 	let data = {};
 
 	let zip = await JSZip.loadAsync(zipData, {base64: true});
-	
+
 	try {
 		let info = zip.file('info.json');
 		if (info) {
@@ -1227,7 +1227,7 @@ async function loadNFTData(zipData) {
 			let infoObj = JSON.parse(myEscapedJSONString);
 
 			data = {
-				niftyVer: infoObj?.niftyVer ?? '', 
+				niftyVer: infoObj?.niftyVer ?? '',
 				title: infoObj?.title ?? '',
 				series: infoObj?.series ?? '',
 				author: infoObj?.author ?? '',
@@ -1242,7 +1242,7 @@ async function loadNFTData(zipData) {
 	} catch(err){
 		debugLog("cannot parse NFT json data", err)
 	}
-	
+
 
 	let pubImg = zip.file(/^public\./);
 	if (!isNullOrEmpty(pubImg)) {
@@ -1360,7 +1360,7 @@ function calculateForwardPage(totalItems, pageSize, reversePage) {
 	const totalTransfers = totalItems.transfer
 	const totalPages = Math.ceil(totalTransfers / pageSize);
     const forwardPage = totalPages - reversePage + 1;
-    return Math.max(forwardPage, 1); 
+    return Math.max(forwardPage, 1);
 }
 
 // Main function to get reverse paginated data
@@ -1379,15 +1379,15 @@ async function getReversePaginatedData(token, pageSize, reversePage) {
 
 				var inputs = [];
 				var outputs = [];
-		
+
 				rawTxResult.transactions.forEach((tx) => {
 					const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
-				
+
 					tx.vout.forEach((vout) => {
 						if (vout.scriptPubKey && vout.scriptPubKey.group) {
 							try {
 								let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-								
+
 								if(decodedAddress['type'] == 'GROUP') {
 									outputs.push({group: vout.scriptPubKey.group, groupQuantity: vout.scriptPubKey.groupQuantity, groupAuthority: vout.scriptPubKey.groupAuthority, address: vout.scriptPubKey.addresses[0]})
 								}
@@ -1396,18 +1396,18 @@ async function getReversePaginatedData(token, pageSize, reversePage) {
 							}
 						}
 					});
-				
+
 					tx.vin.forEach((vin, j) => {
 						const txInput = txInputs[j];
-				
+
 						if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
 							try {
 								let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-								
+
 								if(decodedAddress['type'] == 'GROUP') {
 									inputs.push({group: txInput.scriptPubKey.group, groupQuantity: txInput.scriptPubKey.groupQuantity, groupAuthority: txInput.scriptPubKey.groupAuthority, address: txInput.scriptPubKey.addresses[0]})
 								}
-								
+
 							} catch (err) {
 								debugLog("vin electrum error", err)
 							}
@@ -1628,7 +1628,7 @@ async function search(req, res, wantsJson = false) {
   				data = data.concat(mappedResult);
 			}
 		} catch(err) {}
-		
+
 		searchResponse(req, res, query, data, wantsJson)
 	}
 }

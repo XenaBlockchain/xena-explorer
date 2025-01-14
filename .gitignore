@@ -8,7 +8,7 @@ redis-data
 nexa
 nexa/*
 tokens.csv
-sqlite.db
+*.db
 .DS_Store
 # Runtime data
 pids
