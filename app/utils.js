@@ -13,14 +13,25 @@ import redisCache from "./redisCache.js";
 import global from "./global.js";
 import JSZip from "jszip";
 import coreApi from './api/coreApi.js';
-import tokenQueue from './queue.js';
+import tokenProcessQueue from './tokenProcessQueue.js';
 import db from '../models/index.js'
+import libnexa from "libnexa-js";
 var Op = db.Sequelize.Op;
 
 const debugLog = debug("nexexp:utils");
 const debugErrorLog = debug("nexexp:error");
 const debugErrorVerboseLog = debug("nexexp:errorVerbose");
 const debugPerfLog = debug("nexexp:actionPerformace");
+
+const LEGACY_TOKEN_OP_RETURN_GROUP_ID = 88888888;
+const LEGACY_NFT_OP_RETURN_GROUP_ID = 88888889;
+
+// NRC-1 Token
+const NRC1_OP_RETURN_GROUP_ID = 88888890;
+// NRC-2 NFT Collection
+const NRC2_OP_RETURN_GROUP_ID = 88888891;
+// NRC-3 NFT
+const NRC3_OP_RETURN_GROUP_ID = 88888892;
 
 const coinConfig = coins[config.coin];
 
@@ -1166,7 +1177,7 @@ function isValidHttpUrl(string) {
 	return url.protocol === "http:" || url.protocol === "https:";
 }
 
-function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup, chain){
+async function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup, chain){
 	const groupSizeInBytes = decodedAddress.hash.length;
 
 	//Assume its a token
@@ -1188,9 +1199,43 @@ function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup, chain){
 			debugLog("We shouldnt be here with an NFT");
 		}
 	} else {
-		// Just handle this like a normal token for now.
-		if (!tokenSet.has(inOutGroup)) {
-			tokenSet.add(inOutGroup);
+		let result = null
+		try{
+			result = await coreApi.getTokenGenesis(inOutGroup)
+		} catch (e) {
+			if (!tokenSet.has(inOutGroup)) {
+				tokenSet.add(inOutGroup);
+			}
+			return
+		}
+		if (result.op_return != null) {
+
+			let opReturnScript = new libnexa.Script(result.op_return)
+			if (opReturnScript.chunks.length < 1) {
+				return;
+			}
+
+			let groupClassification = libnexa.crypto.BN.fromBuffer(opReturnScript.chunks[1].buf, {endian: 'little'}).toString()
+			switch (groupClassification) {
+				case String(NRC3_OP_RETURN_GROUP_ID):
+				case String(LEGACY_NFT_OP_RETURN_GROUP_ID):
+					if (!NFTSet.has(inOutGroup)) {
+						NFTSet.add(inOutGroup)
+					}
+					break;
+				case String(LEGACY_TOKEN_OP_RETURN_GROUP_ID):
+				case String(NRC1_OP_RETURN_GROUP_ID):
+				case String(NRC2_OP_RETURN_GROUP_ID):
+					if (!tokenSet.has(inOutGroup)) {
+						tokenSet.add(inOutGroup);
+					}
+					break;
+			}
+
+		} else {
+			if (!tokenSet.has(inOutGroup)) {
+				tokenSet.add(inOutGroup);
+			}
 		}
 	}
 }
@@ -1213,12 +1258,81 @@ function collapseLicense(jsonString) {
 }
 
 
-async function loadNFTData(zipData) {
+async function loadNFTData(zipData, providerName) {
+	let files = [];
+	let data = {};
+	let zip = null
+
+	try {
+		zip = await JSZip.loadAsync(zipData, {base64: true});
+	} catch (e) {
+		debugLog("Cannot open zip file")
+		return {
+			nftMetadata: data,
+			nftFiles: files
+		}
+	}
+	if(providerName.includes("Nebula")){
+		return parseNebulaNFT(zip)
+	} else {
+		return parseNiftyNFT(zip)
+	}
+}
+
+async function parseNebulaNFT(zip) {
 	let files = [];
 	let data = {};
 
-	let zip = await JSZip.loadAsync(zipData, {base64: true});
+	try {
+		let info = zip.file('info.json');
+		if (info) {
+			let infoJson = await info.async('string');
+			let infoObj = JSON.parse(JSON.parse(infoJson));
+			data = {
+				nrc: infoObj?.nrc ?? '',
+				name: infoObj?.name ?? '',
+				attributes: infoObj?.attributes ?? '',
+				data: infoObj?.data ?? {},
+				bindata: infoObj?.bindata ?? {},
+				author: infoObj?.author ?? ''
+			};
+		}
+	} catch(err){
+		debugLog("cannot parse NFT json data", err)
+	}
 
+
+	let pubImg = zip.file(/^public\./);
+	if (!isNullOrEmpty(pubImg)) {
+		let img = await pubImg[0].async('base64');
+		files.push({ title: 'Public', image: img });
+	}
+
+	let frontImg = zip.file(/^front\./);
+	if (!isNullOrEmpty(frontImg)) {
+		let img = await frontImg[0].async('base64');
+		files.push({ title: 'Front', image: img });
+	}
+
+	let backImg = zip.file(/^back\./);
+	if (!isNullOrEmpty(backImg)) {
+		let img = await backImg[0].async('base64');
+		files.push({ title: 'Back', image: img });
+	}
+
+	let ownImg = zip.file(/^owner\./);
+	if (!isNullOrEmpty(ownImg)) {
+		let img = await ownImg[0].async('base64');
+		files.push({ title: 'Owner', image: img });
+	}
+	return {
+		nftMetadata: data,
+		nftFiles: files
+	}
+}
+async function parseNiftyNFT(zip) {
+	let files = [];
+	let data = {};
 	try {
 		let info = zip.file('info.json');
 		if (info) {
@@ -1228,8 +1342,8 @@ async function loadNFTData(zipData) {
 
 			data = {
 				niftyVer: infoObj?.niftyVer ?? '',
-				title: infoObj?.title ?? '',
-				series: infoObj?.series ?? '',
+				name: infoObj?.title ?? '',
+				collection: infoObj?.series ?? '',
 				author: infoObj?.author ?? '',
 				keywords: infoObj?.keywords ?? '',
 				category: infoObj?.category ?? [],
@@ -1246,26 +1360,26 @@ async function loadNFTData(zipData) {
 
 	let pubImg = zip.file(/^public\./);
 	if (!isNullOrEmpty(pubImg)) {
-	  let img = await pubImg[0].async('base64');
-	  files.push({ title: 'Public', image: img });
+		let img = await pubImg[0].async('base64');
+		files.push({ title: 'Public', image: img });
 	}
 
 	let frontImg = zip.file(/^cardf\./);
 	if (!isNullOrEmpty(frontImg)) {
-	  let img = await frontImg[0].async('base64');
-	  files.push({ title: 'Front', image: img });
+		let img = await frontImg[0].async('base64');
+		files.push({ title: 'Front', image: img });
 	}
 
 	let backImg = zip.file(/^cardb\./);
 	if (!isNullOrEmpty(backImg)) {
-	  let img = await backImg[0].async('base64');
-	  files.push({ title: 'Back', image: img });
+		let img = await backImg[0].async('base64');
+		files.push({ title: 'Back', image: img });
 	}
 
 	let ownImg = zip.file(/^owner\./);
 	if (!isNullOrEmpty(ownImg)) {
-	  let img = await ownImg[0].async('base64');
-	  files.push({ title: 'Owner', image: img });
+		let img = await ownImg[0].async('base64');
+		files.push({ title: 'Owner', image: img });
 	}
 	return {
 		nftMetadata: data,
@@ -1275,10 +1389,9 @@ async function loadNFTData(zipData) {
 async function loadGroupDataSlow(filteredTokens, isNfts = false){
 	for (const token of filteredTokens) {
 		try {
-			await tokenQueue.createJob({token: token, isNFT: isNfts})
+			await tokenProcessQueue.createJob({token: token, isNFT: isNfts})
 				.timeout(30000)
 				.retries(2)
-				.delayUntil(Date.now() + 120000)
 				.save()
 		} catch (err) {
 			debugLog(err);
@@ -1353,6 +1466,14 @@ async function fetchAuthories(token) {
         throw new Error('Network response was not ok');
     }
     return response.json();
+}
+
+async function getTokenSupply(token){
+	const response = await fetch(`${config.tokenApi}/api/v1/tokens/${token}/supply`);
+	if (!response.ok) {
+		throw new Error('Network response was not ok');
+	}
+	return response.json();
 }
 
 // Calculate the forward page number based on total items, page size, and reverse page number
@@ -1585,13 +1706,13 @@ async function search(req, res, wantsJson = false) {
 		}
 		let data = []
 		try {
-			const dbresult = await db.Tokens.findAll({
+			const dbresult = await db.Token.findAll({
 				where: {
 					[Op.or]: [
 					  { group: { [Op.like]: `%${query}%` } },
 					  { name: { [Op.like]: `%${query}%` } },
 					  { ticker: { [Op.like]: `%${query}%` } },
-					  { series: { [Op.like]: `%${query}%` } },
+					  { collection: { [Op.like]: `%${query}%` } },
 					  { author: { [Op.like]: `%${query}%` } }
 					]
 				  }
@@ -1610,7 +1731,7 @@ async function search(req, res, wantsJson = false) {
 		}
 
 		try {
-			const dbresult = await db.Series.findAll({
+			const dbresult = await db.Collection.findAll({
 				where: {
 					[Op.or]: [
 					  { author: { [Op.like]: `%${query}%` } },
@@ -1619,9 +1740,9 @@ async function search(req, res, wantsJson = false) {
 				  }
 			})
 			if(dbresult.length > 0) {
-				const mappedResult = dbresult.map(series => ({
-					value: `/series/${series.identifier}`,
-					text: "NFT Series: " + series.name
+				const mappedResult = dbresult.map(collection => ({
+					value: `/collection/${collection.identifier}`,
+					text: "NFT Collection: " + collection.name
 				}));
 
 				// Concatenate mappedResult onto data array
@@ -1707,5 +1828,6 @@ export default {
 	removePublicFromFile,
 	getFileType,
 	search,
+	getTokenSupply,
 	padSatoshiValues
 };

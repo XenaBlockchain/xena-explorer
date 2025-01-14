@@ -16,17 +16,23 @@ module.exports = {
       parent: {
         type: Sequelize.STRING
       },
+      nft_provider_url: {
+        type: Sequelize.STRING
+      },
+      nft_provider_name: {
+       type: Sequelize.STRING
+      },
       is_nft: {
         type: Sequelize.BOOLEAN
       },
       nft_data: {
         type: Sequelize.JSON
       },
-      series_id: {
+      collection_id: {
         type: Sequelize.INTEGER,
         allowNull: true
       },
-      series: {
+      collection: {
         type: Sequelize.STRING
       },
       author: {

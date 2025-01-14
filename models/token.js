@@ -2,27 +2,27 @@
 import { Model, DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  class Tokens extends Model {
+  class Token extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      models.Tokens.belongsTo(models.Series,{
-        foreignKey: 'series_id',
+      models.Token.belongsTo(models.Collection,{
+        foreignKey: 'collection_id',
       })
-      // models.Token.hasMany(models.Transfers)
-      // models.Token.hasMany(models.TokenHolders)
     }
   }
 
-  Tokens.init({
+  Token.init({
     group: DataTypes.STRING,
+	nft_provider_url: DataTypes.STRING,
+	nft_provider_name: DataTypes.STRING,
     parent: DataTypes.STRING,
     is_nft: DataTypes.BOOLEAN,
-    series_id: DataTypes.INTEGER,
-    series: DataTypes.STRING,
+    collection_id: DataTypes.INTEGER,
+    collection: DataTypes.STRING,
     author: DataTypes.STRING,
     nft_data: DataTypes.JSON,
     holders: DataTypes.INTEGER,
@@ -36,8 +36,9 @@ export default (sequelize) => {
     genesis_datetime: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'Tokens',
+    modelName: 'Token',
+	tableName: 'Tokens'
   });
 
-  return Tokens;
+  return Token;
 };

@@ -363,7 +363,7 @@ router.get("/nfts", function(req, res, next){
 			localOffset = 0
 		}
 
-		coreApi.getNFTsSeries(localLimit, localOffset, sort).then(function(results){
+		coreApi.getNFTsCollection(localLimit, localOffset, sort).then(function(results){
 			resolve(results)
 		})
 	}));
@@ -390,7 +390,7 @@ router.get("/nfts", function(req, res, next){
 		})
 	}));
 	promises.push(new Promise(function(resolve, reject){
-		coreApi.getTotalNFTsSeriesCount().then(function(result) {
+		coreApi.getTotalNFTsCollectionCount().then(function(result) {
 			resolve(result)
 		}).catch(function(err){
 			resolve()
@@ -453,14 +453,14 @@ router.get("/nfts", function(req, res, next){
 })
 
 
-router.get("/series/:seriesIdentifier", async function(req, res, next){
+router.get("/collection/:collectionIdentifier", async function(req, res, next){
 
 	var limit = 24;
 	var offset = 0;
 	var sort = "desc";
 
-	var seriesIdentifier = req.params.seriesIdentifier;
-	if(!seriesIdentifier) {
+	var collectionIdentifier = req.params.collectionIdentifier;
+	if(!collectionIdentifier) {
 		res.redirect("/");
 	}
 
@@ -486,13 +486,13 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 	res.locals.limit = limit;
 	res.locals.offset = offset;
 	res.locals.sort = sort;
-	res.locals.paginationBaseUrl = `/series/${seriesIdentifier}?sort=${sort}`;
-	let series = null;
+	res.locals.paginationBaseUrl = `/collection/${collectionIdentifier}?sort=${sort}`;
+	let collection = null;
 
 	try {
-		series = await db.Series.findOne({
+		collection = await db.Collection.findOne({
 			where: {
-				identifier: seriesIdentifier
+				identifier: collectionIdentifier
 			}
 		})
 	} catch (err) {
@@ -504,7 +504,7 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 
 	let promises = [];
 	promises.push(new Promise(function(resolve, reject) {
-		coreApi.getNFTsInSeries(limit, offset, sort, series).then(function(results){
+		coreApi.getNFTsInCollection(limit, offset, sort, collection).then(function(results){
 			resolve(results)
 		}).catch(function(err){
 			resolve()
@@ -512,7 +512,7 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 	}));
 
 	promises.push(new Promise(function(resolve, reject){
-		coreApi.getNFTSeriesStats(series).then(function(result) {
+		coreApi.getNFTCollectionStats(collection).then(function(result) {
 			resolve(result)
 		}).catch(function(err){
 			resolve()
@@ -520,7 +520,7 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 	}));
 
 	promises.push(new Promise(function(resolve, reject){
-		coreApi.getTotalNFTsInSeriesCount(series).then(function(result) {
+		coreApi.getTotalNFTsInCollectionCount(collection).then(function(result) {
 			resolve(result)
 		}).catch(function(err){
 			resolve()
@@ -528,12 +528,12 @@ router.get("/series/:seriesIdentifier", async function(req, res, next){
 	}));
 
 	Promise.all(promises).then(function(promiseResults) {
-		res.locals.series = series
+		res.locals.collection = collection
 		res.locals.tokens = promiseResults[0];
 		res.locals.nftStats = promiseResults[1][0]
 		res.locals.collectionCount = promiseResults[2]
-		res.locals.seriesIdentifier = seriesIdentifier
-		res.render("series");
+		res.locals.collectionIdentifier = collectionIdentifier
+		res.render("collection");
 	})
 	.catch(function(err) {
 		req.session.userMessage = "Error: " + err;
@@ -1329,10 +1329,9 @@ router.get("/token/:token", async function(req, res, next) {
 
 
 	let isTokenValid = false;
-
+	var prefix = global.activeBlockchain == "nexa" ? "nexa:" : "nexatest:";
 	try {
 		var saneToken = "";
-		var prefix = global.activeBlockchain == "nexa" ? "nexa:" : "nexatest:";
 		if(!token.includes(prefix)) {
 			saneToken = prefix.concat(token);
 		} else {
@@ -1359,7 +1358,7 @@ router.get("/token/:token", async function(req, res, next) {
 	let tokenGenesis = null;
 
 	try {
-		indexedToken = await db.Tokens.findOne({
+		indexedToken = await db.Token.findOne({
 			where: {
 				group: token
 			}
@@ -1402,12 +1401,12 @@ router.get("/token/:token", async function(req, res, next) {
 
 			// Get mintage data of token
 			promises.push(new Promise(function(resolve, reject) {
-				coreApi.getTokenMintage(token).then(function(result) {
+				utils.getTokenSupply(token).then(function(result) {
 					res.locals.tokenMintage = result;
-					res.locals.totalSupply = result.mintage_satoshis
-					res.locals.circulatingSupply = result.mintage_satoshis
-					res.locals.totalSupplyUnformatted = BigInt(result.mintage_satoshis)
-					res.locals.circulatingSupplyUnformatted = BigInt(result.mintage_satoshis)
+					res.locals.totalSupply = result.rawSupply
+					res.locals.circulatingSupply = result.rawSupply
+					res.locals.totalSupplyUnformatted = BigInt(result.rawSupply)
+					res.locals.circulatingSupplyUnformatted = BigInt(result.rawSupply)
 
 					if(res.locals.tokenInfo.decimal_places > 0) {
 						res.locals.totalSupply = String(res.locals.totalSupply).substring(0, String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places) + "." + String(res.locals.totalSupply).substring(String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places);
@@ -1512,6 +1511,7 @@ router.get("/token/:token", async function(req, res, next) {
 					resolve()
 				})
 			}));
+
 
 			// Get Token holders count
 			promises.push(new Promise(function(resolve, reject){

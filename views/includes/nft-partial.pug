@@ -49,23 +49,23 @@ div.row.mt-3
 								each val in tokenObj.nft_data.keywords
 									span.badge.badge-info.mx-1.p-1 #{val}
 
-					
-					div.d-flex.justify-content-between.mt-3
-						span Series
-						span.text-monospace.text-truncate
-							if(tokenObj.Series != null)
-								- var url = encodeURIComponent(tokenObj.Series.identifier)
-								a(href=("/series/" + url)) #{tokenObj.Series.name}
 
 					div.d-flex.justify-content-between.mt-3
-						span Author
-						span.text-monospace.word-wrap(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
-							span(title="Author Information" data-content=`<ul> <li> ${tokenObj.author} </li> </ul>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(tokenObj.author, 30)}
+						span Collection
+						span.text-monospace.text-truncate
+							if(tokenObj.Collection != null)
+								- var url = encodeURIComponent(tokenObj.Collection.identifier)
+								a(href=("/collection/" + url)) #{tokenObj.Collection.name}
+					if(tokenObj.author)
+						div.d-flex.justify-content-between.mt-3
+							span Author
+							span.text-monospace.word-wrap(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
+								span(title="Author Information" data-content=`<ul> <li> ${tokenObj.author} </li> </ul>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(tokenObj.author, 30)}
 
 					div.d-flex.justify-content-between.mt-3
 						span NFT Provider
 						span.text-monospace.text-truncate
-							a(href=("https://niftyart.cash/nft/" + tokenObj.group)) Nifty Art
+							a(href=(tokenObj.nft_provider_url)) #{tokenObj.nft_provider_name}
 
 	div.col-12.col-xl-6
 		div.card.stats-card.mb-3

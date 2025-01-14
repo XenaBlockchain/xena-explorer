@@ -24,6 +24,8 @@ import electrumAddressApi from "../api/electrumAddressApi.js";
 
 // var rpcApi = require("./mockApi.js"); // Comment out or remove this line
 import global from "../global.js";
+import tokenProcessQueue from "../tokenProcessQueue.js";
+import tokenLoadQueue from "../tokenLoadQueue.js";
 global.cacheStats = {};
 global.tokenIcons = [];
 // this value should be incremented whenever data format changes, to avoid
@@ -221,7 +223,6 @@ async function tryCacheThenCallFunction(cache, cacheKey, cacheMaxAge, functionTo
 
 		try {
 			const cacheResult = await cache.get(cacheKey);
-
 			if (cacheResult != null) {
 				return cacheResult;
 			}
@@ -1245,8 +1246,8 @@ function logCacheSizes() {
 
 function getStatsForToken(token) {
 	return new Promise(function(resolve, reject){
-		db.Tokens.findOne({
-			include:db.Series,
+		db.Token.findOne({
+			include:db.Collection,
 			where: {
 				group: token
 			}
@@ -1261,7 +1262,7 @@ function getStatsForToken(token) {
 
 function getTokenStats(is_nft = false) {
 	return new Promise(function(resolve, reject){
-		db.Tokens.findAll({where:{ is_nft: is_nft}}).then(function(results){
+		db.Token.findAll({where:{ is_nft: is_nft}}).then(function(results){
 			if(!results || results.length == 0) {
 				resolve({
 					totalTokens: 0,
@@ -1283,14 +1284,14 @@ function getTokenStats(is_nft = false) {
 	});
 }
 
-function getNFTsSeries (pageLimit, pageoffset) {
+function getNFTsCollection (pageLimit, pageoffset) {
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
 		db.sequelizeInstance.query(`
-			SELECT Series.id, Series.name, Series.author, Series.identifier, Series.cover_image, COUNT(Tokens.id) as tokenCount, COUNT(Tokens.transfers) as tokenTransfers
-			FROM Series
-			LEFT JOIN Tokens ON Series.id = Tokens.series_id
-			GROUP BY Series.id
+			SELECT Collections.id, Collections.name, Collections.author, Collections.identifier, Collections.cover_image, COUNT(Tokens.id) as tokenCount, COUNT(Tokens.transfers) as tokenTransfers
+			FROM Collections
+			LEFT JOIN Tokens ON Collections.id = Tokens.collection_id
+			GROUP BY Collections.id
 			ORDER BY tokenCount DESC
 			LIMIT :limit OFFSET :offset
 		  `, {
@@ -1302,20 +1303,20 @@ function getNFTsSeries (pageLimit, pageoffset) {
 		  }).then(data => {
 			resolve(data);
 		  }).catch(function(err) {
-			utils.logError("getNFTsSeries-failure", err);
+			utils.logError("getNFTsCollection-failure", err);
 			reject(err)
 		  });
 	});
 }
 
-function getNFTsInSeries (pageLimit = 24, pageoffset = 0, sortDir = 'desc', series) {
+function getNFTsInCollection (pageLimit = 24, pageoffset = 0, sortDir = 'desc', collection) {
 	return new Promise(async function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.findAll({
+		db.Token.findAll({
 			offset: pageoffset,
 			limit: pageLimit,
 			where: {
-				series_id: series.id
+				collection_id: collection.id
 			},
 			order: [
 				['genesis_datetime', sortDir]
@@ -1323,7 +1324,7 @@ function getNFTsInSeries (pageLimit = 24, pageoffset = 0, sortDir = 'desc', seri
 		}).then(function(results){
 			resolve(results);
 		}).catch(function(err) {
-			utils.logError("getNFTsInSeries-failure", err);
+			utils.logError("getNFTsInCollection-failure", err);
 			reject(err)
 		});
 	});
@@ -1332,7 +1333,7 @@ function getNFTsInSeries (pageLimit = 24, pageoffset = 0, sortDir = 'desc', seri
 function getNewNFTS (pageLimit = 24, pageoffset = 0) {
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.findAll({
+		db.Token.findAll({
 			offset: pageoffset,
 			limit: pageLimit,
 			where: {
@@ -1353,7 +1354,7 @@ function getNewNFTS (pageLimit = 24, pageoffset = 0) {
 function getAllNFTs (pageLimit = 24, pageoffset = 0) {
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.findAll({
+		db.Token.findAll({
 			offset: pageoffset,
 			limit: pageLimit,
 			where: {
@@ -1374,7 +1375,7 @@ function getAllNFTs (pageLimit = 24, pageoffset = 0) {
 function getTotalNFTs(){
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.count({
+		db.Token.count({
 			where: {
 				is_nft: true
 			},
@@ -1388,12 +1389,12 @@ function getTotalNFTs(){
 }
 
 
-function getTotalNFTsInSeriesCount(series){
+function getTotalNFTsInCollectionCount(collection){
 	return new Promise(async function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.count({
+		db.Token.count({
 			where: {
-				series_id: series.id
+				collection_id: collection.id
 			},
 		}).then(function(results){
 			resolve(results);
@@ -1404,12 +1405,12 @@ function getTotalNFTsInSeriesCount(series){
 	});
 }
 
-function getNFTSeriesStats(series){
+function getNFTCollectionStats(collection){
 	return new Promise(async function(resolve, reject){
-		db.Tokens.findAll({
+		db.Token.findAll({
 			where: {
 				is_nft: true,
-				series_id: series.id
+				collection_id: collection.id
 			},
 			attributes: {
 				include: [
@@ -1421,20 +1422,20 @@ function getNFTSeriesStats(series){
 		}).then(function(results){
 			resolve(results);
 		}).catch(function(err) {
-			utils.logError("getTotalNFTsInSeries-failure", err);
+			utils.logError("getTotalNFTsInCollection-failure", err);
 			reject(err)
 		});
 	});
 }
 
-function getTotalNFTsSeriesCount(){
+function getTotalNFTsCollectionCount(){
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Series.count({
+		db.Collection.count({
 		}).then(function(results){
 			resolve(results);
 		}).catch(function(err) {
-			utils.logError("getTotalNFTsSeriesCount-failure", err);
+			utils.logError("getTotalNFTsCollectionCount-failure", err);
 			reject(err)
 		});
 	});
@@ -1443,7 +1444,7 @@ function getTotalNFTsSeriesCount(){
 // sum the holders of all NFT's
 function getNFTsHoldersCount () {
 	return new Promise(function(resolve, reject){
-		db.Tokens.sum('holders', {
+		db.Token.sum('holders', {
 			where: {
 				is_nft: true
 			},
@@ -1460,7 +1461,7 @@ function getNFTsHoldersCount () {
 function getNFT(group) {
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.findOne({
+		db.Token.findOne({
 			where: {
 				is_nft: true,
 				group: group
@@ -1478,7 +1479,7 @@ function getNFT(group) {
 function getTokens(pageLimit = 24, pageoffset = 0, sortDir = 'desc'){
 	return new Promise(function(resolve, reject){
 		// Skip 5 instances and fetch the 5 after that
-		db.Tokens.findAll({
+		db.Token.findAll({
 			offset: pageoffset,
 			limit: pageLimit,
 			where: {
@@ -1606,7 +1607,7 @@ function getTransactionTokens(txids) {
 		});
 		tokens = [...tokens];
 
-		let tokenDbObj = await db.Tokens.findAll({
+		let tokenDbObj = await db.Token.findAll({
 			where: {
 			  group: {
 				[Op.in]: tokens
@@ -1622,90 +1623,11 @@ function getTransactionTokens(txids) {
 	});
 }
 
-function readKnownTokensIntoCache() {
-	return new Promise(async function(resolve, reject) {
-		let tokenApiGroups = [];
-		let tokenApiSubGroups = [];
-		if(!global.processingTokens) {
-			global.processingTokens = true;
-
-			try {
-				let groups = [];
-				let subgroups = [];
-
-				try {
-					let pageResults = 500;
-					let page = 1;
-					let limit = 500
-
-					do {
-						const data = await utils.fetchGroups(page, limit)
-						pageResults = data?.results
-						const dataParsed = data?.tokens.map(item => item.token);
-						groups = groups.concat(dataParsed)
-						page++;
-					} while(pageResults != 0)
-					debugLog("Total number of cached tokens: " + groups.length)
-				} catch(err) {
-					debugLog(err)
-					debugLog("Can't load NFTs from electrum for token: " + token);
-				}
-
-				for (const token of utils.knownNFTProviders(global.activeBlockchain)) {
-					try {
-						let pageResults = 500;
-						let page = 1;
-						let limit = 500
-
-						do {
-							const data = await utils.fetchSubGroups(token, page, limit)
-							pageResults = data?.results
-							const dataParsed = data?.tokens.map(item => item.token);
-							subgroups = subgroups.concat(dataParsed)
-							page++;
-						} while(pageResults != 0)
-						debugLog("Total number of cached NFTs: " + subgroups.length)
-					} catch(err) {
-						debugLog(err)
-						debugLog("cant load NFT's from token API for token: ", token);
-					}
-
-				}
-				tokenApiGroups = groups;
-				tokenApiSubGroups = subgroups;
-
-			} catch(err) {
-				debugLog("Unable to load tokens or NFTS")
-			}
-
-
-			const dbIndexedTokens = await db.Tokens.findAll({
-				attributes: ['group'],
-				where: {
-					is_nft: false,
-				},
-			});
-			const cachedTokenGroups = dbIndexedTokens.map(token => token.group);
-
-			const dbIndexedNFTs = await db.Tokens.findAll({
-				attributes: ['group'],
-				where: {
-					is_nft: true,
-				},
-			});
-
-			const cachedNFTGroups = dbIndexedNFTs.map(token => token.group);
-
-			const notIndexedGroups = tokenApiGroups.filter(item => !cachedTokenGroups.includes(item));
-			const notIndexedSubGroups = tokenApiSubGroups.filter(item => !cachedNFTGroups.includes(item));
-
-			await utils.loadGroupDataSlow(notIndexedGroups);
-			await utils.loadGroupDataSlow(notIndexedSubGroups, true);
-
-			global.processingTokens = false;
-		}
-		resolve()
-	});
+async function readKnownTokensIntoCache() {
+	await tokenLoadQueue.createJob({})
+		.timeout(30000)
+		.retries(2)
+		.save()
 }
 
 function getTokenIcon(token) {
@@ -1773,8 +1695,8 @@ export default {
 	getTokenOperations,
 	getTokens,
 	getNFT,
-	getNFTsSeries,
-	getNFTsInSeries,
+	getNFTsCollection,
+	getNFTsInCollection,
 	getNFTsHoldersCount,
 	getTotalNFTs,
 	getTokenStats,
@@ -1783,10 +1705,10 @@ export default {
 	getTokenGenesis,
 	getTransactionTokens,
 	getTokenIcon,
-	getTotalNFTsSeriesCount,
-	getNFTSeriesStats,
+	getTotalNFTsCollectionCount,
+	getNFTCollectionStats,
 	getNewNFTS,
 	getAllNFTs,
-	getTotalNFTsInSeriesCount,
+	getTotalNFTsInCollectionCount,
 	getMarketDataForToken
 };
