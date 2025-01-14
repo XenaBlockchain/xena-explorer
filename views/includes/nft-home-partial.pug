@@ -1,6 +1,6 @@
 ul.nav.nav-tabs.mt-5
     li.nav-item
-        a.nav-link.text-bold(data-toggle="tab", href="#token-transfers", role="tab", class=(filterBy === "" ? "active" : undefined)) Series
+        a.nav-link.text-bold(data-toggle="tab", href="#token-transfers", role="tab", class=(filterBy === "" ? "active" : undefined)) Collections
     li.nav-item
         a.nav-link.text-bold(data-toggle="tab", href="#token-marketplace", role="tab") Marketplaces
     li.nav-item
@@ -15,12 +15,12 @@ div.tab-content
         div.card-body.tab-card.mb-3.table-hidden
             div.table-responsive
                 table.table.table-striped.mb-0.table-hidden
-                    thead 
+                    thead
                         tr
                             th.data-header.text-left
                                 span.font-weight-bold
                             th.data-header.text-left
-                                span.font-weight-bold Series
+                                span.font-weight-bold Collection
                             th.data-header.text-left
                                 span.font-weight-bold Author
                             th.data-header.text-left
@@ -38,28 +38,28 @@ div.tab-content
                                                 if (filepath)
                                                     case utils.getFileType(JSON.parse(item.cover_image).ext)
                                                         when "audio"
-                                                            a(href="/series/"+item.identifier)
+                                                            a(href="/collection/"+item.identifier)
                                                                 audio.rounded.object-fit-fill(controls='yes', muted)
                                                                     source(src=filepath, type=item.cover_image.mime)
                                                                     | Your browser does not support the audio element.
                                                         when "video"
-                                                            a(href="/series/"+item.identifier)
+                                                            a(href="/collection/"+item.identifier)
                                                                 video.rounded.object-fit-fill(height='35', width='35' autoplay='yes', loop='true' muted)
                                                                     source(src=filepath, type=item.cover_image.mime)
                                                         default
-                                                            a(href="/series/"+item.identifier)
+                                                            a(href="/collection/"+item.identifier)
                                                                 img.rounded(src=filepath, alt="", width=35, height=35)
                                         td.data-cell.p-3.text-monospace.text-left
                                             span
                                                 - var url = encodeURIComponent(item.identifier)
-                                                a(href=("/series/" + url)) #{item.name}
+                                                a(href=("/collection/" + url)) #{item.name}
                                         td.data-cell.p-3.text-monospace.text-left
                                             span #{item.author}
                                         td.data-cell.p-3.text-monospace.text-left
                                             span #{item.tokenCount}
                                         td.data-cell.p-3.text-monospace.text-left
                                             span #{item.tokenTransfers}
-                        else 
+                        else
                             tr
                                 td(colspan="5").data-cell.text-monospace.text-center
                                     span No Data Available
@@ -73,22 +73,22 @@ div.tab-content
                                 if (filepath != null)
                                     case utils.getFileType(JSON.parse(item.cover_image).ext)
                                         when "audio"
-                                            a(href="/series/"+item.identifier)
+                                            a(href="/collection/"+item.identifier)
                                                 audio.rounded.object-fit-fill(controls='yes' muted)
                                                     source(src=filepath, type=item.cover_image.mime)
                                                     | Your browser does not support the audio element.
                                         when "video"
-                                            a(href="/series/"+item.identifier)
+                                            a(href="/collection/"+item.identifier)
                                                 video.rounded.object-fit-fill(height='50', width='50' autoplay='yes', loop='true' muted)
                                                     source(src=filepath, type=item.cover_image.mime)
                                         default
-                                            a(href="/series/"+item.identifier)
+                                            a(href="/collection/"+item.identifier)
                                                 img.rounded(src=filepath, alt="", width=50, height=50)
                         ul.list-group.list-group-flush
                             li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
-                                span Series
+                                span Collection
                                 span.word-wrap.ml-1
-                                    a(href=("/series/" + item.identifier)) #{item.name}
+                                    a(href=("/collection/" + item.identifier)) #{item.name}
                             li(style='background-color: #282d33 !important;').d-flex.justify-content-between.list-group-item
                                 span Author
                                 span.word-wrap.ml-1 #{item.author}
@@ -100,8 +100,8 @@ div.tab-content
                                 span.word-wrap.ml-1 #{item.tokenTransfers}
 
         if (collectionCount > limit)
-            - var localLimit = limit 
-            - var localOffset = offset 
+            - var localLimit = limit
+            - var localOffset = offset
             if(filterBy)
                 - localOffset = 0
                 - localLimit = 24
@@ -139,8 +139,8 @@ div.tab-content
         - var paginationBaseUrl = paginationNewBaseUrl;
         include nft-list.pug
         if (tokenCount > limit)
-            - var localLimit = limit 
-            - var localOffset = offset 
+            - var localLimit = limit
+            - var localOffset = offset
             if(filterBy != "new")
                 - localOffset = 0
                 - localLimit = 24
@@ -160,8 +160,8 @@ div.tab-content
         - var paginationBaseUrl = paginationAllBaseUrl;
         include nft-list.pug
         if (tokenCount > limit)
-            - var localLimit = limit 
-            - var localOffset = offset 
+            - var localLimit = limit
+            - var localOffset = offset
             if(filterBy != "all")
                 - localOffset = 0
                 - localLimit = 24

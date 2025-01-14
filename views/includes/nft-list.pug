@@ -26,9 +26,9 @@ div.card-body.mb-3(id="nft")
 						.card-footer
 							small.text-muted
 								.d-flex.justify-content-between
-									if(token.series)
+									if(token.collection)
 										span(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
-											span(title="Series Information" data-content=`<p> ${token.series} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.series, 15)}
+											span(title="Collection Information" data-content=`<p> ${token.collection} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.collection, 15)}
 									if(token.author)
 										span(style=`display:inline-block;margin-left:3px;cursor:pointer;`)
 											span(title="Author Information" data-content=`<p> ${token.author} </p>`, data-toggle="popover", data-trigger="click") #{utils.ellipsize(token.author, 15)}

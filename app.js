@@ -64,7 +64,8 @@ const __dirname = path.dirname(__filename);
 import baseActionsRouter from './routes/baseActionsRouter.js';
 import apiActionsRouter from './routes/apiRouter.js';
 import snippetActionsRouter from './routes/snippetRouter.js';
-import tokenQueue from './app/queue.js';
+import tokenProcessQueue from './app/tokenProcessQueue.js';
+import tokenLoadQueue from "./app/tokenLoadQueue.js";
 
 var app = express();
 
@@ -123,7 +124,8 @@ process.on('SIGINT', async (signal) => {
 })
 
 async function shutdownProcedure() {
-	await tokenQueue.destroy()
+	await tokenProcessQueue.destroy()
+	await tokenLoadQueue.destroy()
 	// await electrumAddressApi.shutdown()
 	console.log('*** App is now closing ***');
 	setTimeout(process.exit(0), 3000);

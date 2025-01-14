@@ -1,6 +1,6 @@
 div.d-flex.justify-content-start
     //- img.mt-4.mr-1.rounded(src="/img/nfts/"+tokens[0].group+'/Front.png', alt="", width=35, height=35)
-    h1.h3.word-wrap.mt-4.ml-1.text-bold.table-hidden NFT Series #{series.name}
+    h1.h3.word-wrap.mt-4.ml-1.text-bold.table-hidden NFT Collection #{collection.name}
 
 
 div.row.mt-3
@@ -17,27 +17,27 @@ div.row.mt-3
                     div.row.mt-3
                         div.col-md-12
                             div.d-flex.justify-content-between
-                                span Total NFTs in series
+                                span Total NFTs in collection
                                 span.text-monospace.text-truncate #{collectionCount}
-                    
+
                     div.row.mt-3
                         div.col-md-12
                             div.d-flex.justify-content-between
                                 span Holders
                                 span.text-monospace.text-truncate #{nftStats.holders_count}
-                    
+
                     div.row.mt-3
                         div.col-md-12
                             div.d-flex.justify-content-between
                                 span Total Market Cap
                                 span.text-monospace 0
-                    
+
                     div.row.mt-3
                         div.col-md-12
                             div.d-flex.justify-content-between
                                 span Circulating Market Cap
                                 span.text-monospace 0
-                    
+
     div.col-12.col-xl-6
         div.card.stats-card.mb-3
             div.card-header(style="background:transparent;")
@@ -69,9 +69,9 @@ div.row.mt-3
                             div.d-flex.justify-content-between
                                 span Current Supply
                                 //- span.text-monospace #{circulatingSupply}
-                        
 
-                    
+
+
 ul.nav.nav-tabs
     li.nav-item
         a.nav-link.text-bold.active(data-toggle="tab", href="#nft-list", role="tab") Items
@@ -133,11 +133,11 @@ div.tab-content
                                             span
                                                 a(href=("/tx/" + item.lastTransferTxId)) #{item.lastTransferTxId}
                                         td.data-cell.text-monospace.text-left
-                                            span 
-                                                a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}	
+                                            span
+                                                a(href=("/block/" + item.lastTransferHeight)) #{item.lastTransferHeight}
                                         td.data-cell.text-monospace.text-right
                                             span #{item.percentage}
-                        else 
+                        else
                             tr
                                 td(colspan="6").data-cell.text-monospace.text-center
                                     span No Data Available
@@ -148,7 +148,7 @@ div.tab-content
                             .card-body(style='background-color: #282d33 !important;')
                                 h5.card-title.text-center
                                     span #{utils.addThousandsSeparators(item.netAmount)}  #{tokenInfo.ticker}
-                                
+
                                 p.card-text
                                     span
                                         a(href=("/token/" + token.groupId)) #{token.groupId}

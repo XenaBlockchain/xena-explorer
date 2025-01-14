@@ -3,22 +3,23 @@ import { Model, DataTypes } from 'sequelize';
 
 
 export default (sequelize) => {
-  class Series extends Model {
+  class Collection extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      models.Series.hasMany(models.Tokens,{
+      models.Collection.hasMany(models.Token,{
         foreignKey: 'id',
       })
       // define association here
     }
   }
-  Series.init({
+  Collection.init({
     name: DataTypes.STRING,
     author: DataTypes.STRING,
+    group: DataTypes.STRING,
     cover_image: DataTypes.JSON,
     identifier: {
       type: DataTypes.UUID,
@@ -27,7 +28,8 @@ export default (sequelize) => {
     }
   }, {
     sequelize,
-    modelName: 'Series',
+    modelName: 'Collection',
+    tableName: 'Collections'
   });
-  return Series;
+  return Collection;
 };

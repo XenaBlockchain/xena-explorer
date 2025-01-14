@@ -11,7 +11,7 @@ import { ClusterOrder, ElectrumCluster, ElectrumTransport } from 'electrum-cash'
 import global from "../global.js";
 import db from '../../models/index.js';
 const debugLog = debug("nexexp:electrumx");
-import tokenQueue from '../queue.js';
+import tokenProcessQueue from '../tokenProcessQueue.js';
 var Op = db.Sequelize.Op;
 
 const coinConfig = coins[config.coin];
@@ -80,7 +80,7 @@ const handleNotifications = async function (data) {
 
 		for (const token of tokens) {
 			try {
-				await tokenQueue.createJob({token: token, isNFT: false})
+				await tokenProcessQueue.createJob({token: token, isNFT: false})
 					.timeout(30000)
 					.retries(2)
 					.delayUntil(Date.now() + 120000)
@@ -93,7 +93,7 @@ const handleNotifications = async function (data) {
 		for (const nft of NFTs) {
 			debugLog("Updating NFT in cache: ",nft)
 			try {
-				await tokenQueue.createJob({token: nft, isNFT: true})
+				await tokenProcessQueue.createJob({token: nft, isNFT: true})
 					.timeout(30000)
 					.retries(2)
 					.delayUntil(Date.now() + 120000)
@@ -382,7 +382,7 @@ async function mergeBalances(balanceResults) {
 		}
 	}
 
-	const dbTokens = await db.Tokens.findAll({
+	const dbTokens = await db.Token.findAll({
 		where:{
 			group: {
 				[Op.in]: Object.keys(mergedBalances)
