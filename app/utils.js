@@ -1484,69 +1484,7 @@ function calculateForwardPage(totalItems, pageSize, reversePage) {
     return Math.max(forwardPage, 1);
 }
 
-// Main function to get reverse paginated data
-async function getReversePaginatedData(token, pageSize, reversePage) {
-    try {
-        const totalTransfers = await fetchTokenOperations(token);
 
-        const forwardPage = calculateForwardPage(totalTransfers, pageSize, reversePage);
-
-        const data = await fetchTransfers(token, forwardPage, pageSize);
-
-		if(data.transactions.length > 0) {
-			for(var i = 0; i < data.transactions.length; i++) {
-
-				const rawTxResult = await coreApi.getRawTransactionsWithInputs([data.transactions[i].txId]);
-
-				var inputs = [];
-				var outputs = [];
-
-				rawTxResult.transactions.forEach((tx) => {
-					const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
-
-					tx.vout.forEach((vout) => {
-						if (vout.scriptPubKey && vout.scriptPubKey.group) {
-							try {
-								let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-
-								if(decodedAddress['type'] == 'GROUP') {
-									outputs.push({group: vout.scriptPubKey.group, groupQuantity: vout.scriptPubKey.groupQuantity, groupAuthority: vout.scriptPubKey.groupAuthority, address: vout.scriptPubKey.addresses[0]})
-								}
-							} catch (err) {
-								debugLog("vout electrum error", err)
-							}
-						}
-					});
-
-					tx.vin.forEach((vin, j) => {
-						const txInput = txInputs[j];
-
-						if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
-							try {
-								let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-
-								if(decodedAddress['type'] == 'GROUP') {
-									inputs.push({group: txInput.scriptPubKey.group, groupQuantity: txInput.scriptPubKey.groupQuantity, groupAuthority: txInput.scriptPubKey.groupAuthority, address: txInput.scriptPubKey.addresses[0]})
-								}
-
-							} catch (err) {
-								debugLog("vin electrum error", err)
-							}
-						}
-					});
-				});
-				data.transactions[i].inputs = inputs;
-				data.transactions[i].outputs = outputs;
-			}
-
-			return data.transactions.reverse()
-		} else {
-			return []
-		}
-    } catch (error) {
-        console.error('Error fetching data:', error);
-    }
-}
 
 function getBadgeForType(type){
 	switch(type){
@@ -1816,7 +1754,6 @@ export default {
 	isValidHttpUrl,
 	parseGroupData,
 	loadGroupDataSlow,
-	getReversePaginatedData,
 	getBadgeForType,
 	fetchTokenOperations,
 	fetchRichlist,
@@ -1829,5 +1766,7 @@ export default {
 	getFileType,
 	search,
 	getTokenSupply,
-	padSatoshiValues
+	padSatoshiValues,
+	calculateForwardPage,
+	fetchTransfers
 };
