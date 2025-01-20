@@ -1500,7 +1500,7 @@ function getTokens(pageLimit = 24, pageoffset = 0, sortDir = 'desc'){
 // get transfers for a token / nft
 async function getTransfersForToken(token, size, page) {
 	return new Promise(function(resolve, reject){
-		utils.getReversePaginatedData(token, size, page)
+		getReversePaginatedData(token, size, page)
 		.then(function(results){
 			resolve(results);
 		}).catch(function(err) {
@@ -1639,6 +1639,70 @@ function getTokenIcon(token) {
 			reject(err)
 		});
 	});
+}
+
+// Main function to get reverse paginated data
+async function getReversePaginatedData(token, pageSize, reversePage) {
+	try {
+		const totalTransfers = await utils.fetchTokenOperations(token);
+
+		const forwardPage = utils.calculateForwardPage(totalTransfers, pageSize, reversePage);
+
+		const data = await utils.fetchTransfers(token, forwardPage, pageSize);
+
+		if(data.transactions.length > 0) {
+			for(var i = 0; i < data.transactions.length; i++) {
+
+				const rawTxResult = await getRawTransactionsWithInputs([data.transactions[i].txId]);
+
+				var inputs = [];
+				var outputs = [];
+
+				rawTxResult.transactions.forEach((tx) => {
+					const txInputs = rawTxResult.txInputsByTransaction[tx.txid];
+
+					tx.vout.forEach((vout) => {
+						if (vout.scriptPubKey && vout.scriptPubKey.group) {
+							try {
+								let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
+
+								if(decodedAddress['type'] === 'GROUP') {
+									outputs.push({group: vout.scriptPubKey.group, groupQuantity: vout.scriptPubKey.groupQuantity, groupAuthority: vout.scriptPubKey.groupAuthority, address: vout.scriptPubKey.addresses[0]})
+								}
+							} catch (err) {
+								debugLog("vout electrum error", err)
+							}
+						}
+					});
+
+					tx.vin.forEach((vin, j) => {
+						const txInput = txInputs[j];
+
+						if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
+							try {
+								let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
+
+								if(decodedAddress['type'] === 'GROUP') {
+									inputs.push({group: txInput.scriptPubKey.group, groupQuantity: txInput.scriptPubKey.groupQuantity, groupAuthority: txInput.scriptPubKey.groupAuthority, address: txInput.scriptPubKey.addresses[0]})
+								}
+
+							} catch (err) {
+								debugLog("vin electrum error", err)
+							}
+						}
+					});
+				});
+				data.transactions[i].inputs = inputs;
+				data.transactions[i].outputs = outputs;
+			}
+
+			return data.transactions.reverse()
+		} else {
+			return []
+		}
+	} catch (error) {
+		console.error('Error fetching data:', error);
+	}
 }
 
 
