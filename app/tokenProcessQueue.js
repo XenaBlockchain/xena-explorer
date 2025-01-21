@@ -3,6 +3,7 @@ import { createClient } from "redis";
 import { fileTypeFromBuffer } from 'file-type';
 import config from "./config.js";
 import utils from "./utils.js";
+import tokenApi from "./api/tokenApi.js";
 import BeeQueue from 'bee-queue';
 import nexaaddr from 'nexaaddrjs'
 import coreApi from "./api/coreApi.js";
@@ -52,7 +53,7 @@ tokenProcessQueue.process(3,async (job) => {
 			tokenInfo = result;
 
 			promises.push(new Promise(function(resolve, reject) {
-				utils.getTokenSupply(token).then(function(result) {
+				tokenApi.getTokenSupply(token).then(function(result) {
 					totalSupply = BigInt(result.rawSupply)
 					circulatingSupply = BigInt(result.rawSupply)
 					resolve();
@@ -252,12 +253,12 @@ tokenProcessQueue.process(3,async (job) => {
 				let operations = 0;
 				let holders = 0;
 				try {
-					operations = await utils.fetchTokenOperations(token);
+					operations = await tokeApi.fetchTokenOperations(token);
 				} catch (e) {
 					debugLog("Unable to get operations count for token: " + token)
 				}
 				try {
-					holders = await utils.fetchTokenHoldersCount(token);
+					holders = await tokenApi.fetchTokenHoldersCount(token);
 				} catch (e) {
 					debugLog("Unable to get token holders count for token: " + token)
 				}

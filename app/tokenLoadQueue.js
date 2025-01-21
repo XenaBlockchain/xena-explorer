@@ -2,6 +2,7 @@ import debug from "debug";
 import { createClient } from "redis";
 import config from "./config.js";
 import utils from "./utils.js";
+import tokenApi from "./api/tokenApi.js";
 import BeeQueue from 'bee-queue';
 import db from '../models/index.js'
 
@@ -33,7 +34,7 @@ tokenLoadQueue.process(3,async (job) => {
 					let limit = 500
 
 					do {
-						const data = await utils.fetchGroups(page, limit)
+						const data = await tokenApi.fetchGroups(page, limit)
 						pageResults = data?.results
 						const dataParsed = data?.tokens.map(item => item.token);
 						groups = groups.concat(dataParsed)
@@ -53,7 +54,7 @@ tokenLoadQueue.process(3,async (job) => {
 						let limit = 500
 
 						do {
-							const data = await utils.fetchSubGroups(token, page, limit)
+							const data = await tokenApi.fetchSubGroups(token, page, limit)
 							pageResults = data?.results
 							const dataParsed = data?.tokens.map(item => item.token);
 							subgroups = subgroups.concat(dataParsed)

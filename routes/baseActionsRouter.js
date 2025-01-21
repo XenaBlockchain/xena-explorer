@@ -17,6 +17,7 @@ import db from "../models/index.js";
 import asyncHandler from "express-async-handler";
 
 import utils from './../app/utils.js';
+import tokenApi from './../app/api/tokenApi.js';
 import coins from "./../app/coins.js";
 import config from "./../app/config.js";
 import coreApi from "./../app/api/coreApi.js";
@@ -1415,7 +1416,7 @@ router.get("/token/:token", async function(req, res, next) {
 
 			// Get mintage data of token
 			promises.push(new Promise(function(resolve, reject) {
-				utils.getTokenSupply(token).then(function(result) {
+				tokenApi.getTokenSupply(token).then(function(result) {
 					res.locals.tokenMintage = result;
 					res.locals.totalSupply = result.rawSupply
 					res.locals.circulatingSupply = result.rawSupply
@@ -1529,7 +1530,7 @@ router.get("/token/:token", async function(req, res, next) {
 
 			// Get Token holders count
 			promises.push(new Promise(function(resolve, reject){
-				utils.fetchAuthories(token).then(async function(result){
+				tokenApi.fetchAuthories(token).then(async function(result){
 					if(result.length != 0) {
 						res.locals.authorityInfo = result[0]
 					} else {
