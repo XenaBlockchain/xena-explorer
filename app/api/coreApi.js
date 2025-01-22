@@ -6,6 +6,7 @@ import LRU from "lru-cache";
 import fs from 'fs';
 
 import utils from "../utils.js";
+import tokenApi from "../api/tokenApi.js";
 import config from "../config.js";
 import coins from "../coins.js";
 import redisCache from "../redisCache.js";
@@ -1513,7 +1514,7 @@ async function getTransfersForToken(token, size, page) {
 // get richlist / holders for an token / nft
 function getRichList(token) {
 	return new Promise(function(resolve, reject){
-		utils.fetchRichlist(token)
+		tokenApi.fetchRichlist(token)
 		.then(function(results){
 			resolve(results);
 		}).catch(function(err) {
@@ -1526,7 +1527,7 @@ function getRichList(token) {
 // get holders count for a single token / nft
 function getTokenHolders(token) {
 	return new Promise(function(resolve, reject){
-		utils.fetchTokenHoldersCount(token).then(function(result) {
+		tokenApi.fetchTokenHoldersCount(token).then(function(result) {
 			resolve(result);
 		}).catch(function(err) {
 			utils.logError("token-holders-failure", err, {token:token});
@@ -1539,7 +1540,7 @@ function getTokenHolders(token) {
 
 function getTokenOperations(token) {
 	return new Promise(function(resolve, reject){
-		utils.fetchTokenOperations(token)
+		tokenApi.fetchTokenOperations(token)
 		.then(function(results){
 			resolve(results);
 		}).catch(function(err) {
@@ -1644,11 +1645,11 @@ function getTokenIcon(token) {
 // Main function to get reverse paginated data
 async function getReversePaginatedData(token, pageSize, reversePage) {
 	try {
-		const totalTransfers = await utils.fetchTokenOperations(token);
+		const totalTransfers = await tokenApi.fetchTokenOperations(token);
 
 		const forwardPage = utils.calculateForwardPage(totalTransfers, pageSize, reversePage);
 
-		const data = await utils.fetchTransfers(token, forwardPage, pageSize);
+		const data = await tokenApi.fetchTransfers(token, forwardPage, pageSize);
 
 		if(data.transactions.length > 0) {
 			for(var i = 0; i < data.transactions.length; i++) {
