@@ -1401,7 +1401,7 @@ async function loadGroupDataSlow(filteredTokens, isNfts = false){
 
 // Calculate the forward page number based on total items, page size, and reverse page number
 function calculateForwardPage(totalItems, pageSize, reversePage) {
-	const totalTransfers = totalItems.transfer
+	const totalTransfers = totalItems.total
 	const totalPages = Math.ceil(totalTransfers / pageSize);
     const forwardPage = totalPages - reversePage + 1;
     return Math.max(forwardPage, 1);
