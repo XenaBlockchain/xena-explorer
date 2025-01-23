@@ -30,6 +30,7 @@ import v8 from 'v8';
 
 import electrumAddressApi from "../app/api/electrumAddressApi.js";
 import * as net from "node:net";
+import StandardError from "../app/errors/standardError.js";
 import marketDataApi from "../app/api/marketDataApi.js";
 const { forceCsrf } = csurf;
 var Op = db.Sequelize.Op;
@@ -1198,7 +1199,8 @@ function getInputPayloadContractPayload(tx) {
 router.get("/tx/:transactionIdentifier", function(req, res, next) {
 	var txIdentifier = req.params.transactionIdentifier;
 	if (txIdentifier.length != 64) {
-		res.locals.pageErrors.push(utils.logError("2237y4ewssgt", "Wrong transaction indetifier length"));
+		const response = utils.logError("2237y4ewssgt", new StandardError({message:"Wrong transaction identifier length"}));
+		res.locals.pageErrors.push(response);
 
 		res.render("transaction");
 	} else {

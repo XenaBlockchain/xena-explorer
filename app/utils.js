@@ -817,12 +817,12 @@ function logError(errorId, err, optionalUserData = null) {
 	if (err && err.stack) {
 		debugErrorVerboseLog("Stack: " + err.stack);
 	}
+	console.log(err)
 
-	var returnVal = {errorId:errorId, error:err};
+	var returnVal = {errorId:errorId, error:err, errorMessage: err.message};
 	if (optionalUserData) {
 		returnVal.userData = optionalUserData;
 	}
-
 	return returnVal;
 }
 
