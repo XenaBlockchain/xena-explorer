@@ -5,6 +5,7 @@ import utils from "../utils.js";
 import config from "../config.js";
 import coins from "../coins.js";
 import global from "../global.js";
+import RpcError from "../errors/rpcError.js";
 
 const debugLog = debug("nexexp:rpc");
 var activeQueueTasks = 0;
@@ -315,7 +316,7 @@ function getRpcData(cmd) {
 					if(err) {
 						err.userData = {request:cmd};
 	
-						utils.logError("9u4278t5h7rfhgf", err, {request:cmd});
+						utils.logError("9u4278t5h7rfhgf", new RpcError(err), {request:cmd});
 	
 						reject(err);
 	
@@ -373,11 +374,12 @@ function getRpcDataWithParams(request) {
 				client.request(request.method, request.parameters, function(err, rpcResult) {
 					if(err) {
 						err.userData = {request:request};
+						const rpcError = new RpcError(err)
 	
-						utils.logError("283h7ewsede", err, {request:request});
+						utils.logError("283h7ewsede", rpcError, {request:request});
 						logStats(request.method, true, new Date().getTime() - startTime, false)
 	
-						reject(err);
+						reject(rpcError);
 	
 						callback();
 					};

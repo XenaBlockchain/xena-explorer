@@ -130,12 +130,19 @@ html(lang="en")
 				if (pageErrors && pageErrors.length > 0)
 					include includes/page-errors-modal.pug
 
-					div.alert.alert-danger
-						- var errorText = `This page encountered ${pageErrors.length.toLocaleString()} error${pageErrors.length == 1 ? "" : "s"}:`;
-						span.font-weight-bold #{errorText} 
-						a(href="javascript:void(0)", data-toggle="modal", data-target="#pageErrorsModal") Error details
+					each item, index in pageErrors
+						if(item.errorMessage)
+							div.mt-5.mt-sm-3
+								div.card.shadow-sm.mb-1
+									div.card-body.d-flex.flex-column.justify-content-center.align-items-center
+										h4.text-bold Uh oh. Something went wrong!
+										if(item.errorMessage.includes("No such txpool or blockchain transaction"))
+											h6.mt-2.mb-1 No such txpool or blockchain transaction
+											span (If you just made this transaction, wait a few more seconds for it to propagate on the Nexa network.  If the transaction never appears, it is also possible that it was incorrectly constructed, indicating a bug in your wallet)
+										else
+											h6.mt-2.mb-1 #{item.errorMessage}
+										a(href="javascript:void(0)", data-toggle="modal", data-target="#pageErrorsModal") Error details
 
-				
 				div(style="min-height: 500px;")
 					if(userMessage)
 						.toast(style='position: absolute; top: 10%; left: 50%; z-index:999999; min-width:500px; min-height:100px; transform: translate(-50%, -50%); background-color: #021a24;' data-bs-autohide='false' data-delay=2000).bg-dark
