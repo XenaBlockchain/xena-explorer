@@ -1287,7 +1287,7 @@ async function parseNebulaNFT(zip) {
 		let info = zip.file('info.json');
 		if (info) {
 			let infoJson = await info.async('string');
-			let infoObj = JSON.parse(JSON.parse(infoJson));
+			let infoObj = JSON.parse(infoJson);
 			data = {
 				nrc: infoObj?.nrc ?? '',
 				name: infoObj?.name ?? '',
