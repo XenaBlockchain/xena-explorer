@@ -13,6 +13,8 @@ import utils from './../app/utils.js';
 import config from './../app/config.js';
 import coreApi from './../app/api/coreApi.js';
 import db from '../models/index.js'
+import global from "../app/global.js";
+import axios from "axios";
 var Op = db.Sequelize.Op;
 
 const forceCsrf = csurf({ ignoreMethods: [] });
@@ -324,7 +326,7 @@ router.get("/nfts/:sort", function(req, res, next) {
 		coreApi.getNewNFTS(limit, offset).then(function(results) {
 			res.set('Content-Type', 'text/json')
 			res.send(results)
-			utils.perfMeasure(req);	
+			utils.perfMeasure(req);
 		}).catch(function(err){
 			res.set('Content-Type', 'text/json')
 			res.send([])
@@ -334,7 +336,7 @@ router.get("/nfts/:sort", function(req, res, next) {
 		coreApi.getAllNFTs(limit, offset).then(function(results) {
 			res.set('Content-Type', 'text/json')
 			res.send(results)
-			utils.perfMeasure(req);	
+			utils.perfMeasure(req);
 		}).catch(function(err){
 			res.set('Content-Type', 'text/json')
 			res.send([])
@@ -370,6 +372,64 @@ router.get("/utils/:func/:params", function(req, res, next) {
 	res.json(data);
 	utils.perfMeasure(req);
 });
+
+router.get('/tx-stats', function (req, res, next) {
+	const targetBlocksPerDay = 24 * 60 * 60 / global.coinConfig.targetBlockTimeSeconds;
+	const promises = []
+	const data = {};
+	let dataPoints = targetBlocksPerDay / 4;
+
+	if (req.query.dataPoints) {
+		dataPoints = req.query.dataPoints;
+	}
+
+	if (dataPoints > 250) {
+		dataPoints = 250;
+	}
+
+
+
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTxCountStats(dataPoints, 0, "latest", false).then(function(result) {
+			resolve(result)
+		}).catch(function (err) {
+			reject(err)
+		});
+	}));
+
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTxCountStats(dataPoints, -targetBlocksPerDay, "latest", false).then(function(result2) {
+			resolve(result2)
+		}).catch(function (err) {
+			reject(err)
+		});
+	}));
+
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTxCountStats(dataPoints, -targetBlocksPerDay * 7, "latest", false).then(function(result3) {
+			resolve(result3)
+		}).catch(function (err) {
+			reject(err)
+		});
+	}));
+
+	promises.push(new Promise(function(resolve, reject) {
+		coreApi.getTxCountStats(dataPoints, -targetBlocksPerDay * 30, "latest", false).then(function(result4) {
+			resolve(result4)
+		}).catch(function () {
+			reject(err)
+		});
+	}));
+
+	Promise.all(promises).then(async function(promiseResults) {
+		data['txStatsTotal'] = promiseResults[0];
+		data['txStatsDay'] = promiseResults[1];
+		data['txStatsWeek'] = promiseResults[2];
+		data['txStatsMonth'] = promiseResults[3];
+		res.json(data);
+		utils.perfMeasure(req);
+	});
+})
 
 
 
