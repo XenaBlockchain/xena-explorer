@@ -201,7 +201,7 @@ tokenProcessQueue.process(3,async (job) => {
 									var filePath = nftPath + '/' + token + '/' + file.title + '.'+ fileType.ext
 									fs.writeFileSync(filePath, b);
 									let fileStore = {title: file.title, path: filePath, ext: fileType.ext, mime: fileType.mime}
-									if(file.title === "Front") {
+									if((file.title === "Front" || file.title === "Public") && frontFile == null) {
 										frontFile = fileStore
 									}
 									files.push(fileStore)

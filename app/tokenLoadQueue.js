@@ -17,7 +17,7 @@ const tokenLoadQueue = new BeeQueue('tokenLoadQueue',{
 
 
 tokenLoadQueue.process(3,async (job) => {
-	debugLog(`tokenLoadQueue: Processing job ${job.id}, token: ${job.data.token}`);
+	debugLog(`tokenLoadQueue: Processing job ${job.id}`);
 	return new Promise(async function(resolve, reject) {
 		let tokenApiGroups = [];
 		let tokenApiSubGroups = [];
