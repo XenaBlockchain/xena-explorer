@@ -396,11 +396,12 @@ function getUtxoSetSummary() {
 	return tryCacheThenRpcApi(miscCache, "getUtxoSetSummary", 15 * ONE_MIN, rpcApi.getUtxoSetSummary);
 }
 
-function getTxCountStats(dataPtCount, blockStart, blockEnd) {
+function getTxCountStats(dataPtCount, blockStart, blockEnd, plot = true) {
 	return new Promise(function(resolve, reject) {
 		var dataPoints = dataPtCount;
 
 		getBlockchainInfo().then(function(getblockchaininfo) {
+			let i;
 			if (typeof blockStart === "string") {
 				if (["genesis", "first", "zero"].includes(blockStart)) {
 					blockStart = 0;
@@ -426,32 +427,52 @@ function getTxCountStats(dataPtCount, blockStart, blockEnd) {
 			if (blockEnd < 0) {
 				blockEnd += getblockchaininfo.blocks;
 			}
-
-			var chainTxStatsIntervals = [];
-			for (var i = 0; i < dataPoints; i++) {
+			const chainTxStatsIntervals = [];
+			for (i = 0; i < dataPoints; i++) {
 				chainTxStatsIntervals.push(parseInt(Math.max(10, getblockchaininfo.blocks - blockStart - i * (blockEnd - blockStart) / (dataPoints - 1) - 1)));
 			}
 
-			var promises = [];
-			for (var i = 0; i < chainTxStatsIntervals.length; i++) {
+			const promises = [];
+			for (i = 0; i < chainTxStatsIntervals.length; i++) {
 				promises.push(getChainTxStats(chainTxStatsIntervals[i]));
 			}
 
 			Promise.all(promises).then(function(results) {
-				if (results[0].name == "RpcError" && results[0].code == -8) {
+				let i;
+				if (results[0].name === "RpcError" && results[0].code === -8) {
 					// recently started node - no meaningful data to return
 					resolve(null);
 
 					return;
 				}
 
-				var txStats = {
+				const txStats = {
 					txCounts: [],
-					txLabels: [],
-					txRates: []
+					txCumulativeCounts: [],
+					txRates: [],
 				};
 
-				for (var i = results.length - 1; i >= 0; i--) {
+				if (!plot) {
+					for (i = results.length - 1; i >= 0; i--) {
+						if (results[i].window_tx_count) {
+							txStats.txCounts.push(results[i].window_tx_count)
+							txStats.txCumulativeCounts.push(results[i].txcount - results[i].window_tx_count)
+							txStats.txRates.push(results[i].txrate);
+						}
+					}
+
+					resolve({
+						txCountStats:txStats,
+						totalTxCount:txStats.txCounts[txStats.txCounts.length - 1],
+						window: {
+							block_start: blockStart,
+							block_end: blockEnd,
+						}
+					});
+					return;
+				}
+				txStats['txLabels'] = []
+				for (i = results.length - 1; i >= 0; i--) {
 					if (results[i].window_tx_count) {
 						txStats.txCounts.push( {x:(getblockchaininfo.blocks - results[i].window_block_count), y: (results[i].txcount - results[i].window_tx_count)} );
 						txStats.txRates.push( {x:(getblockchaininfo.blocks - results[i].window_block_count), y: (results[i].txrate)} );

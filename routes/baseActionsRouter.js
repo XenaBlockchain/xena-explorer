@@ -2146,13 +2146,13 @@ router.get("/tx-stats", function(req, res, next) {
 		res.locals.getblockchaininfo = result.getblockchaininfo;
 		res.locals.txStats = result.txCountStats;
 
-		coreApi.getTxCountStats(targetBlocksPerDay / 4, -144, "latest").then(function(result2) {
+		coreApi.getTxCountStats(targetBlocksPerDay / 4, -targetBlocksPerDay, "latest").then(function(result2) {
 			res.locals.txStatsDay = result2.txCountStats;
 
-			coreApi.getTxCountStats(targetBlocksPerDay / 4, -144 * 7, "latest").then(function(result3) {
+			coreApi.getTxCountStats(targetBlocksPerDay / 4, -targetBlocksPerDay * 7, "latest").then(function(result3) {
 				res.locals.txStatsWeek = result3.txCountStats;
 
-				coreApi.getTxCountStats(targetBlocksPerDay / 4, -144 * 30, "latest").then(function(result4) {
+				coreApi.getTxCountStats(targetBlocksPerDay / 4, -targetBlocksPerDay * 30, "latest").then(function(result4) {
 					res.locals.txStatsMonth = result4.txCountStats;
 
 					res.render("tx-stats");
