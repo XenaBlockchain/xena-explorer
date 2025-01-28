@@ -90,6 +90,7 @@ function decode(req, res, next) {
 		res.render("decoder");
 		utils.perfMeasure(req);
 	}).catch(function(err) {
+		debugLog(err);
 		res.locals.type = "unknown";
 		res.locals.userMessage = "Decode failed";
 		res.locals.tx = {};
