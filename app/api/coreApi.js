@@ -9,10 +9,8 @@ import utils from "../utils.js";
 import tokenApi from "../api/tokenApi.js";
 import config from "../config.js";
 import coins from "../coins.js";
-import redisCache from "../redisCache.js";
 import Decimal from "decimal.js";
 import nexaaddr from 'nexaaddrjs'
-import md5 from "md5";
 
 
 import db from '../../models/index.js'
@@ -23,181 +21,10 @@ import rpcApi from "./rpcApi.js";
 import electrumAddressApi from "../api/electrumAddressApi.js";
 // import { reject } from "bluebird"; // Uncomment if needed
 
-// var rpcApi = require("./mockApi.js"); // Comment out or remove this line
 import global from "../global.js";
-import tokenProcessQueue from "../tokenProcessQueue.js";
 import tokenLoadQueue from "../tokenLoadQueue.js";
-global.cacheStats = {};
+import cacheApi from "./cacheApi.js";
 global.tokenIcons = [];
-// this value should be incremented whenever data format changes, to avoid
-// pulling old-format data from a persistent cache
-var cacheKeyVersion = "v1";
-
-const ONE_SEC = 1000;
-const ONE_MIN = 60 * ONE_SEC;
-const ONE_HR = 60 * ONE_MIN;
-const FIVE_MINUTES = 5 * ONE_MIN;
-const ONE_DAY = 24 * ONE_HR;
-const ONE_YR = 265 * ONE_DAY;
-
-
-
-function createMemoryLruCache(cacheObj, onCacheEvent) {
-	return {
-		get:function(key) {
-			return new Promise(function(resolve, reject) {
-				onCacheEvent("memory", "try", key);
-
-				var val = cacheObj.get(key);
-
-				if (val != null) {
-					onCacheEvent("memory", "hit", key);
-
-				} else {
-					onCacheEvent("memory", "miss", key);
-				}
-
-				resolve(cacheObj.get(key));
-			});
-		},
-		set:function(key, obj, maxAge) { cacheObj.set(key, obj, maxAge); }
-	}
-}
-
-async function tryCache(cacheKey, cacheObjs, index) {
-    if (index === cacheObjs.length) {
-        return null;
-    }
-
-    const result = await cacheObjs[index].get(cacheKey);
-
-    if (result !== null) {
-        return result;
-    } else {
-        return tryCache(cacheKey, cacheObjs, index + 1);
-    }
-}
-
-function createTieredCache(cacheObjs) {
-	return {
-		get: async function (key) {
-			return await tryCache(key, cacheObjs, 0);
-		},
-
-		set: function (key, obj, maxAge) {
-			for (let i = 0; i < cacheObjs.length; i++) {
-				cacheObjs[i].set(key, obj, maxAge);
-			}
-		},
-
-		append: async function (key, obj, maxAge) {
-			let result = await tryCache(key, cacheObjs, 0);
-			result = Array.isArray(result) && result.length > 0 ? [...result, obj] : [obj];
-
-			for (let i = 0; i < cacheObjs.length; i++) {
-				cacheObjs[i].set(key, result, maxAge);
-			}
-		},
-
-		prepend: async function (key, obj, maxAge) {
-			let result = await tryCache(key, cacheObjs, 0);
-			result = Array.isArray(result) && result.length > 0 ? [obj, ...result] : [obj];
-
-			for (let i = 0; i < cacheObjs.length; i++) {
-				cacheObjs[i].set(key, result, maxAge);
-			}
-		},
-		updateOrAppend: async function (cacheKey, obj, objKey, objKeyValue, maxAge) {
-			let result = await tryCache(cacheKey, cacheObjs, 0);
-			if (Array.isArray(result) && result.length > 0) {
-				const foundIndex = result.findIndex((element) => element[objKey] == objKeyValue);
-				if (foundIndex !== -1) {
-					result[foundIndex] = obj
-				} else {
-					result.push(obj);
-				}
-			} else {
-				result = [];
-				result.push(obj);
-			}
-
-			for (let i = 0; i < cacheObjs.length; i++) {
-				cacheObjs[i].set(cacheKey, result, maxAge);
-			}
-		}
-	}
-}
-
-
-
-
-var miscCaches = [];
-var blockCaches = [];
-var txCaches = [];
-var marketDataCaches = [];
-
-if (!config.noInmemoryRpcCache) {
-	global.cacheStats.memory = {
-		try: 0,
-		hit: 0,
-		miss: 0
-	};
-
-	var onMemoryCacheEvent = function(cacheType, eventType, cacheKey) {
-		if(!('memory' in global.cacheStats)) {
-			global.cacheStats.memory = {
-				try: 0,
-				hit: 0,
-				miss: 0
-			};
-		}
-		global.cacheStats.memory[eventType]++;
-	}
-
-	miscCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
-	blockCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
-	txCaches.push(createMemoryLruCache(new LRU(10000), onMemoryCacheEvent));
-	marketDataCaches.push(createMemoryLruCache(new LRU( 10000), onMemoryCacheEvent));
-}
-
-if (redisCache.active) {
-	global.cacheStats.redis = {
-		try: 0,
-		hit: 0,
-		miss: 0,
-		error: 0
-	};
-
-	var onRedisCacheEvent = function(cacheType, eventType, cacheKey) {
-		if(!('redis' in global.cacheStats)) {
-			global.cacheStats.redis = {
-				try: 0,
-				hit: 0,
-				miss: 0
-			};
-		}
-		global.cacheStats.redis[eventType]++;
-	}
-
-	// md5 of the active RPC credentials serves as part of the key; this enables
-	// multiple instances of btc-rpc-explorer (eg mainnet + testnet) to share
-	// a single redis instance peacefully
-	var rpcHostPort = `${config.credentials.rpc.host}:${config.credentials.rpc.port}`;
-	var rpcCredKeyComponent = md5(JSON.stringify(config.credentials.rpc)).substring(0, 8);
-
-	var redisCacheObj = redisCache.createCache(`${cacheKeyVersion}-${rpcCredKeyComponent}`, onRedisCacheEvent);
-
-	miscCaches.push(redisCacheObj);
-	blockCaches.push(redisCacheObj);
-	txCaches.push(redisCacheObj);
-	marketDataCaches.push(redisCacheObj)
-}
-
-var miscCache = createTieredCache(miscCaches);
-var blockCache = createTieredCache(blockCaches);
-var txCache = createTieredCache(txCaches);
-var marketCache = createTieredCache(marketDataCaches)
-
 
 
 function getGenesisBlockHash() {
@@ -209,79 +36,11 @@ function getGenesisCoinbaseTransactionId() {
 }
 
 function getMarketDataForToken(token, exchange, loadFunction) {
-	return tryCacheThenCallFunction(marketCache, "getMarketInfo-" + token + '-' + exchange, FIVE_MINUTES, loadFunction);
+	return cacheApi.tryCacheThenCallFunction(cacheApi.marketCache, "getMarketInfo-" + token + '-' + exchange, cacheApi.FIVE_MINUTES, loadFunction);
 }
 
 function getTokenGenesis(token) {
-	return tryCacheThenCallFunction(miscCache, "getTokenGenesis-" + token, ONE_YR, electrumAddressApi.getTokenGenesis(token));
-}
-
-async function tryCacheThenCallFunction(cache, cacheKey, cacheMaxAge, functionToCall, cacheConditionFunction) {
-	if (cacheConditionFunction == null) {
-		cacheConditionFunction = function(obj) {
-			return true;
-		};
-
-		try {
-			const cacheResult = await cache.get(cacheKey);
-			if (cacheResult != null) {
-				return cacheResult;
-			}
-
-			const functionResult = await functionToCall;
-
-			if (functionResult != null && cacheConditionFunction(functionResult)) {
-				cache.set(cacheKey, functionResult, cacheMaxAge);
-			}
-
-			return functionResult;
-		} catch (err) {
-			throw err;
-		}
-	}
-}
-
-
-function tryCacheThenRpcApi(cache, cacheKey, cacheMaxAge, rpcApiFunction, cacheConditionFunction) {
-
-	if (cacheConditionFunction == null) {
-		cacheConditionFunction = function(obj) {
-			return true;
-		};
-	}
-
-	return new Promise(function(resolve, reject) {
-		var cacheResult = null;
-
-		var finallyFunc = function() {
-			if (cacheResult != null) {
-				resolve(cacheResult);
-
-			} else {
-				rpcApiFunction().then(function(rpcResult) {
-					if (rpcResult != null && cacheConditionFunction(rpcResult)) {
-						cache.set(cacheKey, rpcResult, cacheMaxAge);
-					}
-
-					resolve(rpcResult);
-
-				}).catch(function(err) {
-					reject(err);
-				});
-			}
-		};
-
-		cache.get(cacheKey).then(function(result) {
-			cacheResult = result;
-
-			finallyFunc();
-
-		}).catch(function(err) {
-			utils.logError("nds9fc2eg621tf3", err, {cacheKey:cacheKey});
-
-			finallyFunc();
-		});
-	});
+	return cacheApi.tryCacheThenCallFunction(cacheApi.miscCache, "getTokenGenesis-" + token, cacheApi.ONE_YR, electrumAddressApi.getTokenGenesis(token));
 }
 
 function shouldCacheTransaction(tx) {
@@ -293,32 +52,28 @@ function shouldCacheTransaction(tx) {
 		return false;
 	}
 
-	if (tx.vin != null && tx.vin.length > 9) {
-		return false;
-	}
-
-	return true;
+	return !(tx.vin != null && tx.vin.length > 9);
 }
 
 
 function getBlockCount() {
-	return tryCacheThenRpcApi(miscCache, "getBlockCount", 10 * ONE_SEC, rpcApi.getBlockCount);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getBlockCount", 10 * cacheApi.ONE_SEC, rpcApi.getBlockCount);
 }
 
 function getBlockchainInfo() {
-	return tryCacheThenRpcApi(miscCache, "getBlockchainInfo", 10 * ONE_SEC, rpcApi.getBlockchainInfo);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getBlockchainInfo", 10 * cacheApi.ONE_SEC, rpcApi.getBlockchainInfo);
 }
 
 function getNetworkInfo() {
-	return tryCacheThenRpcApi(miscCache, "getNetworkInfo", 10 * ONE_SEC, rpcApi.getNetworkInfo);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getNetworkInfo", 10 * cacheApi.ONE_SEC, rpcApi.getNetworkInfo);
 }
 
 function getNetTotals() {
-	return tryCacheThenRpcApi(miscCache, "getNetTotals", 10 * ONE_SEC, rpcApi.getNetTotals);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getNetTotals", 10 * cacheApi.ONE_SEC, rpcApi.getNetTotals);
 }
 
 function getTxpoolInfo() {
-	return tryCacheThenRpcApi(miscCache, "getTxpoolInfo", ONE_SEC, rpcApi.getTxpoolInfo);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getTxpoolInfo", cacheApi.ONE_SEC, rpcApi.getTxpoolInfo);
 }
 
 function getTxpoolTxids() {
@@ -327,44 +82,44 @@ function getTxpoolTxids() {
 }
 
 function getMiningInfo() {
-	return tryCacheThenRpcApi(miscCache, "getMiningInfo", 30 * ONE_SEC, rpcApi.getMiningInfo);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getMiningInfo", 30 * cacheApi.ONE_SEC, rpcApi.getMiningInfo);
 }
 
 function getUptimeSeconds() {
-	return tryCacheThenRpcApi(miscCache, "getUptimeSeconds", ONE_SEC, rpcApi.getUptimeSeconds);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getUptimeSeconds", cacheApi.ONE_SEC, rpcApi.getUptimeSeconds);
 }
 
 function getChainTxStats(blockCount) {
-	return tryCacheThenRpcApi(miscCache, "getChainTxStats-" + blockCount, 20 * ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getChainTxStats-" + blockCount, 20 * cacheApi.ONE_MIN, function() {
 		return rpcApi.getChainTxStats(blockCount);
 	});
 }
 
 function getNetworkHashrate(blockCount) {
-	return tryCacheThenRpcApi(miscCache, "getNetworkHashrate-" + blockCount, 20 * ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getNetworkHashrate-" + blockCount, 20 * cacheApi.ONE_MIN, function() {
 		return rpcApi.getNetworkHashrate(blockCount);
 	});
 }
 
 function getBlockStats(hash_or_height) {
-	return tryCacheThenRpcApi(miscCache, "getBlockStats-" + hash_or_height, ONE_YR, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getBlockStats-" + hash_or_height, cacheApi.ONE_YR, function() {
 		return rpcApi.getBlockStats(hash_or_height);
 	});
 }
 
 function decodeScript(hex) {
-	return tryCacheThenRpcApi(miscCache, "decodeScript-" + hex, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "decodeScript-" + hex, 1000 * 60 * 1000, function() {
 		return rpcApi.decodeScript(hex);
 	});
 }
 
 function getTokenMintage(token) {
-	return tryCacheThenRpcApi(miscCache, "getTokenMintage-" + token,  20 * ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getTokenMintage-" + token,  20 * cacheApi.ONE_MIN, function() {
 		return rpcApi.tokenMintage(token);
 	});
 }
 
-function getTransactions(txids, cacheSpan=ONE_HR) {
+function getTransactions(txids, cacheSpan=cacheApi.ONE_HR) {
 	return new Promise(function(resolve, reject) {
 		var promises = [];
 		for (var i = 0; i < txids.length; i++) {
@@ -381,19 +136,19 @@ function getTransactions(txids, cacheSpan=ONE_HR) {
 }
 
 function getTransaction(tx) {
-	return tryCacheThenRpcApi(miscCache, "gettransaction-" + tx, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "gettransaction-" + tx, 1000 * 60 * 1000, function() {
 		return rpcApi.getTransaction(tx);
 	});
 }
 
 function decodeRawTransaction(hex) {
-	return tryCacheThenRpcApi(miscCache, "decodeRawTransaction-" + hex, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "decodeRawTransaction-" + hex, 1000 * 60 * 1000, function() {
 		return rpcApi.decodeRawTransaction(hex);
 	});
 }
 
 function getUtxoSetSummary() {
-	return tryCacheThenRpcApi(miscCache, "getUtxoSetSummary", 15 * ONE_MIN, rpcApi.getUtxoSetSummary);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getUtxoSetSummary", 15 * cacheApi.ONE_MIN, rpcApi.getUtxoSetSummary);
 }
 
 function getTxCountStats(dataPtCount, blockStart, blockEnd, plot = true) {
@@ -494,7 +249,7 @@ function getTxCountStats(dataPtCount, blockStart, blockEnd, plot = true) {
 
 function getPeerSummary() {
 	return new Promise(function(resolve, reject) {
-		tryCacheThenRpcApi(miscCache, "getpeerinfo", ONE_SEC, rpcApi.getPeerInfo).then(function(getpeerinfo) {
+		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getpeerinfo", cacheApi.ONE_SEC, rpcApi.getPeerInfo).then(function(getpeerinfo) {
 			var result = {};
 			result.getpeerinfo = getpeerinfo;
 
@@ -577,7 +332,7 @@ function getPeerSummary() {
 
 function getTxpoolDetails(start, count) {
 	return new Promise(function(resolve, reject) {
-		tryCacheThenRpcApi(miscCache, "getTxpoolTxids", ONE_SEC, rpcApi.getTxpoolTxids).then(function(resultTxids) {
+		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getTxpoolTxids", cacheApi.ONE_SEC, rpcApi.getTxpoolTxids).then(function(resultTxids) {
 			var txids = [];
 
 			for (var i = start; (i < resultTxids.length && i < (start + count)); i++) {
@@ -618,7 +373,7 @@ function getBlockInt(hash_or_height)
 
 function getBlockCached(hash_or_height, full = false) {
 	if (!full) {
-		return tryCacheThenRpcApi(blockCache, "getBlock-" + hash_or_height, ONE_YR, function() {
+		return cacheApi.tryCacheThenRpcApi(cacheApi.blockCache, "getBlock-" + hash_or_height, cacheApi.ONE_YR, function() {
 			return new Promise(function(resolve, reject) {
 				getBlockInt(hash_or_height).then(function(block) {
 					block.txid.length = 1; // only keep the coinbase TX when caching the result
@@ -683,13 +438,13 @@ function getBlocksByHeight(blockHeights, full = false) {
 }
 
 function getBlockHeader(blockHash) {
-	return tryCacheThenRpcApi(blockCache, "getBlockHeader-" + blockHash, ONE_YR, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.blockCache, "getBlockHeader-" + blockHash, cacheApi.ONE_YR, function() {
 		return rpcApi.getBlockHeader(blockHash);
 	});
 }
 
 function getBlockHeaderByHeight(blockHeight) {
-	return tryCacheThenRpcApi(blockCache, "getBlockHeader-" + blockHeight, ONE_YR, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.blockCache, "getBlockHeader-" + blockHeight, cacheApi.ONE_YR, function() {
 		return rpcApi.getBlockHeader(blockHeight);
 	});
 }
@@ -726,23 +481,23 @@ function getBlocksStatsByHeight(blockHeights) {
 }
 
 function getMiningCandidate(args = {}) {
-	return tryCacheThenRpcApi(miscCache, "getMiningCandidate", ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getMiningCandidate", cacheApi.ONE_MIN, function() {
 		return rpcApi.getMiningCandidate(args);
 	});
 }
 
-function getRawTransaction(txid, cacheSpan=ONE_HR) {
+function getRawTransaction(txid, cacheSpan=cacheApi.ONE_HR) {
 	var rpcApiFunction = function() {
 		return rpcApi.getRawTransaction(txid);
 	};
 
-	return tryCacheThenRpcApi(txCache, "getRawTransaction-" + txid, cacheSpan, rpcApiFunction, shouldCacheTransaction);
+	return cacheApi.tryCacheThenRpcApi(cacheApi.txCache, "getRawTransaction-" + txid, cacheSpan, rpcApiFunction, shouldCacheTransaction);
 }
 
 /*
  * This function pulls raw tx data and then summarizes the outputs. It's used in memory-constrained situations.
  */
-function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
+function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=cacheApi.ONE_HR) {
 	var rpcApiFunction = function() {
 		return new Promise(function(resolve, reject) {
 			rpcApi.getRawTransaction(outpoint, cacheSpan).then(function(rawTx) {
@@ -777,7 +532,7 @@ function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=ONE_HR) {
 		});
 	};
 
-	return tryCacheThenRpcApi(txCache, `txoSummary-${txid}-${outpoint}`, cacheSpan, rpcApiFunction, function() { return true; });
+	return cacheApi.tryCacheThenRpcApi(cacheApi.txCache, `txoSummary-${txid}-${outpoint}`, cacheSpan, rpcApiFunction, function() { return true; });
 }
 
 function getTxUtxos(tx) {
@@ -799,7 +554,7 @@ function getTxUtxos(tx) {
 
 function getUtxo(txid, outputIndex) {
 	return new Promise(function(resolve, reject) {
-		tryCacheThenRpcApi(miscCache, "utxo-" + txid + "-" + outputIndex, ONE_HR, function() {
+		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "utxo-" + txid + "-" + outputIndex, cacheApi.ONE_HR, function() {
 			return rpcApi.getUtxo(txid, outputIndex);
 
 		}).then(function(result) {
@@ -819,18 +574,18 @@ function getUtxo(txid, outputIndex) {
 }
 
 function getTxpoolTxDetails(txid, includeAncDec) {
-	return tryCacheThenRpcApi(miscCache, "txpoolTxDetails-" + txid + "-" + includeAncDec, ONE_HR, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "txpoolTxDetails-" + txid + "-" + includeAncDec, cacheApi.ONE_HR, function() {
 		return rpcApi.getTxpoolTxDetails(txid, includeAncDec);
 	});
 }
 
 function getAddress(address) {
-	return tryCacheThenRpcApi(miscCache, "getAddress-" + address, ONE_HR, function() {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getAddress-" + address, cacheApi.ONE_HR, function() {
 		return rpcApi.getAddress(address);
 	});
 }
 
-function getRawTransactions(txids, cacheSpan=ONE_HR) {
+function getRawTransactions(txids, cacheSpan=cacheApi.ONE_HR) {
 	return new Promise(function(resolve, reject) {
 		var promises = [];
 		for (var i = 0; i < txids.length; i++) {
@@ -929,7 +684,7 @@ function summarizeBlockAnalysisData(blockHeight, tx, inputs) {
 	return txSummary;
 }
 
-function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=ONE_HR) {
+function getRawTransactionsWithInputs(txids, maxInputs=-1, cacheSpan=cacheApi.ONE_HR) {
 	return new Promise(function(resolve, reject) {
 		getRawTransactions(txids, cacheSpan).then(function(transactions) {
 			var maxInputsTracked = config.site.txMaxInput;
@@ -1146,7 +901,7 @@ function getBlockList(args)
 
 function getHelp() {
 	return new Promise(function(resolve, reject) {
-		tryCacheThenRpcApi(miscCache, "getHelp", ONE_DAY, rpcApi.getHelp).then(function(helpContent) {
+		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getHelp", cacheApi.ONE_DAY, rpcApi.getHelp).then(function(helpContent) {
 			var lines = helpContent.split("\n");
 			var sections = [];
 
@@ -1182,7 +937,7 @@ function getRpcMethodHelp(methodName) {
 	};
 
 	return new Promise(function(resolve, reject) {
-		tryCacheThenRpcApi(miscCache, "getHelp-" + methodName, ONE_DAY, rpcApiFunction).then(function(helpContent) {
+		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getHelp-" + methodName, cacheApi.ONE_DAY, rpcApiFunction).then(function(helpContent) {
 			var output = {};
 			output.string = helpContent;
 
@@ -1259,7 +1014,7 @@ function getRpcMethodHelp(methodName) {
 }
 
 function logCacheSizes() {
-	var itemCounts = [ miscCache.itemCount, blockCache.itemCount, txCache.itemCount ];
+	var itemCounts = [ cacheApi.miscCache.itemCount, cacheApi.blockCache.itemCount, cacheApi.txCache.itemCount ];
 
 	var stream = fs.createWriteStream("memoryUsage.csv", {flags:'a'});
 	stream.write("itemCounts: " + JSON.stringify(itemCounts) + "\n");
