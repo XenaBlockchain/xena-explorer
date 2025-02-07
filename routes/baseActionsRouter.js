@@ -1,14 +1,10 @@
 import debug from "debug";
-const debugLog = debug("nexexp:router");
-
 import express from 'express';
 import csurf from 'csurf';
-const router = express.Router();
 import qrcode from 'qrcode';
 import bitcoinjs from 'bitcoinjs-lib';
 import nexaaddrjs from 'nexaaddrjs';
 import crypto from 'crypto-js';
-const {sha256, hexEnc} = crypto;
 import Decimal from "decimal.js";
 import libnexa from 'libnexa-js'
 import db from "../models/index.js";
@@ -23,15 +19,19 @@ import config from "./../app/config.js";
 import coreApi from "./../app/api/coreApi.js";
 import addressApi from "./../app/api/addressApi.js";
 import rpcApi from "./../app/api/rpcApi.js";
-const coinConfig = coins[config.coin];
 import global from "../app/global.js";
 
 import v8 from 'v8';
 
 import electrumAddressApi from "../app/api/electrumAddressApi.js";
-import * as net from "node:net";
 import StandardError from "../app/errors/standardError.js";
 import marketDataApi from "../app/api/marketDataApi.js";
+
+const debugLog = debug("nexexp:router");
+
+const router = express.Router();
+const {sha256, hexEnc} = crypto;
+const coinConfig = coins[config.coin];
 const { forceCsrf } = csurf;
 var Op = db.Sequelize.Op;
 
@@ -614,32 +614,59 @@ router.get("/collection/:collectionIdentifier", async function(req, res, next){
 })
 
 router.get("/peers", function(req, res, next) {
-	coreApi.getPeerSummary().then(function(peerSummary) {
+	coreApi.getPeerSummary().then(async function (peerSummary) {
 		res.locals.peerSummary = peerSummary;
+		try {
+			res.locals.peerIpSummary = await utils.geoLocateIpAddresses(peerSummary);
+			res.locals.mapBoxKey = config.credentials.mapBoxKey
 
-		var peerIps = [];
-		for (var i = 0; i < peerSummary.getpeerinfo.length; i++) {
-			var ipWithPort = peerSummary.getpeerinfo[i].addr;
-			if (ipWithPort.lastIndexOf(":") >= 0) {
-				var ip = ipWithPort.substring(0, ipWithPort.lastIndexOf(":"));
-				if (ip.trim().length > 0) {
-					peerIps.push(ip.trim());
+			const versionCounts = {};
+			const countryCounts = {}
+			const hostCounts = {}
+
+			Object.values(res.locals.peerIpSummary.detailsByIp).forEach(item => {
+				const version = item.subver;
+				if (version) {
+					versionCounts[version] = (versionCounts[version] || 0) + 1;
 				}
-			}
-		}
 
-		if (peerIps.length > 0) {
-			utils.geoLocateIpAddresses(peerIps).then(function(results) {
-				res.locals.peerIpSummary = results;
+				const country = item.country
+				if (country) {
+					countryCounts[country] = (countryCounts[country] || 0) + 1;
+				}
 
-				res.render("peers");
-				utils.perfMeasure(req);
-
+				const host = item.org
+				if (country) {
+					hostCounts[host] = (hostCounts[host] || 0) + 1;
+				}
 			});
-		} else {
-			res.render("peers");
 
+			const versionPlotData = utils.sortChartData(Object.keys(versionCounts), Object.values(versionCounts))
+			const hostPlotData = utils.sortChartData(Object.keys(hostCounts), Object.values(hostCounts))
+			const countryPlotData = utils.sortChartData(Object.keys(countryCounts), Object.values(countryCounts))
+
+			res.locals.versionPlot = {
+				labels: versionPlotData.labels,
+				data: versionPlotData.data,
+				label: "Nexa Versions on the network"
+			}
+
+			res.locals.hostPlot = {
+				labels: hostPlotData.labels,
+				data: hostPlotData.data,
+				label: "Server hosts on the network"
+			}
+
+			res.locals.countryPlot = {
+				labels: countryPlotData.labels,
+				data: countryPlotData.data,
+				label: "Countries where nodes are located"
+			}
+		} catch (e) {
+			debugLog("Cannot load peer ip summary: " + e)
 		}
+		res.render("peers");
+		utils.perfMeasure(req);
 	}).catch(function(err) {
 		res.locals.userMessage = "Error: " + err;
 

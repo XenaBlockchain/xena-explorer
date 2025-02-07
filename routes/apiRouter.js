@@ -285,6 +285,24 @@ router.get("/current-block-reward", function(req, res, next) {
 	});
 });
 
+// Returns all the peer data from the connected fullnode and geocoded ip data
+router.get("/peers", function(req, res, next) {
+	coreApi.getPeerSummary().then(async function (peerSummary) {
+		const data = {};
+
+		data.peerSummary = peerSummary;
+		try {
+			data.peerIpSummary = await utils.geoLocateIpAddresses(peerSummary);
+		} catch (e) {
+			debugLog("Cannot load peer ip summary: " + e)
+		}
+		res.json(data)
+		utils.perfMeasure(req);
+	}).catch(function(err) {
+		res.json({success:false, error:`Unknown function: ${err}`})
+	});
+});
+
 router.get("/search", async function(req, res, next) {
 	debugLog(req.query.q)
 	if (!req.query.q) {

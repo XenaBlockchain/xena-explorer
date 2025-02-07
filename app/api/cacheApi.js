@@ -112,6 +112,7 @@ var miscCaches = [];
 var blockCaches = [];
 var txCaches = [];
 var marketDataCaches = [];
+var ipAddressCaches = [];
 
 if (!config.noInmemoryRpcCache) {
 	global.cacheStats.memory = {
@@ -135,6 +136,7 @@ if (!config.noInmemoryRpcCache) {
 	blockCaches.push(createMemoryLruCache(new LRU(2000), onMemoryCacheEvent));
 	txCaches.push(createMemoryLruCache(new LRU(10000), onMemoryCacheEvent));
 	marketDataCaches.push(createMemoryLruCache(new LRU( 10000), onMemoryCacheEvent));
+	ipAddressCaches.push(createMemoryLruCache(new LRU( 10000), onMemoryCacheEvent));
 }
 
 if (redisCache.active) {
@@ -168,12 +170,14 @@ if (redisCache.active) {
 	blockCaches.push(redisCacheObj);
 	txCaches.push(redisCacheObj);
 	marketDataCaches.push(redisCacheObj)
+	ipAddressCaches.push(redisCacheObj)
 }
 
 var miscCache = createTieredCache(miscCaches);
 var blockCache = createTieredCache(blockCaches);
 var txCache = createTieredCache(txCaches);
 var marketCache = createTieredCache(marketDataCaches)
+var ipAddressCache = createTieredCache(ipAddressCaches)
 
 async function tryCacheThenCallFunction(cache, cacheKey, cacheMaxAge, functionToCall, cacheConditionFunction) {
 	if (cacheConditionFunction == null) {
@@ -187,7 +191,7 @@ async function tryCacheThenCallFunction(cache, cacheKey, cacheMaxAge, functionTo
 				return cacheResult;
 			}
 
-			const functionResult = await functionToCall;
+			const functionResult = await functionToCall();
 
 			if (functionResult != null && cacheConditionFunction(functionResult)) {
 				cache.set(cacheKey, functionResult, cacheMaxAge);
@@ -253,6 +257,7 @@ export default {
 	blockCache,
 	txCache,
 	marketCache,
+	ipAddressCache,
 	tryCacheThenCallFunction,
 	tryCacheThenRpcApi,
 }

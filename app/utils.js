@@ -9,7 +9,6 @@ import nexaaddr from "nexaaddrjs";
 
 import config from "./config.js";
 import coins from "./coins.js";
-import redisCache from "./redisCache.js";
 import global from "./global.js";
 import JSZip from "jszip";
 import coreApi from './api/coreApi.js';
@@ -34,52 +33,6 @@ const NRC2_OP_RETURN_GROUP_ID = 88888891;
 const NRC3_OP_RETURN_GROUP_ID = 88888892;
 
 const coinConfig = coins[config.coin];
-
-
-var ipMemoryCache = {};
-
-var ipRedisCache = null;
-if (redisCache.active) {
-	var onRedisCacheEvent = function(cacheType, eventType, cacheKey) {
-		global.cacheStats.redis[eventType]++;
-	}
-
-	ipRedisCache = redisCache.createCache("v0", onRedisCacheEvent);
-}
-
-var ipCache = {
-	get:function(key) {
-		return new Promise(function(resolve, reject) {
-			if (ipMemoryCache[key] != null) {
-				resolve({key:key, value:ipMemoryCache[key]});
-
-				return;
-			}
-
-			if (ipRedisCache != null) {
-				ipRedisCache.get("ip-" + key).then(function(redisResult) {
-					if (redisResult != null) {
-						resolve({key:key, value:redisResult});
-
-						return;
-					}
-
-					resolve({key:key, value:null});
-				});
-
-			} else {
-				resolve({key:key, value:null});
-			}
-		});
-	},
-	set:function(key, value, expirationMillis) {
-		ipMemoryCache[key] = value;
-
-		if (ipRedisCache != null) {
-			ipRedisCache.set("ip-" + key, value, expirationMillis);
-		}
-	}
-};
 
 function perfMeasure(req) {
 	var time = Date.now() - req.startTime;
@@ -631,57 +584,84 @@ async function getExchangeFromExchangeRateExtensions() {
 	}
 }
 
+async function loadGeoDataForIp(ipStr) {
+	const apiUrl = `http://ip-api.com/json/${ipStr}`
+	try {
+		const response = await axios.get(apiUrl);
+		const ip = response.data.query;
+		if (response.data.lat && response.data.lon) {
+			debugLog(`Successful IP-geo-lookup: ${ip} -> (${response.data.lat}, ${response.data.lon})`);
+		} else {
+			debugLog(`Unknown location for IP-geo-lookup: ${ip}`);
+		}
+		return response.data
+	} catch (err) {
+		debugLog("Failed IP-geo-lookup: " + ipStr);
+		logError("39724gdge33a", err, {ip: ipStr});
+		// we failed to get what we wanted, but there's no meaningful recourse,
+		// so we log the failure and continue without objection
+		return {}
+	}
+}
+
+// Convert HSL to RGB https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex
+function hslToHex(h, s, l) {
+	l /= 100;
+	const a = s * Math.min(l, 1 - l) / 100;
+	const f = n => {
+		const k = (n + h / 30) % 12;
+		const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+		return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+	};
+	return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function stringToHexColor(inputString) {
+	let hash = 0;
+	for (let i = 0; i < inputString.length; i++) {
+		hash = inputString.charCodeAt(i) + ((hash << 5) - hash);
+	}
+
+	let hue = Math.abs(hash % 360);
+
+	let saturation = 60;
+	let lightness = 55;
+
+	return hslToHex(hue, saturation, lightness);
+}
+
 // Uses ipstack.com API
-function geoLocateIpAddresses(ipAddresses, provider) {
+function geoLocateIpAddresses(peerSummary) {
 	return new Promise(function(resolve, reject) {
-		if (config.privacyMode || config.credentials.ipStackComApiAccessKey === undefined) {
+		if (config.privacyMode || config.credentials.mapBoxKey === undefined) {
 			resolve({});
 
 			return;
 		}
-
-		var ipDetails = {ips:ipAddresses, detailsByIp:{}};
-
-		var promises = [];
-		for (var i = 0; i < ipAddresses.length; i++) {
-			var ipStr = ipAddresses[i];
-
-			promises.push(new Promise(function(resolve2, reject2) {
-				ipCache.get(ipStr).then(async function(result) {
-					if (result.value == null) {
-						var apiUrl = "http://api.ipstack.com/" + result.key + "?access_key=" + config.credentials.ipStackComApiAccessKey;
-
-						try {
-							const response = await axios.get(apiUrl);
-							var ip = response.data.ip;
-							ipDetails.detailsByIp[ip] = response.data;
-							if (response.data.latitude && response.data.longitude) {
-								debugLog(`Successful IP-geo-lookup: ${ip} -> (${response.data.latitude}, ${response.data.longitude})`);
-							} else {
-								debugLog(`Unknown location for IP-geo-lookup: ${ip}`);
-							}
-							ipCache.set(ip, response.data, 1000 * 60 * 60 * 24 * 365);
-							resolve2();
-						} catch(err) {
-							debugLog("Failed IP-geo-lookup: " + result.key);
-							logError("39724gdge33a", error, {ip: result.key});
-							// we failed to get what we wanted, but there's no meaningful recourse,
-							// so we log the failure and continue without objection
-							resolve2();
-						}
-					} else {
-						ipDetails.detailsByIp[result.key] = result.value
-						resolve2();
-					}
-				});
-			}));
+		const ipDetails = {ips: [], detailsByIp: {}};
+		const promises = [];
+		for (let i = 0; i < peerSummary.getpeerinfo.length; i++) {
+			peerSummary.getpeerinfo[i].marker = stringToHexColor(peerSummary.getpeerinfo[i].subver)
+			const ipWithPort = peerSummary.getpeerinfo[i].addr;
+			if (ipWithPort.lastIndexOf(":") >= 0) {
+				const ip = ipWithPort.substring(0, ipWithPort.lastIndexOf(":"));
+				if (ip.trim().length > 0) {
+					ipDetails.ips.push(ip.trim());
+					ipDetails.detailsByIp[ip.trim()] = peerSummary.getpeerinfo[i]
+					promises.push(coreApi.getGeoDataForIps(ip.trim(), ((ip) => () => loadGeoDataForIp(ip))(ip.trim())));
+				}
+			}
 		}
 
-		Promise.all(promises).then(function(results) {
+		Promise.allSettled(promises).then(function(results) {
+			for (const key in results) {
+				Object.assign(ipDetails.detailsByIp[results[key].value.query], results[key].value)
+			}
+
 			resolve(ipDetails);
 		}).catch(function(err) {
+			debugLog("Failed IP-geo-lookup all promises: " + err)
 			logError("80342hrf78wgehdf07gds", err);
-
 			reject(err);
 		});
 	});
@@ -1615,7 +1595,26 @@ async function search(req, res, wantsJson = false) {
 	}
 }
 
+function sortChartData (labels, data) {
+	const arrayOfObj = labels.map(function(d, i) {
+		return {
+			label: d,
+			data: data[i] || 0
+		};
+	});
 
+	const sortedArrayOfObj = arrayOfObj.sort(function(a, b) {
+		return b.data - a.data;
+	});
+
+	const newArrayLabel = [];
+	const newArrayData = [];
+	sortedArrayOfObj.forEach(function(d){
+		newArrayLabel.push(d.label);
+		newArrayData.push(d.data);
+	});
+	return {labels: newArrayLabel, data: newArrayData}
+}
 
 export default {
 	readRichList,
@@ -1682,5 +1681,6 @@ export default {
 	getFileType,
 	search,
 	padSatoshiValues,
-	calculateForwardPage
+	calculateForwardPage,
+	sortChartData
 };
