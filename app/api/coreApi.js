@@ -2,7 +2,6 @@ import debug from "debug";
 
 const debugLog = debug("nexexp:core");
 
-import LRU from "lru-cache";
 import fs from 'fs';
 
 import utils from "../utils.js";
@@ -35,6 +34,9 @@ function getGenesisCoinbaseTransactionId() {
 	return coins[config.coin].genesisCoinbaseTransactionIdsByNetwork[global.activeBlockchain];
 }
 
+function getGeoDataForIps(ip, loadFunction) {
+	return cacheApi.tryCacheThenCallFunction(cacheApi.ipAddressCache, "ip-" + ip, cacheApi.ONE_HR, loadFunction);
+}
 function getMarketDataForToken(token, exchange, loadFunction) {
 	return cacheApi.tryCacheThenCallFunction(cacheApi.marketCache, "getMarketInfo-" + token + '-' + exchange, cacheApi.FIVE_MINUTES, loadFunction);
 }
@@ -1551,5 +1553,6 @@ export default {
 	getNewNFTS,
 	getAllNFTs,
 	getTotalNFTsInCollectionCount,
-	getMarketDataForToken
+	getMarketDataForToken,
+	getGeoDataForIps
 };

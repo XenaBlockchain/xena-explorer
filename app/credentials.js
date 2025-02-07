@@ -24,11 +24,10 @@ export default {
 		timeout: parseInt(btcUri.query.timeout || process.env.NEXEXP_NEXAD_RPC_TIMEOUT || 5000),
 	},
 
-	// optional: enter your api access key from ipstack.com below
+	// optional: enter your api access key from, mapbox below
 	// to include a map of the estimated locations of your node's
 	// peers
-	// format: "ID_FROM_IPSTACK"
-	ipStackComApiAccessKey: process.env.NEXEXP_IPSTACK_APIKEY,
+	mapBoxKey: process.env.NEXEXP_MAPBOX_KEY,
 
 	// optional: GA tracking code
 	// format: "UA-..."
