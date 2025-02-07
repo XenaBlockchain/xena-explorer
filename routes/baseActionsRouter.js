@@ -46,7 +46,7 @@ function decode(req, res, next) {
 	if (!query) {
 		res.locals.decodedScript = "";
 		res.locals.tx = undefined;
-		res.locals.type = "script";
+		res.locals.type = "unknown";
 		res.render("decoder");
 		utils.perfMeasure(req);
 	}
@@ -60,27 +60,32 @@ function decode(req, res, next) {
 		input = input.slice(0,input.length-1);
 	}
 	if (input.slice(0,2) === "0x") input = input.slice(2);
+
 	promises.push(coreApi.decodeScript(input));
 	promises.push(coreApi.decodeRawTransaction(input));
+	// promises.push(coreApi.validateRawTransaction(input))
 
 	allSettled(promises).then(function(promiseResults) {
 		let decodedScript = promiseResults[0];
 		let decodedTx = promiseResults[1];
 		res.locals.decodedScript = "";
 		res.locals.tx = " ";
+		res.locals.inputHex = input
 		if ("txid" in decodedTx) {
 			res.locals.type = "tx";
 			res.locals.userMessage = "";
 			res.locals.tx = decodedTx;
 			// If tx decodes, assume its a tx because tx hex can be decoded as bad scripts
 			res.locals.decodedJson = JSON.stringify(decodedTx, utils.bigIntToRawJSON, 4);
+			res.locals.validatedTransaction = promiseResults[2]
+
 		} else if ("asm" in decodedScript) {
 			res.locals.type = "script";
 			res.locals.userMessage = "";
-			// FIXME we are mixing routing with view here. What script does
-			// should be done in the views/decoder.pug
 			res.locals.decodedDetails = utils.prettyScript(decodedScript.asm, '\t');
 			res.locals.decodedJson = JSON.stringify(decodedScript, utils.bigIntToRawJSON, 4);
+			res.locals.script = new libnexa.Script(input).toString()
+
 		} else {
 			res.locals.type = "unknown";
 			res.locals.userMessage = "Decode failed";
@@ -837,7 +842,7 @@ router.get("/decoded-tx/:txHex",function(req, res, next) {
 router.get("/decoder", function(req, res, next) {
 	res.locals.decodedScript = "";
 	res.locals.tx = undefined;
-	res.locals.type = "script";
+	res.locals.type = "unknown";
 	res.render("decoder");
 	utils.perfMeasure(req);
 });

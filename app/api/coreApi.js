@@ -146,6 +146,11 @@ function decodeRawTransaction(hex) {
 		return rpcApi.decodeRawTransaction(hex);
 	});
 }
+function validateRawTransaction(hex) {
+	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "validateRawTransaction-" + hex, 1000 * 60 * 1000, function() {
+		return rpcApi.validateRawTransaction(hex);
+	});
+}
 
 function getUtxoSetSummary() {
 	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getUtxoSetSummary", 15 * cacheApi.ONE_MIN, rpcApi.getUtxoSetSummary);
@@ -1526,6 +1531,7 @@ export default {
 	getBlockHeadersByHeight,
 	decodeScript,
 	decodeRawTransaction,
+	validateRawTransaction,
 	getBlockList,
 	getTokenMintage,
 	getTransaction,

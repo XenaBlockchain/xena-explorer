@@ -18,7 +18,7 @@ var rpcQueue = async.queue(function(task, callback) {
 		try {
 			callback();
 		}
-		
+
 		catch(err){
 			debugLog(err)
 		}
@@ -91,6 +91,9 @@ function decodeScript(hex) {
 
 function decodeRawTransaction(hex) {
 	return getRpcDataWithParams({method:"decoderawtransaction", parameters:[hex]});
+}
+function validateRawTransaction(hex) {
+	return getRpcDataWithParams({method:"validaterawtransaction", parameters:[hex]});
 }
 
 
@@ -315,46 +318,46 @@ function getRpcData(cmd) {
 				client.request(cmd, [], function(err, rpcResult) {
 					if(err) {
 						err.userData = {request:cmd};
-	
+
 						utils.logError("9u4278t5h7rfhgf", new RpcError(err), {request:cmd});
-	
+
 						reject(err);
-	
+
 						callback();
 					};
-	
+
 					let result = null;
 					if(rpcResult) {
 						result = rpcResult.result;
 					}
-	
+
 					if (Array.isArray(result) && result.length == 1) {
 						var result0 = result[0];
 						if (result0 && result0.name && result0.name == "RpcError") {
-	
+
 							logStats(cmd, false, new Date().getTime() - startTime, false);
-	
+
 							throw new Error(`RpcError: type=errorResponse-01`);
 						}
 					}
-	
+
 					if (result.name && result.name == "RpcError") {
 						logStats(cmd, false, new Date().getTime() - startTime, false);
-	
+
 						throw new Error(`RpcError: type=errorResponse-02`);
 					}
-	
+
 					resolve(result);
-	
+
 					logStats(cmd, false, new Date().getTime() - startTime, true);
-	
+
 					callback();
-	
+
 				});
 			} catch (err) {
 				reject(err);
 			}
-			
+
 		};
 
 		rpcQueue.push({rpcCall:rpcCall});
@@ -375,40 +378,40 @@ function getRpcDataWithParams(request) {
 					if(err) {
 						err.userData = {request:request};
 						const rpcError = new RpcError(err)
-	
+
 						utils.logError("283h7ewsede", rpcError, {request:request});
 						logStats(request.method, true, new Date().getTime() - startTime, false)
-	
+
 						reject(rpcError);
-	
+
 						callback();
 					};
 					let result = null;
 					if(rpcResult) {
 						result = rpcResult.result;
 					}
-	
+
 					if (Array.isArray(result) && result.length == 1) {
 						var result0 = result[0];
-	
-	
+
+
 						if (result0 && result0.name && result0.name == "RpcError") {
 							logStats(request.method, true, new Date().getTime() - startTime, false);
-	
+
 								throw new Error(`RpcError: type=errorResponse-03`);
 						}
 					}
-	
+
 					if (result && result.name && result.name == "RpcError") {
 						logStats(request.method, true, new Date().getTime() - startTime, false);
-	
+
 						throw new Error(`RpcError: type=errorResponse-04`);
 					}
-	
+
 					resolve(result);
-	
+
 					logStats(request.method, true, new Date().getTime() - startTime, true);
-	
+
 					callback();
 				});
 			} catch (err) {
@@ -474,6 +477,7 @@ export default {
 	getBlockHeader,
 	decodeScript,
 	decodeRawTransaction,
+	validateRawTransaction,
 	tokenMintage,
 	getTransaction,
 	dumpTokenset
