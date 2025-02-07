@@ -69,6 +69,11 @@ npx sequelize-cli db:migrate
 
 This will start indexing the tokens on the nexa network.
 
+Anytime you pull develop or a branch that is being update you should run the migrate function above to make sure you
+have all the latest tables.
+
+The schema is located in [schema.png](/docs/schema.png).
+
 
 ### Configuration
 
