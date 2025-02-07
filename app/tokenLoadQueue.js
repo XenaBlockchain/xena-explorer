@@ -16,15 +16,24 @@ const tokenLoadQueue = new BeeQueue('tokenLoadQueue',{
 });
 
 
-tokenLoadQueue.process(3,async (job) => {
+tokenLoadQueue.process(1,async (job) => {
 	debugLog(`tokenLoadQueue: Processing job ${job.id}`);
 	return new Promise(async function(resolve, reject) {
 		let tokenApiGroups = [];
 		let tokenApiSubGroups = [];
+		let lastBlockHeight = 0
 		if(!global.processingTokens) {
 			global.processingTokens = true;
-
+			const storedBlockHeight = await db.Preference.findOne({
+				where: {
+					key: "last_block"
+				}
+			})
+			if(storedBlockHeight && storedBlockHeight.value > 0) {
+				lastBlockHeight = storedBlockHeight.value
+			}
 			try {
+				let results = [];
 				let groups = [];
 				let subgroups = [];
 
@@ -34,68 +43,40 @@ tokenLoadQueue.process(3,async (job) => {
 					let limit = 500
 
 					do {
-						const data = await tokenApi.fetchGroups(page, limit)
+						const data = await tokenApi.fetchGroups(page, limit, true)
 						pageResults = data?.results
-						const dataParsed = data?.tokens.map(item => item.token);
-						groups = groups.concat(dataParsed)
+						const dataParsed = data?.tokens.map(item => {
+							if(item.blockHeight < lastBlockHeight ){
+								return null
+							}
+							if (item.parentGroup === null) {
+								groups.push(item.token)
+							} else {
+								subgroups.push(item.token) // add to subgroups array
+							}
+							return item.token
+						});
+						results = results.concat(dataParsed)
 						page++;
 					} while(pageResults !== 0)
-					debugLog("Total number of tokens from token api: " + groups.length)
+
 				} catch(err) {
 					debugLog(err)
 					debugLog("Can't load NFTs from electrum for token: " + token);
 				}
-
-				for (const token of groups) {
-					debugLog("loading token " + token);
-					try {
-						let pageResults = 500;
-						let page = 1;
-						let limit = 500
-
-						do {
-							const data = await tokenApi.fetchSubGroups(token, page, limit)
-							pageResults = data?.results
-							const dataParsed = data?.tokens.map(item => item.token);
-							subgroups = subgroups.concat(dataParsed)
-							page++;
-						} while(pageResults !== 0)
-					} catch(err) {
-						debugLog(err)
-						debugLog("cant load NFT's from token API for token: ", token);
-					}
-
-				}debugLog("Total number of subgroups from token api: " + subgroups.length)
+				debugLog("Total number of assets from token api: " + results.length)
+				debugLog("Total number of groups for indexing: " + groups.length)
+				debugLog("Total number of subgroups for indexing: " + subgroups.length)
 				tokenApiGroups = groups;
 				tokenApiSubGroups = subgroups;
 
 			} catch(err) {
 				debugLog("Unable to load tokens or NFTS")
+				reject(err)
 			}
 
-
-			const dbIndexedTokens = await db.Token.findAll({
-				attributes: ['group'],
-				where: {
-					is_nft: false,
-				},
-			});
-			const cachedTokenGroups = dbIndexedTokens.map(token => token.group);
-
-			const dbIndexedNFTs = await db.Token.findAll({
-				attributes: ['group'],
-				where: {
-					is_nft: true,
-				},
-			});
-
-			const cachedNFTGroups = dbIndexedNFTs.map(token => token.group);
-
-			const notIndexedGroups = tokenApiGroups.filter(item => !cachedTokenGroups.includes(item));
-			const notIndexedSubGroups = tokenApiSubGroups.filter(item => !cachedNFTGroups.includes(item));
-
-			await utils.loadGroupDataSlow(notIndexedGroups);
-			await utils.loadGroupDataSlow(notIndexedSubGroups, true);
+			await utils.loadGroupDataSlow(tokenApiGroups);
+			await utils.loadGroupDataSlow(tokenApiSubGroups, true);
 
 			global.processingTokens = false;
 		}

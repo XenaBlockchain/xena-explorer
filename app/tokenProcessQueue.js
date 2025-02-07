@@ -232,8 +232,6 @@ tokenProcessQueue.process(3,async (job) => {
 					}
 
 					const series = nftData?.nftMetadata?.collection ?? null;
-					debugLog("NFT METADATA: " + JSON.stringify(nftData?.nftMetadata))
-					debugLog("Token Series: "+ series)
 
 					if (series && (series !== ' ' || series !== '') &&(nftDataProviderName &&  nftDataProviderName.includes('Nifty'))) {
 						const [collectionModel, collectionCreated] = await db.Collection.findOrCreate({
@@ -316,6 +314,8 @@ tokenProcessQueue.process(3,async (job) => {
 				}
 
 				debugLog(`Added Token To Cache: ${token}`)
+				await updatePreferenceHeight(tokenInfo)
+
 				resolve(transfers)
 			}).catch(function(err) {
 				debugLog("db error", err)
@@ -324,6 +324,29 @@ tokenProcessQueue.process(3,async (job) => {
 		}
 	});
 });
+
+async function updatePreferenceHeight(tokenInfo){
+	const [preferenceModel, preferenceCreated] = await db.Preference.findOrCreate({
+		where: { key: "last_block"  },
+		defaults: {
+			value: tokenInfo.height,
+		}
+	})
+	if(!preferenceCreated && preferenceModel) {
+		if(tokenInfo.height > preferenceModel.value){
+			await db.Preference.update(
+				{
+					value: tokenInfo.height
+				},
+				{
+					where: {
+						key: "last_block"
+					},
+				},
+			);
+		}
+	}
+}
 
 
 async function processDocumentUrl(tokenInfo, documentInfo) {
