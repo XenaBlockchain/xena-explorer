@@ -888,7 +888,7 @@ function prettyScript(inScript, indentChar) {
 	var indenter=["OP_IF", "OP_ELSE"]
 	var outdenter=["OP_ENDIF", "OP_ELSE"]
 
-	s = inScript.split(" ");
+	var s = inScript.split(" ");
 	var shiftAmt=0;
 	var i;
 	var indenting = '';
@@ -897,7 +897,7 @@ function prettyScript(inScript, indentChar) {
 		var item=s[i];
 		if (s[i].slice(0,2) == "OP")
 		{
-			s[i] = "<span class='opcode'>" + s[i] + "</span>";
+			s[i] = "<span class='nexa-yellow'>" + s[i] + "</span>";
 		}
 		if (outdenter.includes(item)) shiftAmt -= 1;
 		if (shiftAmt < 0) shiftAmt = 0;

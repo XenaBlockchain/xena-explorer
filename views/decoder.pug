@@ -10,59 +10,111 @@ block content
 	form.form(method="post", action="/decoder", class="form")
 		input(type="hidden", name="_csrf", value=csrfToken)
 		div(class="input-group input-group-lg")
-			textarea(class="form-control form-control-sm", name="query", placeholder="hex data", rows="6", value=(query), style="width: 90%;")
+			textarea(class="form-control form-control-sm", name="query", placeholder="Input hex data....", rows="6", value=(query), style="width: 90%;")
 
-		div.input-group
-			button.mt-2.px-3(type="submit", class="btn btn-primary") Decode
+		div.input-group.justify-content-end
+			button.mt-2.px-3(type="submit", class="btn btn-primary") Decode Hex
+	if(type !== "unknown")
+		ul.nav.nav-tabs.mt-5
+			li.nav-item
+				a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Decoded Information
+			li.nav-item
+				a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
+			li.nav-item
+				a.nav-link(data-toggle="tab", href="#tab-input", role="tab") Input
 
-	ul.nav.nav-tabs.mt-5
-		li.nav-item
-			a.nav-link.active(data-toggle="tab", href="#tab-details", role="tab") Details
-		li.nav-item
-			a.nav-link(data-toggle="tab", href="#tab-json", role="tab") JSON
-
-	div.tab-content
-		div(id="tab-details", class="tab-pane active", role="tabpanel")
-			if type === "script"
-				div.mb-5 !{decodedDetails}
-			else if type === "tx"
-				if (tx.vin.length > 0 && tx.vin[0].coinbase)
+		div.tab-content
+			div(id="tab-details", class="tab-pane active", role="tabpanel")
+				if type === "script"
 					div.card.shadow-sm.mb-3
 						div.card-body.px-2.px-md-3
-							h2.h6.mb-0 Coinbase
+							div.d-flex.justify-content-between
+								h5.mb-3.text-bold Decoded Script
+								// TODO: PUT THIS BACK WHEN DEBUGGER IS READY
+								//a.btn.btn-primary.btn-sm.p-2(href="https://debug.nexa.org/script/" + inputHex, target="_blank")
+								//	span.mr-2 View on debugger 
+								//	i.fas.fa-arrow-right
+
+							div.highlight.mt-3
+								h6.mb-2.text-bold Prettified
+								div.mb-5 !{decodedDetails}
+							div.highlight
+								h6.mb-2.text-bold Raw script instructions
+								div.mb-5 !{script}
+
+				else if type === "tx"
+					if (tx.vin.length > 0 && tx.vin[0].coinbase)
+						div.card.shadow-sm.mb-3
+							div.card-body.px-2.px-md-3
+								h2.h6.mb-0 Coinbase
+								hr
+
+								h6 Hex
+								div.bg-light.px-2.py-2.mb-3.border
+									span.text-monospace.word-wrap #{tx.vin[0].coinbase}
+
+								h6 Decoded
+								div.bg-light.px-2.py-2.border
+									span.text-monospace.word-wrap #{utils.hex2string(tx.vin[0].coinbase)}
+
+					div.card.shadow-sm.mb-3
+						div.card-body.px-2.px-md-3
+							div.d-flex.justify-content-between.mb-3.flex-column.flex-md-row
+								div.d-flex.justify-content-between
+									h5.mt-2.text-bold Decoded Transaction
+									// TODO: PUT THIS BACK WHEN WE CHANGE VALIDATION
+								//	if(validatedTransaction && validatedTransaction.errors)
+								//		button.btn.btn-outline-danger.btn-sm.ml-3(type='button' data-toggle='collapse' data-target='#collapseExample' aria-expanded='false' aria-controls='collapseExample')
+								//			| #{validatedTransaction.errors.length > 0 ? "Errors" : "View Validation"}
+								//			span.badge.badge-danger.ml-2 #{validatedTransaction.errors.length}
+								a.btn.btn-primary.btn-sm.p-2.mt-3.mt-sm-0(href="https://debug.nexa.org/tx/" + inputHex, target="_blank")
+									span.mr-2 View on debugger 
+									i.fas.fa-arrow-right
+							//if(validatedTransaction)
+							//	div.collapse(id="collapseExample")
+							//		if(validatedTransaction.errors.length > 0)
+							//			div.alert.alert-danger.mb-sm-3.text-black
+							//				div.d-flex.flex-column.justify-content-center.align-items-center
+							//					each item in validatedTransaction.errors
+							//						if(item.includes('inputs-are-missing'))
+							//							li.text-bold.w-100.w-sm-50 #{item} (Has this transaction already been spent?)
+							//						else
+							//							li.text-bold.w-100.w-sm-50 #{item}
+							//		else
+							//			div.alert.alert-success.mb-sm-3
+							//				div.d-flex.flex-column.justify-content-center.align-items-center.text-primary
+							//					h4.mb-0.text-bold.text-success This transaction is valid
+							h2.h6.mb-0
+								span #{tx.vin.length.toLocaleString()} 
+								if (tx.vin.length == 1)
+									span Input
+								else
+									span Inputs
+
+								span.mx-2.text-muted.text-small /
+
+								span #{tx.vout.length.toLocaleString()} 
+								if (tx.vout.length == 1)
+									span Output
+								else
+									span Outputs
+
 							hr
 
-							h6 Hex
-							div.bg-light.px-2.py-2.mb-3.border
-								span.text-monospace.word-wrap #{tx.vin[0].coinbase}
+							- var txInputs = [];
+							- var blockHeight = -1;
+							include includes/transaction-io-details.pug
 
-							h6 Decoded
-							div.bg-light.px-2.py-2.border
-								span.text-monospace.word-wrap #{utils.hex2string(tx.vin[0].coinbase)}
-
+			div(id="tab-json", class="tab-pane", role="tabpanel")
 				div.card.shadow-sm.mb-3
 					div.card-body.px-2.px-md-3
-						h2.h6.mb-0
-							span #{tx.vin.length.toLocaleString()}
-							if (tx.vin.length == 1)
-								span Input
-							else
-								span Inputs
-
-							span.mx-2.text-muted.text-small /
-
-							span #{tx.vout.length.toLocaleString()}
-							if (tx.vout.length == 1)
-								span Output
-							else
-								span Outputs
-
-						hr
-
-						- var txInputs = [];
-						- var blockHeight = -1;
-						include includes/transaction-io-details.pug
-
-		div(id="tab-json", class="tab-pane", role="tabpanel")
-			pre
-				code.json.bg-light(data-lang="json") #{decodedJson}
+						h5.mb-3.text-bold Script Json
+						pre
+							code.json.bg-light(data-lang="json") #{decodedJson}
+			div(id="tab-input", class="tab-pane", role="tabpanel")
+				div.card.shadow-sm.mb-3
+					div.card-body.px-2.px-md-3
+						h5.mb-3.text-bold Inputted hex data
+						div.highlight
+							pre
+								code.json.bg-light(data-lang="json") #{JSON.stringify(inputHex, utils.bigIntToRawJSON, 4)}
