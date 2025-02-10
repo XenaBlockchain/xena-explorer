@@ -22,15 +22,26 @@ async function loadExbitronDataForToken(ticker){
 }
 async function loadMarketDataForTicker(ticker) {
 	const items = [
-		{ key: 'Exbitron', loader: () => coreApi.getMarketDataForToken(ticker, 'Exbitron', loadExbitronDataForToken(ticker))},
+		{ key: 'Exbitron', loader: () => coreApi.getMarketDataForToken(ticker, 'Exbitron', () => loadExbitronDataForToken(ticker))},
 	];
 
 	try {
 		const processedData = await processLoadingOfData(items);
+		// Add null/undefined checks and filter empty results
+		let flatData = processedData
+			.filter(item => item?.data) // Filter out null/undefined data
+			.flatMap(({key, data}) =>
+				(Array.isArray(data) ? data : []) // Ensure we have an array
+					.map(item => ({...item, key}))
+			);
 
-		let flatData = processedData.flatMap(({key, data}) =>
-			data.map(item => ({...item, key}))
-		)
+		// Handle case where all data sources failed
+		if (flatData.length === 0) {
+			return {
+				marketData: [],
+				priceData: 0
+			};
+		}
 
 		const averagePrice = flatData.reduce((sum, item) => sum + item.rate, 0) / flatData.length;
 
@@ -44,17 +55,19 @@ async function loadMarketDataForTicker(ticker) {
 }
 
 async function processLoadingOfData(items) {
-	const promises = items.map(({ key, loader }) => ({
-		key,
-		value: loader(),
-	}));
+	const promises = items.map(async ({ key, loader }) => {
+		try {
+			const data = await loader();
+			return { key, data };
+		} catch (error){
+			console.error(`Failed to load data for ${key}:`, error);
+			// Explicit null for failed loads
+			return { key, data: null };
+		}
+	});
 
-	const results = await Promise.all(promises.map(p => p.value));
-
-	return promises.map((promise, index) => ({
-		key: promise.key,
-		data: results[index],
-	}));
+	const results = await Promise.all(promises);
+	return results;
 }
 
 export default {
