@@ -22,7 +22,7 @@ async function loadExbitronDataForToken(ticker){
 }
 async function loadMarketDataForTicker(ticker) {
 	const items = [
-		{ key: 'Exbitron', loader: () => coreApi.getMarketDataForToken(ticker, 'Exbitron', loadExbitronDataForToken(ticker))},
+		{ key: 'Exbitron', loader: () => coreApi.getMarketDataForToken(ticker, 'Exbitron', loadExbitronDataForToken)},
 	];
 
 	try {
