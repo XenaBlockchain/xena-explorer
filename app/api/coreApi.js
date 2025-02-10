@@ -42,7 +42,7 @@ function getMarketDataForToken(token, exchange, loadFunction) {
 }
 
 function getTokenGenesis(token) {
-	return cacheApi.tryCacheThenCallFunction(cacheApi.miscCache, "getTokenGenesis-" + token, cacheApi.ONE_YR, electrumAddressApi.getTokenGenesis(token));
+	return cacheApi.tryCacheThenCallFunction(cacheApi.miscCache, "getTokenGenesis-" + token, cacheApi.ONE_YR, async () => await electrumAddressApi.getTokenGenesis(token));
 }
 
 function shouldCacheTransaction(tx) {
