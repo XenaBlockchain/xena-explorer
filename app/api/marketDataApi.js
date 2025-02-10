@@ -22,7 +22,7 @@ async function loadExbitronDataForToken(ticker){
 }
 async function loadMarketDataForTicker(ticker) {
 	const items = [
-		{ key: 'Exbitron', loader: () => coreApi.getMarketDataForToken(ticker, 'Exbitron', loadExbitronDataForToken)},
+		{ key: 'Exbitron', loader: () => coreApi.getMarketDataForToken(ticker, 'Exbitron', () => loadExbitronDataForToken(ticker))},
 	];
 
 	try {
@@ -59,7 +59,7 @@ async function processLoadingOfData(items) {
 		try {
 			const data = await loader();
 			return { key, data };
-		} catch {
+		} catch (error){
 			console.error(`Failed to load data for ${key}:`, error);
 			// Explicit null for failed loads
 			return { key, data: null };
