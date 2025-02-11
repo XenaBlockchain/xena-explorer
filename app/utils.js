@@ -585,7 +585,7 @@ async function getExchangeFromExchangeRateExtensions() {
 }
 
 async function loadGeoDataForIp(ipStr) {
-	const apiUrl = `http://ip-api.com/json/${ipStr}`
+	const apiUrl = `http://pro.ip-api.com/json/${ipStr}?key=${config.credentials.mapBoxKey}`
 	try {
 		const response = await axios.get(apiUrl);
 		const ip = response.data.query;
