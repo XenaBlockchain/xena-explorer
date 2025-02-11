@@ -585,7 +585,7 @@ async function getExchangeFromExchangeRateExtensions() {
 }
 
 async function loadGeoDataForIp(ipStr) {
-	const apiUrl = `http://pro.ip-api.com/json/${ipStr}?key=${config.credentials.mapBoxKey}`
+	const apiUrl = `https://pro.ip-api.com/json/${ipStr}?key=${config.credentials.ipApiKey}`
 	try {
 		const response = await axios.get(apiUrl);
 		const ip = response.data.query;
@@ -655,7 +655,9 @@ function geoLocateIpAddresses(peerSummary) {
 
 		Promise.allSettled(promises).then(function(results) {
 			for (const key in results) {
-				Object.assign(ipDetails.detailsByIp[results[key].value.query], results[key].value)
+				if ((Object.keys(results[key].value).length > 0) && (results[key].value.status === "success")) {
+					Object.assign(ipDetails.detailsByIp[results[key].value.query], results[key].value)
+				}
 			}
 
 			resolve(ipDetails);

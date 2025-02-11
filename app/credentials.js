@@ -29,6 +29,9 @@ export default {
 	// peers
 	mapBoxKey: process.env.NEXEXP_MAPBOX_KEY,
 
+	// optional: ip-api.com API KEY to get geodat from IP address.
+	ipApiKey: process.env.NEXEXP_IPAPI_KEY,
+
 	// optional: GA tracking code
 	// format: "UA-..."
 	googleAnalyticsTrackingId: process.env.NEXEXP_GANALYTICS_TRACKING,
