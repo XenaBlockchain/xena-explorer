@@ -13,7 +13,7 @@ import path from 'path';
 import { Sequelize } from 'sequelize';
 import process from 'process';
 import { fileURLToPath } from 'url';
-import configFile from '../sequelize_config/config.json' assert { type: 'json' };
+const configFile = JSON.parse(fs.readFileSync('./sequelize_config/config.json', 'utf-8'));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

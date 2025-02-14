@@ -5,7 +5,6 @@ import qrcode from "qrcode";
 import textdecoding from "text-decoding";
 import fs from "fs";
 import path from "path";
-import nexaaddr from "nexaaddrjs";
 
 import config from "./config.js";
 import coins from "./coins.js";
@@ -14,23 +13,13 @@ import JSZip from "jszip";
 import coreApi from './api/coreApi.js';
 import tokenProcessQueue from './tokenProcessQueue.js';
 import db from '../models/index.js'
-import libnexa from "libnexa-js";
+import {Address, AddressType, GroupIdType, GroupToken, Script} from "libnexa-ts";
 var Op = db.Sequelize.Op;
 
 const debugLog = debug("nexexp:utils");
 const debugErrorLog = debug("nexexp:error");
 const debugErrorVerboseLog = debug("nexexp:errorVerbose");
 const debugPerfLog = debug("nexexp:actionPerformace");
-
-const LEGACY_TOKEN_OP_RETURN_GROUP_ID = 88888888;
-const LEGACY_NFT_OP_RETURN_GROUP_ID = 88888889;
-
-// NRC-1 Token
-const NRC1_OP_RETURN_GROUP_ID = 88888890;
-// NRC-2 NFT Collection
-const NRC2_OP_RETURN_GROUP_ID = 88888891;
-// NRC-3 NFT
-const NRC3_OP_RETURN_GROUP_ID = 88888892;
 
 const coinConfig = coins[config.coin];
 
@@ -947,12 +936,7 @@ function readUTXOSetForTokens() {
 	lines.forEach(function(line) {
 		let lineArray = line.split(',');
 		try {
-			let decodedAddress = nexaaddr.decode(lineArray[5]);
-
-			if(decodedAddress['type'] == 'GROUP') {
-				tokens.add(lineArray[5]);
-			}
-
+			if (Address.fromString(lineArray[5]).isGroupIdentifierAddress()) tokens.add(lineArray[5]);
 		} catch (err) {
 		}
 	});
@@ -1060,22 +1044,22 @@ const intToBigInt = function(key, val, unparsedVal) {
  * Usage: `hsl(${ tokenID2HueSaturation(vout.tokenData.category) }, 50%)`
  */
 function tokenID2HueSaturation(groupIdEncoded) {
-	let groupId = nexaaddr.decode(groupIdEncoded).hash;
-	if (groupId.length > 32) {
+	let groupId = Address.fromString(groupIdEncoded)
+	if (GroupToken.isSubgroup(groupIdEncoded)) {
 		// this is asubgroup which contains the parent group id in the first 32 bytes
-		groupId = groupId.slice(32);
+		groupId = new Address(Buffer.from(groupId.data.subarray(0, 32)), groupId.network, AddressType.GroupIdAddress)
 	}
-	const raw = groupId.reduce((acc, num) => acc * num, 1) % 36000;
+	const raw = groupId.data.reduce((acc, num) => acc * num, 1) % 36000;
 	const hue = (raw / 100).toFixed(0);
 	const saturation = Math.min(100, (raw / 360 + 50)).toFixed(0);
 	return `${hue},${saturation}%`;
 }
 
 function tokenID2HexString(groupIdEncoded) {
-	let groupId = nexaaddr.decode(groupIdEncoded).hash;
-	if (groupId.length > 32) {
+	let groupId = Address.fromString(groupIdEncoded).data
+	if (GroupToken.isSubgroup(groupIdEncoded)) {
 		// this is asubgroup which contains the parent group id in the first 32 bytes
-		groupId = groupId.slice(32);
+		groupId = groupId.subarray(0, 32);
 	}
 	return uint8Array2hexstring(groupId);
 }
@@ -1159,19 +1143,20 @@ function isValidHttpUrl(string) {
 	return url.protocol === "http:" || url.protocol === "https:";
 }
 
-async function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup, chain){
-	const groupSizeInBytes = decodedAddress.hash.length;
+async function parseGroupData(tokenSet, NFTSet, inOutGroup, chain){
+	const decodedAddress = Address.fromString(inOutGroup)
+	const groupSizeInBytes = decodedAddress.data
 
 	//Assume its a token
-	if (groupSizeInBytes == 32) {
+	if (groupSizeInBytes.length === 32) {
 		if (!tokenSet.has(inOutGroup)) {
 			tokenSet.add(inOutGroup);
 		}
 	}
 	// Assume that this "Could" be an NFT
 	else if (groupSizeInBytes > 32 && groupSizeInBytes <= 64) {
-		var parentGroupInBytes = decodedAddress.hash.slice(0, 32);
-		var encodedGroup = nexaaddr.encode('nexa', 'GROUP', parentGroupInBytes)
+		var parentGroupInBytes = decodedAddress.data.subarray(0, 32);
+		var encodedGroup = new Address(parentGroupInBytes, decodedAddress.network, AddressType.GroupIdAddress).toString()
 		if(knownNFTProviders(chain).includes(encodedGroup)){
 			if(!NFTSet.has(inOutGroup)) {
 				NFTSet.add(inOutGroup)
@@ -1191,33 +1176,23 @@ async function parseGroupData(tokenSet, NFTSet, decodedAddress, inOutGroup, chai
 			return
 		}
 		if (result.op_return != null) {
-
-			let opReturnScript = new libnexa.Script(result.op_return)
+			let opReturnScript = new Script(result.op_return)
 			if (opReturnScript.chunks.length < 1) {
 				return;
 			}
-
-			let groupClassification = libnexa.crypto.BN.fromBuffer(opReturnScript.chunks[1].buf, {endian: 'little'}).toString()
-			switch (groupClassification) {
-				case String(NRC3_OP_RETURN_GROUP_ID):
-				case String(LEGACY_NFT_OP_RETURN_GROUP_ID):
-					if (!NFTSet.has(inOutGroup)) {
-						NFTSet.add(inOutGroup)
-					}
+			switch (opReturnScript) {
+				case opReturnScript.getGroupIdType() === GroupIdType.NRC3:
+					NFTSet.add(inOutGroup)
 					break;
-				case String(LEGACY_TOKEN_OP_RETURN_GROUP_ID):
-				case String(NRC1_OP_RETURN_GROUP_ID):
-				case String(NRC2_OP_RETURN_GROUP_ID):
-					if (!tokenSet.has(inOutGroup)) {
-						tokenSet.add(inOutGroup);
-					}
+				case opReturnScript.getGroupIdType() === GroupIdType.LEGACY:
+				case opReturnScript.getGroupIdType() === GroupIdType.NRC1:
+				case opReturnScript.getGroupIdType() === GroupIdType.NRC2:
+					tokenSet.add(inOutGroup);
 					break;
 			}
 
 		} else {
-			if (!tokenSet.has(inOutGroup)) {
-				tokenSet.add(inOutGroup);
-			}
+			tokenSet.add(inOutGroup);
 		}
 	}
 }
@@ -1483,9 +1458,9 @@ async function search(req, res, wantsJson = false) {
 				});
 
 				try {
-					let decodedAddress = nexaaddr.decode(query);
+					let decodedAddress = Address.fromString(query)
 
-					if(decodedAddress['type'] == 'GROUP') {
+					if(decodedAddress.isGroupIdentifierAddress()) {
 						const data = [{value: "/token/" + query, text: query}]
 						searchResponse(req, res, query, data, wantsJson)
 					}
@@ -1538,9 +1513,9 @@ async function search(req, res, wantsJson = false) {
 				searchResponse(req, res, query, data, wantsJson)
 			}
 
-			let decodedAddress = nexaaddr.decode(query);
+			let decodedAddress = Address.fromString(query)
 
-			if(decodedAddress['type'] == 'GROUP') {
+			if(decodedAddress.isGroupIdentifierAddress()) {
 				const data = [{value: "/token/" + query, text: query}]
 				searchResponse(req, res, query, data, wantsJson)
 			}

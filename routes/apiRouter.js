@@ -7,7 +7,6 @@ import rateLimit from 'express-rate-limit';
 import csurf from 'csurf';
 var router = express.Router();
 import Decimal from 'decimal.js';
-import nexaaddr from 'nexaaddrjs'
 
 import utils from './../app/utils.js';
 import config from './../app/config.js';

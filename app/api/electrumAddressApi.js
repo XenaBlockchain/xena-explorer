@@ -4,7 +4,6 @@ import config from "./../config.js";
 import coins from "../coins.js";
 import utils from "../utils.js";
 import crypto from 'crypto-js';
-import nexaaddr from 'nexaaddrjs'
 import coreApi from './coreApi.js';
 import rpcApi from './rpcApi.js';
 import { ClusterOrder, ElectrumCluster, ElectrumTransport } from 'electrum-cash';
@@ -12,6 +11,7 @@ import global from "../global.js";
 import db from '../../models/index.js';
 const debugLog = debug("nexexp:electrumx");
 import tokenProcessQueue from '../tokenProcessQueue.js';
+import {Address, AddressType} from "libnexa-ts";
 var Op = db.Sequelize.Op;
 
 const coinConfig = coins[config.coin];
@@ -45,11 +45,8 @@ const handleNotifications = async function (data) {
 			tx.vout.forEach((vout) => {
 				if (vout.scriptPubKey && vout.scriptPubKey.group) {
 					try {
-						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-
-						if(decodedAddress['type'] === 'GROUP') {
-							utils.parseGroupData(tokens, NFTs, decodedAddress, vout.scriptPubKey.group, global.activeBlockchain);
-						}
+						if (Address.fromString(vout.scriptPubKey.group).isGroupIdentifierAddress())
+							utils.parseGroupData(tokens, NFTs, vout.scriptPubKey.group, global.activeBlockchain);
 					} catch (err) {
 						debugLog("vout electrum error", err)
 					}
@@ -61,12 +58,8 @@ const handleNotifications = async function (data) {
 
 				if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
 					try {
-						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-
-						if(decodedAddress['type'] === 'GROUP') {
-							utils.parseGroupData(tokens, NFTs, decodedAddress, txInput.scriptPubKey.group, global.activeBlockchain);
-						}
-
+						if (Address.fromString(txInput.scriptPubKey.group).isGroupIdentifierAddress())
+							utils.parseGroupData(tokens, NFTs, txInput.scriptPubKey.group, global.activeBlockchain);
 					} catch (err) {
 						debugLog("vin electrum error", err)
 					}
@@ -365,11 +358,12 @@ async function handleKnownToken(token) {
 
 async function mergeBalances(balanceResults) {
 	let mergedBalances = {};
+	var network = global.activeBlockchain === "nexa" ? "mainnet" : "testnet:";
 
 	// Combine confirmed and unconfirmed balances
 	for (const type of ['confirmed', 'unconfirmed']) {
 		for (const key of Object.keys(balanceResults[type])) {
-			let group = nexaaddr.encode('nexa', 'GROUP', utils.hex2array(key));
+			let group = new Address(key, network, AddressType.GroupIdAddress).toString()
 			let token = {}
 			if(mergedBalances[group] == null) {
 				mergedBalances[group] = {}
