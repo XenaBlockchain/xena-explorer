@@ -2,11 +2,9 @@ import debug from "debug";
 import express from 'express';
 import csurf from 'csurf';
 import qrcode from 'qrcode';
-import bitcoinjs from 'bitcoinjs-lib';
-import nexaaddrjs from 'nexaaddrjs';
 import crypto from 'crypto-js';
 import Decimal from "decimal.js";
-import libnexa from 'libnexa-js'
+import { Script, ScriptFactory, Address } from 'libnexa-ts'
 import db from "../models/index.js";
 
 
@@ -1387,14 +1385,14 @@ router.get("/token/:token", async function(req, res, next) {
 		} else {
 			saneToken = token;
 		}
-		let decodedAddress = nexaaddrjs.decode(saneToken);
-		if(decodedAddress['type'] == 'GROUP') {
+		let decodedAddress = Address.fromString(saneToken)
+		if(decodedAddress.isGroupIdentifierAddress()) {
 			token = saneToken;
 			isTokenValid = true;
 		} else {
 			console.log("token not valid")
-			console.log(decodedAddress['type'])
-			console.log(decodedAddress['hash'].length)
+			console.log(decodedAddress.toObject().type)
+			console.log(decodedAddress.toObject().data)
 		}
 	} catch(err3) {
 		//res.locals.pageErrors.push(utils.logError("address parsing error", err3));
@@ -1441,9 +1439,7 @@ router.get("/token/:token", async function(req, res, next) {
 			res.locals.token = token;
 			res.locals.tokenInfo = result
 			try {
-				res.locals.script = new libnexa.Script(result.op_return).toString()
-				var bytes = nexaaddrjs.decode(token)
-				res.locals.scriptAddress = libnexa.Script.fromHex(bytes.hash).toString()
+				res.locals.script = new Script(result.op_return).toString()
 			} catch(err){
 				debugLog("Cannot parse Script:", err)
 			}
@@ -1646,32 +1642,16 @@ router.get("/address/:address", function(req, res, next) {
 
 	res.locals.result = {};
 	try {
-		res.locals.addressObj = bitcoinjs.address.fromBase58Check(address);
-
-	} catch (err) {
-		//if (!err.toString().startsWith("Error: Non-base58 character")) {
-		//	res.locals.pageErrors.push(utils.logError("u3gr02gwef", err));
-		//}
-
-		try {
-			res.locals.addressObj = bitcoinjs.address.fromBech32(address);
-
-		} catch (err2) {
-			//res.locals.pageErrors.push(utils.logError("u02qg02yqge", err));
-			try {
-				var saneAddress = "";
-				var prefix = global.activeBlockchain == "nexa" ? "nexa:" : "nexatest:";
-				if(!address.includes(prefix)) {
-					saneAddress = prefix.concat(address);
-				} else {
-					saneAddress = address;
-				}
-				res.locals.addressObj = nexaaddrjs.decode(saneAddress);
-				res.locals.addressObj["isCashAddr"]=true;
-			} catch(err3) {
-				//res.locals.pageErrors.push(utils.logError("address parsing error", err3));
-			}
+		var saneAddress = "";
+		var prefix = global.activeBlockchain === "nexa" ? "nexa:" : "nexatest:";
+		if(!address.includes(prefix)) {
+			saneAddress = prefix.concat(address);
+		} else {
+			saneAddress = address;
 		}
+		res.locals.addressObj = Address.fromString(saneAddress).toObject()
+	} catch(err3) {
+		res.locals.pageErrors.push(utils.logError("address parsing error", err3));
 	}
 
 	if (global.miningPoolsConfigs) {

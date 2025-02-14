@@ -9,7 +9,6 @@ import tokenApi from "../api/tokenApi.js";
 import config from "../config.js";
 import coins from "../coins.js";
 import Decimal from "decimal.js";
-import nexaaddr from 'nexaaddrjs'
 
 
 import db from '../../models/index.js'
@@ -22,6 +21,8 @@ import electrumAddressApi from "../api/electrumAddressApi.js";
 
 import global from "../global.js";
 import tokenLoadQueue from "../tokenLoadQueue.js";
+import {Address} from "libnexa-ts";
+global.cacheStats = {};
 import cacheApi from "./cacheApi.js";
 global.tokenIcons = [];
 
@@ -1354,13 +1355,7 @@ function getTransactionTokens(txids) {
 			tx.vout.forEach((vout) => {
 				if (vout.scriptPubKey && vout.scriptPubKey.group) {
 					try {
-						let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-
-						if(decodedAddress['type'] == 'GROUP') {
-							if (!tokens.has(vout.scriptPubKey.group)) {
-								tokens.add(vout.scriptPubKey.group);
-							}
-						}
+						if (Address.fromString(vout.scriptPubKey.group).isGroupIdentifierAddress()) tokens.add(vout.scriptPubKey.group);
 					} catch (err) {
 						debugLog("An error occured while parsing transaction " + tx.txidem + " outputs searching for tokens");
 						debugLog(err);
@@ -1373,15 +1368,7 @@ function getTransactionTokens(txids) {
 
 				if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
 					try {
-						let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-
-						if(decodedAddress['type'] == 'GROUP') {
-
-							if (!tokens.has(txInput.scriptPubKey.group)) {
-								tokens.add(txInput.scriptPubKey.group);
-							}
-						}
-
+						if (Address.fromString(txInput.scriptPubKey.group).isGroupIdentifierAddress()) tokens.add(txInput.scriptPubKey.group);
 					} catch (err) {
 						debugLog("An error occured while parsing transaction " + tx.txidem + " inputs searching for tokens");
 						debugLog(err)
@@ -1448,11 +1435,13 @@ async function getReversePaginatedData(token, pageSize, reversePage) {
 					tx.vout.forEach((vout) => {
 						if (vout.scriptPubKey && vout.scriptPubKey.group) {
 							try {
-								let decodedAddress = nexaaddr.decode(vout.scriptPubKey.group);
-
-								if(decodedAddress['type'] === 'GROUP') {
-									outputs.push({group: vout.scriptPubKey.group, groupQuantity: vout.scriptPubKey.groupQuantity, groupAuthority: vout.scriptPubKey.groupAuthority, address: vout.scriptPubKey.addresses[0]})
-								}
+								if (Address.fromString(vout.scriptPubKey.group).isGroupIdentifierAddress())
+									outputs.push({
+										group: vout.scriptPubKey.group,
+										groupQuantity: vout.scriptPubKey.groupQuantity,
+										groupAuthority: vout.scriptPubKey.groupAuthority,
+										address: vout.scriptPubKey.addresses[0]
+									})
 							} catch (err) {
 								debugLog("vout electrum error", err)
 							}
@@ -1464,12 +1453,13 @@ async function getReversePaginatedData(token, pageSize, reversePage) {
 
 						if (txInput && txInput.scriptPubKey && txInput.scriptPubKey.group) {
 							try {
-								let decodedAddress = nexaaddr.decode(txInput.scriptPubKey.group);
-
-								if(decodedAddress['type'] === 'GROUP') {
-									inputs.push({group: txInput.scriptPubKey.group, groupQuantity: txInput.scriptPubKey.groupQuantity, groupAuthority: txInput.scriptPubKey.groupAuthority, address: txInput.scriptPubKey.addresses[0]})
-								}
-
+								if (Address.fromString(txInput.scriptPubKey.group).isGroupIdentifierAddress())
+									inputs.push({
+										group: txInput.scriptPubKey.group,
+										groupQuantity: txInput.scriptPubKey.groupQuantity,
+										groupAuthority: txInput.scriptPubKey.groupAuthority,
+										address: txInput.scriptPubKey.addresses[0]
+									})
 							} catch (err) {
 								debugLog("vin electrum error", err)
 							}

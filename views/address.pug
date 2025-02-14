@@ -118,27 +118,19 @@ block content
 												include includes/value-display.pug
 
 
-
+									if (addressObj.hasOwnProperty("type"))
+										div.row
+											div.summary-split-table-label Type
+											div.summary-split-table-content.text-monospace #{addressObj.type}
 									if (addressDetails && addressDetails.txCount)
 										div.row
 											div.summary-split-table-label Transactions
 											div.summary-split-table-content.text-monospace #{addressDetails.txCount.toLocaleString()}
 
-									if (addressObj.hash)
-										if (addressObj.hash && !(addressObj.hasOwnProperty("isCashAddr")))
-											div.row
-												div.summary-split-table-label Hash 160
-												div.summary-split-table-content.text-monospace #{addressObj.hash.toString("hex")}
-
 									if (result.validateaddress.scriptPubKey)
 										div.row
 											div.summary-split-table-label Script Public Key
 											div.summary-split-table-content.text-monospace #{result.validateaddress.scriptPubKey}
-
-									if (addressObj.hasOwnProperty("version"))
-										div.row
-											div.summary-split-table-label Version
-											div.summary-split-table-content.text-monospace #{addressObj.version}
 
 									if (firstSeenTransaction && firstSeenTransaction.confirmations > 0)
 										div.row

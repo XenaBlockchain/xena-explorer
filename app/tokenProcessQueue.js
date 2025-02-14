@@ -5,7 +5,6 @@ import config from "./config.js";
 import utils from "./utils.js";
 import tokenApi from "./api/tokenApi.js";
 import BeeQueue from 'bee-queue';
-import nexaaddr from 'nexaaddrjs'
 import coreApi from "./api/coreApi.js";
 import db from '../models/index.js'
 import path from 'path';
@@ -16,19 +15,7 @@ import axios from 'axios';
 import JSZip from "jszip";
 const debugLog = debug("nexexp:queue");
 import global from "./global.js";
-import {DataTypes} from "sequelize";
-import libnexa from "libnexa-js";
-
-const LEGACY_TOKEN_OP_RETURN_GROUP_ID = 88888888;
-const LEGACY_NFT_OP_RETURN_GROUP_ID = 88888889;
-
-// NRC-1 Token
-const NRC1_OP_RETURN_GROUP_ID = 88888890;
-// NRC-2 NFT Collection
-const NRC2_OP_RETURN_GROUP_ID = 88888891;
-// NRC-3 NFT
-const NRC3_OP_RETURN_GROUP_ID = 88888892;
-
+import {Address, AddressType, GroupIdType, GroupToken, Script} from "libnexa-ts";
 
 const tokenProcessQueue = new BeeQueue('tokenProcessQueue',{
 	redis: createClient(config.redisUrl),
@@ -95,22 +82,23 @@ tokenProcessQueue.process(3,async (job) => {
 				let tokenAuthor = null;
 				let frontFile = null
 				let files = [];
-				let groupId = nexaaddr.decode(token).hash;
-				if (groupId.length > 32) {
+
+				let groupId = Address.fromString(token)
+				if (GroupToken.isSubgroup(token)) {
 					// this is asubgroup which contains the parent group id in the first 32 bytes
-					parent = nexaaddr.encode(global.activeBlockchain === "nexa" ? "nexa" : "nexatest", 'GROUP', groupId.slice(0, 32));
+					parent = new Address(Buffer.from(groupId.data.subarray(0, 32)), groupId.network, AddressType.GroupIdAddress).toString()
 				}
 				await processDocumentUrl(tokenInfo, documentInfo)
 				// If its an NFT lets try and grab the image for it.
 				if(isNFT) {
 					if(tokenInfo.op_return != null) {
 
-						let opReturnScript = new libnexa.Script(tokenInfo.op_return)
+						let opReturnScript = new Script(tokenInfo.op_return)
 						if(opReturnScript.chunks.length < 1){
 							return;
 						}
-						let groupClassification = libnexa.crypto.BN.fromBuffer(opReturnScript.chunks[1].buf, { endian: 'little' }).toString()
-						if(groupClassification === String(NRC3_OP_RETURN_GROUP_ID)) {
+
+						if(opReturnScript.getGroupIdType() === GroupIdType.NRC3) {
 							// token is a nebula NFT
 							const prefix = global.activeBlockchain === "nexa" ? "nexa:" : "nexatest:";
 							const isTestnet = (prefix === "nexatest:");
@@ -122,8 +110,8 @@ tokenProcessQueue.process(3,async (job) => {
 								nftDataProviderName = "Nebula";
 							}
 						} else {
-							debugLog("This is the token classifier: " + groupClassification)
-							debugLog("This is the op return classifier: " + libnexa.crypto.BN.fromBuffer(opReturnScript.chunks[1].buf, { endian: 'little' }).toString())
+							debugLog("This is the token classifier: " + GroupIdType.NRC3)
+							debugLog("This is the op return classifier: " + opReturnScript.getGroupIdType())
 						}
 
 					} else {
