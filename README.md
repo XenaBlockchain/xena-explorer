@@ -32,12 +32,12 @@ The below instructions are geared toward NEX, but can be adapted easily to other
 
 ## Prerequisites
 
-1. Install and run a full, archiving node - [instructions](https://www.nexa.org/download). Ensure that your bitcoin node has full transaction indexing enabled (`txindex=1`) and the RPC server enabled (`server=1`) adding the flags into the bitcoind executable.
-2. Synchronize your node with the Bitcoin network.
-3. Run nex-rpc-explorer passing the cookie route based on the defined path to store files download with BCH-Unlimited. (Check cli arguments section)
-3. "Recent" version of Node.js (8+ recommended).
-4. You could also run an [ElectrsCash](https://github.com/bitcoinunlimited/ElectrsCash) and configure the explorer to received data from it (optional)
-5. You need to use nodejs version 12.9 or higher due to the use of [Promise.allSettled()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled) method
+1. Install and run a full, archiving node - [instructions](https://www.nexa.org/download). Ensure that your nexa node has full transaction indexing enabled (`txindex=1`) and the RPC server enabled (`server=1`) adding the flags into the nexa executable.
+2. Synchronize your node with the NEXA network.
+3. Install and set up a redis server instance, which is mandatory to run the explorer (see /docs/server-setup.md for more details)
+3. Run nex-rpc-explorer passing the cookie route based on the defined path to store files download with Nexa full node. (Check cli arguments section)
+4. Node.js has to be version >= 22.
+4. You could also run an [rostrum](https://gitlab.com/nexa/rostrum) and configure the explorer to received data from it (optional)
 
 ## Instructions
 
@@ -53,7 +53,6 @@ You may set configuration options in a `.env` file or using CLI args.
 See [configuration](#configuration) for details.
 
 ## Token indexing
-### You must be running a redis instance for token indexing!
 
 After installing you need to install sequelize cli and migrate the database schema for indexing of tokens.
 
@@ -86,10 +85,10 @@ You may also pass options as CLI arguments, for example:
 
 ```bash
 UNIX
-nex-rpc-explorer --port 8080 --bitcoind-port 18443 --bitcoind-cookie ~/.bitcoin/regtest/.cookie
+nex-rpc-explorer --port 8080 --nexad-port 18332 --nexad-cookie ~/.nexa/regtes/:nqtsq5g5wtkt44pfqusjj3wulk2n2pd27lhpzg0m326kcnsj.cookie
 
 WINDOWS
-nex-rpc-explorer --bitcoind-cookie C:\your-bch-unlimited-path\.cookie
+nex-rpc-explorer --nexad-cookie C:\your-nexad-path\.cookie
 ```
 
 See `nex-rpc-explorer --help` for the full list of CLI options.
@@ -101,7 +100,7 @@ See `nex-rpc-explorer --help` for the full list of CLI options.
 
 # Support
 
-* [bitcoincash:pq6snv5fcx2fp6dlzg7s0m9zs8yqh74335tzvvfcmq](bitcoincash:pq6snv5fcx2fp6dlzg7s0m9zs8yqh74335tzvvfcmq)
+* nexa:nqtsq5g5wtkt44pfqusjj3wulk2n2pd27lhpzg0m326kcnsj
 
 
 [npm-ver-img]: https://img.shields.io/npm/v/nex-rpc-explorer.svg?style=flat

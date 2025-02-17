@@ -47,7 +47,7 @@ for (var i = 0; i < corsAllowedServersStrings.length; i++) {
   }
 }
 
-["NEXEXP_DEMO", "NEXEXP_PRIVACY_MODE", "NEXEXP_NO_INMEMORY_RPC_CACHE", "NEXEXP_UI_SHOW_RPC", "NEXEXP_HEADER_BY_HEIGHT_SUPPORT", "NEXEXP_BLOCK_BY_HEIGHT_SUPPORT", "NEXEXP_SHOW_NEXTDIFF"].forEach(function(item) {
+["NEXEXP_DEMO", "NEXEXP_PRIVACY_MODE", "NEXEXP_UI_SHOW_RPC", "NEXEXP_HEADER_BY_HEIGHT_SUPPORT", "NEXEXP_BLOCK_BY_HEIGHT_SUPPORT", "NEXEXP_SHOW_NEXTDIFF"].forEach(function(item) {
   if (process.env[item] === undefined) {
     process.env[item] = "false";
   }
@@ -95,7 +95,6 @@ export default {
   demoSite: (process.env.NEXEXP_DEMO.toLowerCase() == "true"),
   showRpc: (process.env.NEXEXP_UI_SHOW_RPC.toLowerCase() === "true"),
   queryExchangeRates: (process.env.NEXEXP_NO_RATES.toLowerCase() != "true"),
-  noInmemoryRpcCache: (process.env.NEXEXP_NO_INMEMORY_RPC_CACHE.toLowerCase() == "true"),
   blockByHeightSupport: (process.env.NEXEXP_BLOCK_BY_HEIGHT_SUPPORT.toLowerCase() == "true"),
   hideIp: (process.env.NEXEXP_HIDE_IP.toLowerCase() == "true"),
   showNextDiff: (process.env.NEXEXP_SHOW_NEXTDIFF.toLowerCase() == "true"),

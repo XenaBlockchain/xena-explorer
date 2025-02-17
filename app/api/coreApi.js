@@ -36,14 +36,14 @@ function getGenesisCoinbaseTransactionId() {
 }
 
 function getGeoDataForIps(ip, loadFunction) {
-	return cacheApi.tryCacheThenCallFunction(cacheApi.ipAddressCache, "ip-" + ip, cacheApi.ONE_HR, loadFunction);
+	return cacheApi.tryCacheThenCallFunction( "ip-" + ip, cacheApi.ONE_HR, loadFunction);
 }
 function getMarketDataForToken(token, exchange, loadFunction) {
-	return cacheApi.tryCacheThenCallFunction(cacheApi.marketCache, "getMarketInfo-" + token + '-' + exchange, cacheApi.FIVE_MINUTES, loadFunction);
+	return cacheApi.tryCacheThenCallFunction("getMarketInfo-" + token + '-' + exchange, cacheApi.FIVE_MINUTES, loadFunction);
 }
 
 function getTokenGenesis(token) {
-	return cacheApi.tryCacheThenCallFunction(cacheApi.miscCache, "getTokenGenesis-" + token, cacheApi.ONE_YR, () => electrumAddressApi.getTokenGenesis(token));
+	return cacheApi.tryCacheThenCallFunction("getTokenGenesis-" + token, cacheApi.ONE_YR, () => electrumAddressApi.getTokenGenesis(token));
 }
 
 function shouldCacheTransaction(tx) {
@@ -60,23 +60,23 @@ function shouldCacheTransaction(tx) {
 
 
 function getBlockCount() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getBlockCount", 10 * cacheApi.ONE_SEC, rpcApi.getBlockCount);
+	return cacheApi.tryCacheThenRpcApi( "getBlockCount", 10 * cacheApi.ONE_SEC, rpcApi.getBlockCount);
 }
 
 function getBlockchainInfo() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getBlockchainInfo", 10 * cacheApi.ONE_SEC, rpcApi.getBlockchainInfo);
+	return cacheApi.tryCacheThenRpcApi("getBlockchainInfo", 10 * cacheApi.ONE_SEC, rpcApi.getBlockchainInfo);
 }
 
 function getNetworkInfo() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getNetworkInfo", 10 * cacheApi.ONE_SEC, rpcApi.getNetworkInfo);
+	return cacheApi.tryCacheThenRpcApi("getNetworkInfo", 10 * cacheApi.ONE_SEC, rpcApi.getNetworkInfo);
 }
 
 function getNetTotals() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getNetTotals", 10 * cacheApi.ONE_SEC, rpcApi.getNetTotals);
+	return cacheApi.tryCacheThenRpcApi("getNetTotals", 10 * cacheApi.ONE_SEC, rpcApi.getNetTotals);
 }
 
 function getTxpoolInfo() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getTxpoolInfo", cacheApi.ONE_SEC, rpcApi.getTxpoolInfo);
+	return cacheApi.tryCacheThenRpcApi( "getTxpoolInfo", cacheApi.ONE_SEC, rpcApi.getTxpoolInfo);
 }
 
 function getTxpoolTxids() {
@@ -85,39 +85,39 @@ function getTxpoolTxids() {
 }
 
 function getMiningInfo() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getMiningInfo", 30 * cacheApi.ONE_SEC, rpcApi.getMiningInfo);
+	return cacheApi.tryCacheThenRpcApi( "getMiningInfo", 30 * cacheApi.ONE_SEC, rpcApi.getMiningInfo);
 }
 
 function getUptimeSeconds() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getUptimeSeconds", cacheApi.ONE_SEC, rpcApi.getUptimeSeconds);
+	return cacheApi.tryCacheThenRpcApi( "getUptimeSeconds", cacheApi.ONE_SEC, rpcApi.getUptimeSeconds);
 }
 
 function getChainTxStats(blockCount) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getChainTxStats-" + blockCount, 20 * cacheApi.ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi("getChainTxStats-" + blockCount, 20 * cacheApi.ONE_MIN, function() {
 		return rpcApi.getChainTxStats(blockCount);
 	});
 }
 
 function getNetworkHashrate(blockCount) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getNetworkHashrate-" + blockCount, 20 * cacheApi.ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi("getNetworkHashrate-" + blockCount, 20 * cacheApi.ONE_MIN, function() {
 		return rpcApi.getNetworkHashrate(blockCount);
 	});
 }
 
 function getBlockStats(hash_or_height) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getBlockStats-" + hash_or_height, cacheApi.ONE_YR, function() {
+	return cacheApi.tryCacheThenRpcApi("getBlockStats-" + hash_or_height, cacheApi.ONE_YR, function() {
 		return rpcApi.getBlockStats(hash_or_height);
 	});
 }
 
 function decodeScript(hex) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "decodeScript-" + hex, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi( "decodeScript-" + hex, 1000 * 60 * 1000, function() {
 		return rpcApi.decodeScript(hex);
 	});
 }
 
 function getTokenMintage(token) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getTokenMintage-" + token,  20 * cacheApi.ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi( "getTokenMintage-" + token,  20 * cacheApi.ONE_MIN, function() {
 		return rpcApi.tokenMintage(token);
 	});
 }
@@ -139,24 +139,24 @@ function getTransactions(txids, cacheSpan=cacheApi.ONE_HR) {
 }
 
 function getTransaction(tx) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "gettransaction-" + tx, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi("gettransaction-" + tx, 1000 * 60 * 1000, function() {
 		return rpcApi.getTransaction(tx);
 	});
 }
 
 function decodeRawTransaction(hex) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "decodeRawTransaction-" + hex, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi( "decodeRawTransaction-" + hex, 1000 * 60 * 1000, function() {
 		return rpcApi.decodeRawTransaction(hex);
 	});
 }
 function validateRawTransaction(hex) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "validateRawTransaction-" + hex, 1000 * 60 * 1000, function() {
+	return cacheApi.tryCacheThenRpcApi( "validateRawTransaction-" + hex, 1000 * 60 * 1000, function() {
 		return rpcApi.validateRawTransaction(hex);
 	});
 }
 
 function getUtxoSetSummary() {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getUtxoSetSummary", 15 * cacheApi.ONE_MIN, rpcApi.getUtxoSetSummary);
+	return cacheApi.tryCacheThenRpcApi( "getUtxoSetSummary", 15 * cacheApi.ONE_MIN, rpcApi.getUtxoSetSummary);
 }
 
 function getTxCountStats(dataPtCount, blockStart, blockEnd, plot = true) {
@@ -257,7 +257,7 @@ function getTxCountStats(dataPtCount, blockStart, blockEnd, plot = true) {
 
 function getPeerSummary() {
 	return new Promise(function(resolve, reject) {
-		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getpeerinfo", cacheApi.ONE_SEC, rpcApi.getPeerInfo).then(function(getpeerinfo) {
+		cacheApi.tryCacheThenRpcApi( "getpeerinfo", cacheApi.ONE_SEC, rpcApi.getPeerInfo).then(function(getpeerinfo) {
 			var result = {};
 			result.getpeerinfo = getpeerinfo;
 
@@ -340,7 +340,7 @@ function getPeerSummary() {
 
 function getTxpoolDetails(start, count) {
 	return new Promise(function(resolve, reject) {
-		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getTxpoolTxids", cacheApi.ONE_SEC, rpcApi.getTxpoolTxids).then(function(resultTxids) {
+		cacheApi.tryCacheThenRpcApi("getTxpoolTxids", cacheApi.ONE_SEC, rpcApi.getTxpoolTxids).then(function(resultTxids) {
 			var txids = [];
 
 			for (var i = start; (i < resultTxids.length && i < (start + count)); i++) {
@@ -381,7 +381,7 @@ function getBlockInt(hash_or_height)
 
 function getBlockCached(hash_or_height, full = false) {
 	if (!full) {
-		return cacheApi.tryCacheThenRpcApi(cacheApi.blockCache, "getBlock-" + hash_or_height, cacheApi.ONE_YR, function() {
+		return cacheApi.tryCacheThenRpcApi( "getBlock-" + hash_or_height, cacheApi.ONE_YR, function() {
 			return new Promise(function(resolve, reject) {
 				getBlockInt(hash_or_height).then(function(block) {
 					block.txid.length = 1; // only keep the coinbase TX when caching the result
@@ -446,13 +446,13 @@ function getBlocksByHeight(blockHeights, full = false) {
 }
 
 function getBlockHeader(blockHash) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.blockCache, "getBlockHeader-" + blockHash, cacheApi.ONE_YR, function() {
+	return cacheApi.tryCacheThenRpcApi( "getBlockHeader-" + blockHash, cacheApi.ONE_YR, function() {
 		return rpcApi.getBlockHeader(blockHash);
 	});
 }
 
 function getBlockHeaderByHeight(blockHeight) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.blockCache, "getBlockHeader-" + blockHeight, cacheApi.ONE_YR, function() {
+	return cacheApi.tryCacheThenRpcApi( "getBlockHeader-" + blockHeight, cacheApi.ONE_YR, function() {
 		return rpcApi.getBlockHeader(blockHeight);
 	});
 }
@@ -489,7 +489,7 @@ function getBlocksStatsByHeight(blockHeights) {
 }
 
 function getMiningCandidate(args = {}) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getMiningCandidate", cacheApi.ONE_MIN, function() {
+	return cacheApi.tryCacheThenRpcApi( "getMiningCandidate", cacheApi.ONE_MIN, function() {
 		return rpcApi.getMiningCandidate(args);
 	});
 }
@@ -499,7 +499,7 @@ function getRawTransaction(txid, cacheSpan=cacheApi.ONE_HR) {
 		return rpcApi.getRawTransaction(txid);
 	};
 
-	return cacheApi.tryCacheThenRpcApi(cacheApi.txCache, "getRawTransaction-" + txid, cacheSpan, rpcApiFunction, shouldCacheTransaction);
+	return cacheApi.tryCacheThenRpcApi("getRawTransaction-" + txid, cacheSpan, rpcApiFunction, shouldCacheTransaction);
 }
 
 /*
@@ -540,7 +540,7 @@ function getSummarizedTransactionOutput(outpoint, txid, cacheSpan=cacheApi.ONE_H
 		});
 	};
 
-	return cacheApi.tryCacheThenRpcApi(cacheApi.txCache, `txoSummary-${txid}-${outpoint}`, cacheSpan, rpcApiFunction, function() { return true; });
+	return cacheApi.tryCacheThenRpcApi( `txoSummary-${txid}-${outpoint}`, cacheSpan, rpcApiFunction, function() { return true; });
 }
 
 function getTxUtxos(tx) {
@@ -562,7 +562,7 @@ function getTxUtxos(tx) {
 
 function getUtxo(txid, outputIndex) {
 	return new Promise(function(resolve, reject) {
-		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "utxo-" + txid + "-" + outputIndex, cacheApi.ONE_HR, function() {
+		cacheApi.tryCacheThenRpcApi( "utxo-" + txid + "-" + outputIndex, cacheApi.ONE_HR, function() {
 			return rpcApi.getUtxo(txid, outputIndex);
 
 		}).then(function(result) {
@@ -582,13 +582,13 @@ function getUtxo(txid, outputIndex) {
 }
 
 function getTxpoolTxDetails(txid, includeAncDec) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "txpoolTxDetails-" + txid + "-" + includeAncDec, cacheApi.ONE_HR, function() {
+	return cacheApi.tryCacheThenRpcApi( "txpoolTxDetails-" + txid + "-" + includeAncDec, cacheApi.ONE_HR, function() {
 		return rpcApi.getTxpoolTxDetails(txid, includeAncDec);
 	});
 }
 
 function getAddress(address) {
-	return cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getAddress-" + address, cacheApi.ONE_HR, function() {
+	return cacheApi.tryCacheThenRpcApi( "getAddress-" + address, cacheApi.ONE_HR, function() {
 		return rpcApi.getAddress(address);
 	});
 }
@@ -909,7 +909,7 @@ function getBlockList(args)
 
 function getHelp() {
 	return new Promise(function(resolve, reject) {
-		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getHelp", cacheApi.ONE_DAY, rpcApi.getHelp).then(function(helpContent) {
+		cacheApi.tryCacheThenRpcApi( "getHelp", cacheApi.ONE_DAY, rpcApi.getHelp).then(function(helpContent) {
 			var lines = helpContent.split("\n");
 			var sections = [];
 
@@ -945,7 +945,7 @@ function getRpcMethodHelp(methodName) {
 	};
 
 	return new Promise(function(resolve, reject) {
-		cacheApi.tryCacheThenRpcApi(cacheApi.miscCache, "getHelp-" + methodName, cacheApi.ONE_DAY, rpcApiFunction).then(function(helpContent) {
+		cacheApi.tryCacheThenRpcApi( "getHelp-" + methodName, cacheApi.ONE_DAY, rpcApiFunction).then(function(helpContent) {
 			var output = {};
 			output.string = helpContent;
 
@@ -1022,7 +1022,7 @@ function getRpcMethodHelp(methodName) {
 }
 
 function logCacheSizes() {
-	var itemCounts = [ cacheApi.miscCache.itemCount, cacheApi.blockCache.itemCount, cacheApi.txCache.itemCount ];
+	var itemCounts = [ cacheApi.redisCacheObj.itemCount];
 
 	var stream = fs.createWriteStream("memoryUsage.csv", {flags:'a'});
 	stream.write("itemCounts: " + JSON.stringify(itemCounts) + "\n");
