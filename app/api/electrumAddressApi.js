@@ -349,21 +349,14 @@ async function executeElectrumRequest(method, ...params) {
 	}
 }
 
-
-async function handleKnownToken(token) {
-	if (utils.knownTokens(global.activeBlockchain).includes(token)) {
-		return await coreApi.getTokenIcon(token);
-	}
-}
-
 async function mergeBalances(balanceResults) {
 	let mergedBalances = {};
-	var network = global.activeBlockchain === "nexa" ? "mainnet" : "testnet:";
+	var network = global.activeBlockchain === "nexa" ? "mainnet" : "testnet";
 
 	// Combine confirmed and unconfirmed balances
 	for (const type of ['confirmed', 'unconfirmed']) {
 		for (const key of Object.keys(balanceResults[type])) {
-			let group = new Address(key, network, AddressType.GroupIdAddress).toString()
+			let group = new Address(Buffer.from(key, 'hex'), network, AddressType.GroupIdAddress).toString()
 			let token = {}
 			if(mergedBalances[group] == null) {
 				mergedBalances[group] = {}
@@ -371,7 +364,6 @@ async function mergeBalances(balanceResults) {
 				token = mergedBalances[group]
 			}
 			token[type + 'Balance'] = balanceResults[type][key];
-			token.tokenImageUrl = await handleKnownToken(group);
 			mergedBalances[group] = token;
 		}
 	}

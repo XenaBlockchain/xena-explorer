@@ -24,7 +24,6 @@ import tokenLoadQueue from "../tokenLoadQueue.js";
 import {Address} from "libnexa-ts";
 global.cacheStats = {};
 import cacheApi from "./cacheApi.js";
-global.tokenIcons = [];
 
 
 function getGenesisBlockHash() {
@@ -1401,17 +1400,6 @@ async function readKnownTokensIntoCache() {
 		.save()
 }
 
-function getTokenIcon(token) {
-	return new Promise(function(resolve, reject){
-		miscCache.get('tracked-tokens-icon-' + token).then(function(result) {
-			resolve(result);
-		}).catch(function(err) {
-			utils.logError("token-holders-failure", err, {token:token});
-			reject(err)
-		});
-	});
-}
-
 // Main function to get reverse paginated data
 async function getReversePaginatedData(token, pageSize, reversePage) {
 	try {
@@ -1543,7 +1531,6 @@ export default {
 	readKnownTokensIntoCache,
 	getTokenGenesis,
 	getTransactionTokens,
-	getTokenIcon,
 	getTotalNFTsCollectionCount,
 	getNFTCollectionStats,
 	getNewNFTS,
