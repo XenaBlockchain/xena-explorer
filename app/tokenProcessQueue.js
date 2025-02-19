@@ -239,7 +239,7 @@ tokenProcessQueue.process(3,async (job) => {
 				let operations = 0;
 				let holders = 0;
 				try {
-					operations = await tokeApi.fetchTokenOperations(token);
+					operations = await tokenApi.fetchTokenOperations(token);
 				} catch (e) {
 					debugLog("Unable to get operations count for token: " + token)
 				}
