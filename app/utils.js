@@ -1113,7 +1113,8 @@ function knownTokens(chain) {
 			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9',
 			'nexa:tzjntmuvat5px5fp44auwpcjuqk4dkxz5wtysal4e3wmmut08yqqqy2ltpmwz',
 			'nexa:tpjkhlhuazsgskkt5hyqn3d0e7l6vfvfg97cf42pprntks4x7vqqqcavzypmt',
-			'nexa:trm9zcajh900a02t8fmqklw99uflcvcd6antut98asxfxlq4rcqqqdw80lls5'
+			'nexa:trm9zcajh900a02t8fmqklw99uflcvcd6antut98asxfxlq4rcqqqdw80lls5',
+			'nexa:tqjn69vd07zu2lf2jwsvhwr5s3yse2epq4823zyazz62732w0vqqq5fhgdygx'
 		];
 	} else {
 		//testnet
