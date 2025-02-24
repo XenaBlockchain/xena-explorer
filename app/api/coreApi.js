@@ -1284,7 +1284,7 @@ function getTokens(pageLimit = 24, pageoffset = 0, sortDir = 'desc'){
 // get transfers for a token / nft
 async function getTransfersForToken(token, size, page) {
 	return new Promise(function(resolve, reject){
-		getReversePaginatedData(token, size, page)
+		getPaginatedData(token, size, page)
 		.then(function(results){
 			resolve(results);
 		}).catch(function(err) {
@@ -1401,13 +1401,9 @@ async function readKnownTokensIntoCache() {
 }
 
 // Main function to get reverse paginated data
-async function getReversePaginatedData(token, pageSize, reversePage) {
+async function getPaginatedData(token, pageSize, page) {
 	try {
-		const totalTransfers = await tokenApi.fetchTokenOperations(token);
-
-		const forwardPage = utils.calculateForwardPage(totalTransfers, pageSize, reversePage);
-
-		const data = await tokenApi.fetchTransfers(token, forwardPage, pageSize);
+		const data = await tokenApi.fetchTransfers(token, page, pageSize);
 
 		if(data.transactions.length > 0) {
 			for(var i = 0; i < data.transactions.length; i++) {
@@ -1458,7 +1454,7 @@ async function getReversePaginatedData(token, pageSize, reversePage) {
 				data.transactions[i].outputs = outputs;
 			}
 
-			return data.transactions.reverse()
+			return data.transactions
 		} else {
 			return []
 		}

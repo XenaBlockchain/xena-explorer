@@ -180,7 +180,7 @@ div.tab-content
                                         span
                                             a(href=("/tx/" + item.txIdem)) #{utils.ellipsize(item.txIdem, 45)}
                                     td.data-cell.text-monospace.text-left
-                                        - var timestampHuman = moment.utc(item.date).unix()
+                                        - var timestampHuman = moment.utc(item.txDate).unix()
                                         include ./timestamp-human.pug
                                         small.ml-1 utc
                                         //- span #{moment.utc(new Date(item.date)).format('MMM D, Y, HH:MM')}
