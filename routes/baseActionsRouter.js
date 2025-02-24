@@ -1444,82 +1444,56 @@ router.get("/token/:token", async function(req, res, next) {
 				debugLog("Cannot parse Script:", err)
 			}
 
-
 			// Get mintage data of token
 			promises.push(new Promise(function(resolve, reject) {
 				tokenApi.getTokenSupply(token).then(function(result) {
-					res.locals.tokenMintage = result;
-					res.locals.totalSupply = result.rawSupply
-					res.locals.circulatingSupply = result.rawSupply
-					res.locals.totalSupplyUnformatted = BigInt(result.rawSupply)
-					res.locals.circulatingSupplyUnformatted = BigInt(result.rawSupply)
-
-					if(res.locals.tokenInfo.decimal_places > 0) {
-						res.locals.totalSupply = String(res.locals.totalSupply).substring(0, String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places) + "." + String(res.locals.totalSupply).substring(String(res.locals.totalSupply).length - res.locals.tokenInfo.decimal_places);
-						res.locals.circulatingSupply = String(res.locals.circulatingSupply).substring(0, String(res.locals.circulatingSupply).length - res.locals.tokenInfo.decimal_places) + "." + String(res.locals.circulatingSupply).substring(String(res.locals.circulatingSupply).length - res.locals.tokenInfo.decimal_places);
-					}
-
-					res.locals.totalSupply = utils.addThousandsSeparators(res.locals.totalSupply)
-					res.locals.circulatingSupply = utils.addThousandsSeparators(res.locals.circulatingSupply)
-
-					resolve();
+					resolve(result);
 				}).catch(function(err) {
-					// console.log(err)
-					resolve();
+					debugLog(err)
+					resolve(null);
 				});
 			}));
 
 			// Get transaction string
 			promises.push(new Promise(function(resolve, reject) {
 				coreApi.getRawTransaction(res.locals.tokenInfo.txid).then(function(tx) {
-					if (tx) {
-						res.locals.getrawtransaction = tx;
-						res.locals.rawtransaction_parsed = JSON.stringify(tx, utils.bigIntToRawJSON, 4);
-						// always use txidem as query param independently
-						// by which mean we searched in the first place
-					}
-					resolve();
+					resolve(tx);
 				}).catch(function(err) {
-					resolve();
+					debugLog(err)
+					resolve(null);
 				});
 			}));
 
 			// Get Token operations
 			promises.push(new Promise(function(resolve, reject){
 				coreApi.getTokenOperations(token).then(async function(result){
-					res.locals.tokenOperations = result
-					res.locals.transfersCount = result.transfer
-					resolve()
+					resolve(result)
 				}).catch(function(err){
-					resolve()
+					debugLog(err)
+					resolve(null)
 				})
 			}));
 
 			// Get market info
 			promises.push(new Promise(function(resolve, reject){
 				marketDataApi.loadMarketDataForTicker(res.locals.tokenInfo.ticker).then(async function(result){
-					res.locals.marketInfo = result.marketData ?? []
-					res.locals.priceInfo = result.priceData ?? 'N/A'
-					resolve()
+					resolve(result)
 				}).catch(function(err){
-					resolve()
+					debugLog(err)
+					resolve(null)
 				})
 			}));
 
 			// Get Transfers from token API
 			promises.push(new Promise(function(resolve, reject){
-				let page = 1;
-				if (res.locals.offset >= res.locals.transfersCount) {
-					page = 1;
-				} else {
-					page = Math.floor(res.locals.offset / res.locals.limit) + 1;
-				}
+				let page = res.locals.offset >= res.locals.transfersCount
+					? 1
+					: Math.floor(res.locals.offset / res.locals.limit) + 1;
 
 				coreApi.getTransfersForToken(token, res.locals.limit, page).then(async function(result){
-					res.locals.transfers = result;
-					resolve()
+					resolve(result)
 				}).catch(function(err){
-					console.log(err)
+					debugLog(err)
 					resolve()
 				})
 			}));
@@ -1527,34 +1501,20 @@ router.get("/token/:token", async function(req, res, next) {
 			// Get richlist from token api and process it to have more data
 			promises.push(new Promise(function(resolve, reject){
 				coreApi.getRichList(token).then(async function(result){
-				for(var i = 0; i < result.length; i++){
-					let item = result[i]
-					const percentage = res.locals.totalSupplyUnformatted ? ((Number(item.amount) / Number(res.locals.totalSupplyUnformatted))) * 100 : BigInt(0);
-					const formattedBalance = res.locals.tokenInfo.decimal_places > 0
-						? String(item.amount).slice(0, - res.locals.tokenInfo.decimal_places) +
-						"." + String(item.amount).slice(- res.locals.tokenInfo.decimal_places)
-						: item.amount
-
-					item.percentage =  new Intl.NumberFormat('en-us', { maximumSignificantDigits: 2 }).format(
-						percentage,
-					  );
-					item.net_amount = formattedBalance
-				}
- 					res.locals.richList = result;
-					resolve()
+					resolve(result)
 				}).catch(function(err){
-					console.log(err)
-					resolve()
+					debugLog(err)
+					resolve(null)
 				})
 			}));
 
 			// Get Token Object from SQLite
 			promises.push(new Promise(function(resolve, reject){
 				coreApi.getStatsForToken(token).then(async function(result){
-					res.locals.tokenObj = result;
-					resolve()
+					resolve(result)
 				}).catch(function(err){
-					resolve()
+					debugLog(err)
+					resolve(null)
 				})
 			}));
 
@@ -1562,29 +1522,88 @@ router.get("/token/:token", async function(req, res, next) {
 			// Get Token holders count
 			promises.push(new Promise(function(resolve, reject){
 				tokenApi.fetchAuthories(token).then(async function(result){
-					if(result.length != 0) {
-						res.locals.authorityInfo = result[0]
+					if(result.length !== 0) {
+						resolve(result[0])
 					} else {
-						res.locals.authorityInfo = null;
+						resolve(null)
 					}
-					resolve()
+					resolve(result)
 				}).catch(function(err){
 					debugLog(err)
-					resolve()
+					resolve(null)
 				})
 			}));
 
 			// Get Token authorities
 			promises.push(new Promise(function(resolve, reject){
 				coreApi.getTokenHolders(token).then(async function(result){
-					res.locals.tokenHolders = result.total;
-					resolve()
+					resolve(result)
 				}).catch(function(err){
-					resolve()
+					debugLog(err)
+					resolve(null)
 				})
 			}));
 
-			Promise.all(promises.map(utils.reflectPromise)).then(function() {
+			Promise.all(promises).then(function(promiseData) {
+				if(promiseData[0]) {
+					res.locals.tokenMintage = promiseData[0];
+					res.locals.totalSupply = promiseData[0].supply
+					res.locals.circulatingSupply = promiseData[0].supply
+					res.locals.totalSupplyUnformatted = BigInt(promiseData[0].rawSupply)
+					res.locals.circulatingSupplyUnformatted = BigInt(promiseData[0].rawSupply)
+
+					res.locals.totalSupply = utils.addThousandsSeparators(res.locals.totalSupply)
+					res.locals.circulatingSupply = utils.addThousandsSeparators(res.locals.circulatingSupply)
+				}
+
+				if(promiseData[1]){
+					res.locals.getrawtransaction = promiseData[1];
+					res.locals.rawtransaction_parsed = JSON.stringify(promiseData[1], utils.bigIntToRawJSON, 4);
+				}
+
+				if(promiseData[2]) {
+					res.locals.tokenOperations = promiseData[2]
+					res.locals.transfersCount = promiseData[2].transfer
+				}
+
+				if(promiseData[3]){
+					res.locals.marketInfo = promiseData[3].marketData ?? []
+					res.locals.priceInfo = promiseData[3].priceData ?? 'N/A'
+				}
+
+				if(promiseData[4]) {
+					res.locals.transfers = promiseData[4];
+				}
+
+				if(promiseData[5]){
+					for(var i = 0; i < promiseData[5].length; i++){
+						let item = promiseData[5][i]
+						const percentage = res.locals.totalSupplyUnformatted ? (Number(item.amount) / Number(res.locals.totalSupplyUnformatted)) * 100 : BigInt(0);
+						const formattedBalance = res.locals.tokenInfo.decimal_places > 0
+							? String(item.amount).slice(0, - res.locals.tokenInfo.decimal_places) +
+							"." + String(item.amount).slice(- res.locals.tokenInfo.decimal_places)
+							: item.amount
+
+						item.percentage =  new Intl.NumberFormat('en-us', { maximumSignificantDigits: 2 }).format(
+							percentage,
+						);
+						item.net_amount = formattedBalance
+					}
+					res.locals.richList = promiseData[5];
+				}
+
+				if(promiseData[6]) {
+					res.locals.tokenObj = promiseData[6];
+				}
+
+				if(promiseData[7]) {
+					res.locals.authorityInfo = promiseData[7]
+				}
+
+				if(promiseData[8]){
+					res.locals.tokenHolders = promiseData[8].total;
+				}
+
 				res.render("token");
 				utils.perfMeasure(req);
 			}).catch(function(err) {
