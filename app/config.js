@@ -4,10 +4,10 @@ import url from 'url'
 import coins from './coins.js';
 import credentials from './credentials.js';
 
-var currentCoin = process.env.NEXEXP_COIN || "NEX";
-var richListPath = process.env.NEXEXP_RICHLIST_PATH || "/tmp/rich_list.csv";
-var utxoPath = process.env.NEXEXP_UTXO_PATH || "/tmp/utxo.csv";
-var tokenApiPath = process.env.NEXEXP_TOKEN_API || "https://tokenapi.otoplo.com";
+var currentCoin = process.env.XENAEXP_COIN || "XENA";
+var richListPath = process.env.XENAEXP_RICHLIST_PATH || "/tmp/rich_list.csv";
+var utxoPath = process.env.XENAEXP_UTXO_PATH || "/tmp/utxo.csv";
+var tokenApiPath = process.env.XENAEXP_TOKEN_API || "https://tokenapi.otoplo.com";
 
 var rpcCred = credentials.rpc;
 
@@ -21,13 +21,13 @@ if (rpcCred.cookie && !rpcCred.username && !rpcCred.password && fs.existsSync(rp
   }
 }
 
-var cookieSecret = process.env.NEXEXP_COOKIE_SECRET
+var cookieSecret = process.env.XENAEXP_COOKIE_SECRET
  || (rpcCred.password && crypto.createHmac('sha256', JSON.stringify(rpcCred))
                                .update('nex-rpc-explorer-cookie-secret').digest('hex'))
  || "0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f";
 
 
-var electrumXServerUriStrings = (process.env.NEXEXP_ELECTRUMX_SERVERS || "").split(',').filter(Boolean);
+var electrumXServerUriStrings = (process.env.XENAEXP_ELECTRUMX_SERVERS || "").split(',').filter(Boolean);
 var electrumXServers = [];
 for (var i = 0; i < electrumXServerUriStrings.length; i++) {
   var uri = url.parse(electrumXServerUriStrings[i]);
@@ -36,7 +36,7 @@ for (var i = 0; i < electrumXServerUriStrings.length; i++) {
 }
 
 
-var corsAllowedServersStrings = (process.env.NEXEXP_CORS_SERVERS || "").split(',').filter(Boolean);
+var corsAllowedServersStrings = (process.env.XENAEXP_CORS_SERVERS || "").split(',').filter(Boolean);
 var corsAllowedServers = [];
 for (var i = 0; i < corsAllowedServersStrings.length; i++) {
   try {
@@ -47,37 +47,32 @@ for (var i = 0; i < corsAllowedServersStrings.length; i++) {
   }
 }
 
-["NEXEXP_DEMO", "NEXEXP_PRIVACY_MODE", "NEXEXP_UI_SHOW_RPC", "NEXEXP_HEADER_BY_HEIGHT_SUPPORT", "NEXEXP_BLOCK_BY_HEIGHT_SUPPORT", "NEXEXP_SHOW_NEXTDIFF"].forEach(function(item) {
+["XENAEXP_DEMO", "XENAEXP_PRIVACY_MODE", "XENAEXP_UI_SHOW_RPC", "XENAEXP_HEADER_BY_HEIGHT_SUPPORT", "XENAEXP_BLOCK_BY_HEIGHT_SUPPORT", "XENAEXP_SHOW_NEXTDIFF"].forEach(function(item) {
   if (process.env[item] === undefined) {
     process.env[item] = "false";
   }
 });
 
-["NEXEXP_NO_RATES", "NEXEXP_UI_SHOW_TOOLS_SUBHEADER", "NEXEXP_SLOW_DEVICE_MODE", "NEXEXP_HIDE_IP", "NEXEXP_SHOW_PUG_RENDER_STACKTRACE"].forEach(function(item) {
+["XENAEXP_NO_RATES", "XENAEXP_UI_SHOW_TOOLS_SUBHEADER", "XENAEXP_SLOW_DEVICE_MODE", "XENAEXP_HIDE_IP", "XENAEXP_SHOW_PUG_RENDER_STACKTRACE"].forEach(function(item) {
   if (process.env[item] === undefined) {
     process.env[item] = "true";
   }
 });
 
 var siteToolsJSON = [
-  { "name": "Token Tracker", "url": "/tokens", "desc": "Token Tracker.", "fontawesome": "fas fa-money-bill green-300" },
-  { "name": "NFT Dashboard", "url": "/nfts", "desc": "NFT Dashboard.", "fontawesome": "fas fa-image green-300" },
-  { "name": "Node Status", "url": "/node-status", "desc": "Summary of this node: version, network, uptime, etc.", "fontawesome": "fas fa-broadcast-tower green-300" },
   { "name": "Peers", "url": "/peers", "desc": "Detailed info about the peers connected to this node.", "fontawesome": "fas fa-sitemap green-300" },
   { "name": "Browse Blocks", "url": "/blocks", "desc": "Browse all blocks in the blockchain.", "fontawesome": "fas fa-cubes green-300" },
   { "name": "Transaction Stats", "url": "/tx-stats", "desc": "See graphs of total transaction volume and transaction rates.", "fontawesome": "fas fa-chart-bar green-300" },
   { "name": "Txpool Summary", "url": "/txpool-summary", "desc": "Detailed summary of the current txpool for this node.", "fontawesome": "fas fa-clipboard-list green-300" },
   { "name": "Unconfirmed Txs", "url": "/unconfirmed-tx", "desc": "Browse unconfirmed/pending transactions.", "fontawesome": "fas fa-unlock-alt green-300" },
-  { "name": `${coins[currentCoin].name} Fun`, "url": "/fun", "desc": "See fun/interesting historical blockchain data.", "fontawesome": "fas fa-certificate green-300" },
   { "name": "Mining Summary", "url": "/mining-summary", "desc": "Summary of recent data about miners.", "fontawesome": "fas fa-chart-pie green-300" },
   { "name": "Block Stats", "url": "/block-stats", "desc": "Summary data for blocks in configurable range.", "fontawesome": "fas fa-layer-group green-300" },
   { "name": "Block Analysis", "url": "/block-analysis", "desc": "Summary analysis for all transactions in a block.", "fontawesome": "fas fa-angle-double-down green-300" },
   { "name": "Difficulty History", "url": "/difficulty-history", "desc": "Graph of difficulty changes over time.", "fontawesome": "fas fa-chart-line green-300" },
-  { "name": "Rich List", "url": "/rich-list", "desc": "Top 100 balance addresses", "fontawesome": "fas fa-money-bill-wave green-300" },
   { "name": "Decoder", "url": "/decoder", "desc": "Transaction/script decoder.", "fontawesome": "fas fa-flask green-300" }
 ];
 
-if (process.env.NEXEXP_UI_SHOW_RPC.toLowerCase() === "true") {
+if (process.env.XENAEXP_UI_SHOW_RPC.toLowerCase() === "true") {
   siteToolsJSON.push({ "name": "RPC Browser", "url": "/rpc-browser", "desc": "Browse the RPC functionality of this node. See docs and execute commands.", "fontawesome": "fas fa-book" })
   siteToolsJSON.push({ "name": "RPC Terminal", "url": "/rpc-terminal", "desc": "Directly execute RPCs against this node.", "fontawesome": "fas fa-terminal" })
 }
@@ -88,22 +83,22 @@ export default {
   cookieSecret: cookieSecret,
   richListPath: richListPath,
   utxoPath: utxoPath,
-  renderPugError: (process.env.NEXEXP_SHOW_PUG_RENDER_STACKTRACE == "true"),
+  renderPugError: (process.env.XENAEXP_SHOW_PUG_RENDER_STACKTRACE == "true"),
 
-  privacyMode: (process.env.NEXEXP_PRIVACY_MODE.toLowerCase() == "true"),
-  slowDeviceMode: (process.env.NEXEXP_SLOW_DEVICE_MODE.toLowerCase() == "true"),
-  demoSite: (process.env.NEXEXP_DEMO.toLowerCase() == "true"),
-  showRpc: (process.env.NEXEXP_UI_SHOW_RPC.toLowerCase() === "true"),
-  queryExchangeRates: (process.env.NEXEXP_NO_RATES.toLowerCase() != "true"),
-  blockByHeightSupport: (process.env.NEXEXP_BLOCK_BY_HEIGHT_SUPPORT.toLowerCase() == "true"),
-  hideIp: (process.env.NEXEXP_HIDE_IP.toLowerCase() == "true"),
-  showNextDiff: (process.env.NEXEXP_SHOW_NEXTDIFF.toLowerCase() == "true"),
+  privacyMode: (process.env.XENAEXP_PRIVACY_MODE.toLowerCase() == "true"),
+  slowDeviceMode: (process.env.XENAEXP_SLOW_DEVICE_MODE.toLowerCase() == "true"),
+  demoSite: (process.env.XENAEXP_DEMO.toLowerCase() == "true"),
+  showRpc: (process.env.XENAEXP_UI_SHOW_RPC.toLowerCase() === "true"),
+  queryExchangeRates: (process.env.XENAEXP_NO_RATES.toLowerCase() != "true"),
+  blockByHeightSupport: (process.env.XENAEXP_BLOCK_BY_HEIGHT_SUPPORT.toLowerCase() == "true"),
+  hideIp: (process.env.XENAEXP_HIDE_IP.toLowerCase() == "true"),
+  showNextDiff: (process.env.XENAEXP_SHOW_NEXTDIFF.toLowerCase() == "true"),
 
-  rpcConcurrency: (process.env.NEXEXP_RPC_CONCURRENCY || 10),
+  rpcConcurrency: (process.env.XENAEXP_RPC_CONCURRENCY || 10),
 
   rpcBlacklist:
-    process.env.NEXEXP_RPC_ALLOWALL  ? []
-  : process.env.NEXEXP_RPC_BLACKLIST ? process.env.NEXEXP_RPC_BLACKLIST.split(',').filter(Boolean)
+    process.env.XENAEXP_RPC_ALLOWALL  ? []
+  : process.env.XENAEXP_RPC_BLACKLIST ? process.env.XENAEXP_RPC_BLACKLIST.split(',').filter(Boolean)
   : [
     "addnode",
     "backupwallet",
@@ -177,14 +172,14 @@ export default {
     "walletpassphrasechange",
   ],
 
-  addressApi:process.env.NEXEXP_ADDRESS_API,
+  addressApi:process.env.XENAEXP_ADDRESS_API,
   electrumXServers:electrumXServers,
 
   corsAllowedServers: corsAllowedServers,
   tokenApi: tokenApiPath,
-  syncTokens: !(process.env.NEXEXP_DONT_SYNC_TOKENS == "true"),
+  syncTokens: !(process.env.XENAEXP_DONT_SYNC_TOKENS == "true"),
 
-  redisUrl:process.env.NEXEXP_REDIS_URL,
+  redisUrl:process.env.XENAEXP_REDIS_URL,
 
   site: {
     homepage:{
@@ -200,19 +195,19 @@ export default {
     },
     valueDisplayMaxLargeDigits: 4,
     header:{
-      showToolsSubheader:(process.env.NEXEXP_UI_SHOW_TOOLS_SUBHEADER == "false"),
+      showToolsSubheader:(process.env.XENAEXP_UI_SHOW_TOOLS_SUBHEADER == "false"),
       dropdowns:[
         {
           title:"Network",
           links:[
-            {name: "Testnet", url:"https://testnet-explorer.nexa.org", imgUrl:"/img/logo/nex.svg"},
-            {name: "Nexa", url:"https://explorer.nexa.org", imgUrl:"/img/logo/nex.svg"},
+             
+            {name: "xena", url:"/", imgUrl:"/img/logo/xena.png"},
           ]
         }
       ]
     },
     subHeaderToolsList:[0, 1, 4, 7, 8, 9], // indexes in "siteTools" below that are shown in the site "sub menu" (visible on all pages except homepage)
-    prioritizedToolIdsList: [0, 1, 4, 7, 8, 9, 3, 2, 5, 10, 11, 12, 6, 13, 14],
+    prioritizedToolIdsList: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   },
 
   credentials: credentials,
@@ -221,10 +216,9 @@ export default {
 
   donations:{
     addresses:{
-      coins:["NEXA"],
-      sites:{"NEXA":"https://explorer.nexa.org"},
-
-      "NEXA":{address:"nexa:nqtsq5g5wtkt44pfqusjj3wulk2n2pd27lhpzg0m326kcnsj"}
+      coins:["XENA"],
+      sites:{"XENA":"https://explorer.xenablockchain.com"},
+      "XENA":{address:"xena:nqtsq5g5wtkt44pfqusjj3wulk2n2pd27lhpzg0m326kcnsj"}
     }
   }
 };

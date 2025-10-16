@@ -17,21 +17,21 @@ block content
 				span
 					span.font-weight-bold #{coinConfig.siteTitlesByNetwork[activeBlockchain]}
 					span  is 
-					a(href="https://gitlab.com/nexa/explorer", target="_blank") open-source
+					a(href="https://github.com/XenaBlockchain/explorer", target="_blank") open-source
 					span  and easy to set up. It can communicate with your 
 					a(href=coinConfig.nodeUrl, target="_blank") #{coinConfig.name} Full Node
 					span  via RPC. See the 
-					a(href="https://gitlab.com/nexa/explorer", target="_blank") project description
+					a(href="https://github.com/XenaBlockchain/explorer", target="_blank") project description
 					span  for a list of features and instructions for running.
 
 				if (global.sourcecodeProjectMetadata)
 					div.mt-2
-						a.btn.btn-primary.btn-sm.mr-3.mb-1(href="https://gitlab.com/nexa/explorer")
+						a.btn.btn-primary.btn-sm.mr-3.mb-1(href="https://github.com/XenaBlockchain/explorer")
 							i.fas.fa-star.mr-2
 							span.mr-2 Star 
 							span.badge.bg-white.text-dark #{global.sourcecodeProjectMetadata.stargazers_count}
 
-						a.btn.btn-primary.btn-sm.mr-3.mb-1(href="https://gitlab.com/nexa/explorer/fork")
+						a.btn.btn-primary.btn-sm.mr-3.mb-1(href="https://github.com/XenaBlockchain/explorer/fork")
 							i.fas.fa-code-branch.mr-2
 							span.mr-2 Fork 
 							span.badge.bg-white.text-dark #{global.sourcecodeProjectMetadata.forks_count}
@@ -54,11 +54,11 @@ block content
 				span.text-monospace #{new Decimal(blockChainInfo.verificationprogress).times(100).toDP(3)}%
 
 		
-		if (processingTokens)
+		if (false && processingTokens)
 			div.alert.alert-warning.shadow-sm.border.mb-3
 				div.font-weight-bold.mb-1 Your node is currently indexing tokens
 
-				div.mb-1 Your node is currently downloading and indexing Nexa Tokens. Until the process is finished, some features of this tool will be unusable and/or unreliable.
+				div.mb-1 Your node is currently downloading and indexing Xena Tokens. Until the process is finished, some features of this tool will be unusable and/or unreliable.
 
 				span.font-weight-bold Progress: 
 				span.text-monospace 5%
@@ -106,83 +106,7 @@ block content
 						include includes/blocks-list.pug
 
 
-		div.row.mt-5
-			div.col
-				div.row.mb-3
-					div.col
-						h4.mb-0.text-bold Top Tokens
-
-					div.col.text-right.text-bold
-						button.btn.btn-primary.btn-sm
-							a(href="/tokens").text-white See more &raquo;
-				div.card.shadow-sm.table-hidden
-					div.card-body.px-2.px-sm-3
-						table.table.table-striped.table-responsive.mb-0.table-hidden.table-responsive
-								if(topTenTokens && topTenTokens.length >0)
-									thead
-										tr
-											th.data-header.text-left
-												span.font-weight-bold Icon
-											th.data-header.text-left
-												span.font-weight-bold Name
-											th.data-header.text-left
-												span.font-weight-bold Transfers
-											th.data-header.text-left
-												span.font-weight-bold Holders
-											th.data-header.text-left
-												span.font-weight-bold Supply
-									tbody
-										each token in topTenTokens
-											tr
-												td.data-cell.text-monospace.text-left
-													- var isTokenTrusted = utils.knownTokens(activeBlockchain).includes(token.group);
-													if(isTokenTrusted)
-														img.rounded(src="img/tokens/" + token.group + ".png", alt="", width=24)
-												td.data-cell.text-monospace.text-left
-													span
-														a(href=("/token/" + token.group))(title=token.group, data-toggle="tooltip") #{token.name} (#{token.ticker})
-												td.data-cell.text-monospace.text-left
-													span #{token.transfers}
-												td.data-cell.text-monospace.text-left
-													span #{token.holders}
-												td.data-cell.text-monospace.text-left
-													span #{token.max_supply}
-								else 
-									tr
-										td(colspan="5").data-cell.text-monospace.text-center
-											span No Data Available
-				div.list-hidden
-					if(topTenTokens && topTenTokens.length >0)
-						each token in topTenTokens
-							.card(style='width: 100%;').mb-2
-								.card-body(style='background-color: #282d33 !important;')
-									h5.card-title
-										- var isTokenTrusted = utils.knownTokens(activeBlockchain).includes(token.group);
-										if(isTokenTrusted && token.document_info)
-											img.m-1.rounded(src=token.document_info.icon, alt="", width=24)
-										span #{token.name} 
-
-									p.card-text
-										span
-											a(href=("/token/" + token.group)) #{token.group}
-								ul.list-group.list-group-flush
-									li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-										span Transfers
-										span #{token.transfers}
-									li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-										span Holders
-										span #{token.holders}
-									li(style='background-color: #282d33 !important;display: flex; justify-content:space-between;').list-group-item
-										span Max Supply
-										span #{token.max_supply} (#{token.ticker})
-					else 
-						.card(style='width: 100%;').mb-2
-							.card-body(style='background-color: #282d33 !important;')
-								tr
-									td(colspan="5").data-cell.text-monospace.text-center
-										span No Data Available
-								
-
+ 
 		if (txStats)
 			div.row.mt-5
 				div.col

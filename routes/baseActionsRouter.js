@@ -4,7 +4,7 @@ import csurf from 'csurf';
 import qrcode from 'qrcode';
 import crypto from 'crypto-js';
 import Decimal from "decimal.js";
-import { Script, ScriptFactory, Address } from 'libnexa-ts'
+import { Script, ScriptFactory, Address } from 'libxena-ts'
 import db from "../models/index.js";
 
 
@@ -82,7 +82,7 @@ function decode(req, res, next) {
 			res.locals.userMessage = "";
 			res.locals.decodedDetails = utils.prettyScript(decodedScript.asm, '\t');
 			res.locals.decodedJson = JSON.stringify(decodedScript, utils.bigIntToRawJSON, 4);
-			res.locals.script = new libnexa.Script(input).toString()
+			res.locals.script = new libxena.Script(input).toString()
 
 		} else {
 			res.locals.type = "unknown";
@@ -646,7 +646,7 @@ router.get("/peers", function(req, res, next) {
 			res.locals.versionPlot = {
 				labels: versionPlotData.labels,
 				data: versionPlotData.data,
-				label: "Nexa Versions on the network"
+				label: "Xena Versions on the network"
 			}
 
 			res.locals.hostPlot = {
@@ -1377,7 +1377,7 @@ router.get("/token/:token", async function(req, res, next) {
 
 
 	let isTokenValid = false;
-	var prefix = global.activeBlockchain == "nexa" ? "nexa:" : "nexatest:";
+	var prefix = global.activeBlockchain == "xena" ? "xena:" : "xenatest:";
 	try {
 		var saneToken = "";
 		if(!token.includes(prefix)) {
@@ -1475,7 +1475,7 @@ router.get("/token/:token", async function(req, res, next) {
 			}));
 
 			// Get market info
-			promises.push(new Promise(function(resolve, reject){
+			/* promises.push(new Promise(function(resolve, reject){
 				marketDataApi.loadMarketDataForTicker(res.locals.tokenInfo.ticker).then(async function(result){
 					resolve(result)
 				}).catch(function(err){
@@ -1483,6 +1483,7 @@ router.get("/token/:token", async function(req, res, next) {
 					resolve(null)
 				})
 			}));
+			*/
 
 			// Get Transfers from token API
 			promises.push(new Promise(function(resolve, reject){
@@ -1662,7 +1663,7 @@ router.get("/address/:address", function(req, res, next) {
 	res.locals.result = {};
 	try {
 		var saneAddress = "";
-		var prefix = global.activeBlockchain === "nexa" ? "nexa:" : "nexatest:";
+		var prefix = global.activeBlockchain === "xena" ? "xena:" : "xenatest:";
 		if(!address.includes(prefix)) {
 			saneAddress = prefix.concat(address);
 		} else {
@@ -1912,7 +1913,7 @@ router.get("/address/:address", function(req, res, next) {
 
 router.get("/rpc-terminal", function(req, res, next) {
 	if (!config.demoSite && !req.authenticated) {
-		res.send("RPC Terminal / Browser require authentication. Set an authentication password via the 'NEXEXP_BASIC_AUTH_PASSWORD' environment variable (see .env-sample file for more info).");
+		res.send("RPC Terminal / Browser require authentication. Set an authentication password via the 'XENAEXP_BASIC_AUTH_PASSWORD' environment variable (see .env-sample file for more info).");
 
 //		next();
 
@@ -1927,7 +1928,7 @@ router.get("/rpc-terminal", function(req, res, next) {
 
 router.post("/rpc-terminal", function(req, res, next) {
 	if (!config.demoSite && !req.authenticated) {
-		res.send("RPC Terminal / Browser require authentication. Set an authentication password via the 'NEXEXP_BASIC_AUTH_PASSWORD' environment variable (see .env-sample file for more info).");
+		res.send("RPC Terminal / Browser require authentication. Set an authentication password via the 'XENAEXP_BASIC_AUTH_PASSWORD' environment variable (see .env-sample file for more info).");
 
 		utils.perfMeasure(req);
 
@@ -1985,7 +1986,7 @@ router.post("/rpc-terminal", function(req, res, next) {
 
 router.get("/rpc-browser", function(req, res, next) {
 	if (!config.demoSite && !req.authenticated) {
-		res.send("RPC Terminal / Browser require authentication. Set an authentication password via the 'NEXEXP_BASIC_AUTH_PASSWORD' environment variable (see .env-sample file for more info).");
+		res.send("RPC Terminal / Browser require authentication. Set an authentication password via the 'XENAEXP_BASIC_AUTH_PASSWORD' environment variable (see .env-sample file for more info).");
 
 		utils.perfMeasure(req);
 

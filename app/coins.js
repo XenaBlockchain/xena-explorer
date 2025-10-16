@@ -1,7 +1,7 @@
-import nex from "./coins/nex.js";
+import xena from "./coins/xena.js";
 
 export default {
-  "NEX": nex,
+  "XENA": xena,
 
-  "coins": ["NEX"]
+  "coins": ["XENA"]
 };

@@ -13,7 +13,7 @@ import JSZip from "jszip";
 import coreApi from './api/coreApi.js';
 import tokenProcessQueue from './tokenProcessQueue.js';
 import db from '../models/index.js'
-import {Address, AddressType, GroupIdType, GroupToken, Script} from "libnexa-ts";
+import {Address, AddressType, GroupIdType, GroupToken, Script} from "libxena-ts";
 var Op = db.Sequelize.Op;
 
 const debugLog = debug("nexexp:utils");
@@ -248,7 +248,7 @@ function satoshisPerUnitOfActiveCurrency() {
 		var one = new Decimal(1);
 		dec = dec.times(global.exchangeRates[exchangeType]);
 
-		// USDT/NEXA -> NEXA/USDT
+		// USDT/XENA -> XENA/USDT
 		dec = one.dividedBy(dec);
 
 		var unitName = coins[config.coin].baseCurrencyUnit.name;
@@ -448,20 +448,20 @@ function getTxTotalInputOutputValues(tx, txInputs, blockHeight) {
 
 // returns block reward for a given height
 function getBlockReward(nHeight) {
-	const nSubsidyHalvingInterval = 1050000;
+	const nSubsidyHalvingInterval = 800000;
 	const halvings = Math.floor(nHeight / nSubsidyHalvingInterval);
-	let initialBlockSubsidy = 10 * 1000000 * 100; // 10 mil nex in satoshis
+	let initialBlockSubsidy = 50000 * 100000000; 
 	let blockRewardSat=Math.floor(initialBlockSubsidy/(halvings+1));
-	var to_return = blockRewardSat / 100;
+	var to_return = blockRewardSat / 100000000;
 	return to_return.toFixed(2);
 }
 
 // returns the amount of minted NEX (100 satoshis) for a given height
 function getCoinsMinted(nHeight = -1) {
 	let totalMinted = 0;
-	const nSubsidyHalvingInterval = 1050000;
+	const nSubsidyHalvingInterval = 800000;
 	const halvings = Math.floor(nHeight / nSubsidyHalvingInterval);
-	let nSubsidy = 10 * 1000000 * 100; // 10 mil nex in satoshis
+	let nSubsidy = 50000 * 100000000; // 10 mil nex in satoshis
 	let trackedHeight = nHeight;
 
 	for (let i = 0; i <= halvings; ++i) {
@@ -671,7 +671,7 @@ var exponentScales = [
 	{val:1000000000000000000000000000, name:"?", abbreviation:"X", exponent:"27"},
 	{val:1000000000000000000000000, name:"yotta", abbreviation:"Y", exponent:"24"},
 	{val:1000000000000000000000, name:"zetta", abbreviation:"Z", exponent:"21"},
-	{val:1000000000000000000, name:"exa", abbreviation:"E", exponent:"18"},
+	{val:1000000000000000000, name:"xena", abbreviation:"E", exponent:"18"},
 	{val:1000000000000000, name:"peta", abbreviation:"P", exponent:"15", textDesc:"Q"},
 	{val:1000000000000, name:"tera", abbreviation:"T", exponent:"12", textDesc:"T"},
 	{val:1000000000, name:"giga", abbreviation:"G", exponent:"9", textDesc:"B"},
@@ -868,7 +868,7 @@ function prettyScript(inScript, indentChar) {
 		var item=s[i];
 		if (s[i].slice(0,2) == "OP")
 		{
-			s[i] = "<span class='nexa-yellow'>" + s[i] + "</span>";
+			s[i] = "<span class='xena-yellow'>" + s[i] + "</span>";
 		}
 		if (outdenter.includes(item)) shiftAmt -= 1;
 		if (shiftAmt < 0) shiftAmt = 0;
@@ -965,8 +965,8 @@ function readRichList () {
 		};
 		parsedLines.push(parsedLine);
 		// Skip the address with more coin because it is MEXC cold/hot wallet.
-		// Keeping it while computing NEXA coins distribution is not fair cause
-		// it gives a biased idea of the NEXA coins distribution.
+		// Keeping it while computing XENA coins distribution is not fair cause
+		// it gives a biased idea of the XENA coins distribution.
 		if (i > 0) {
 			coinsDistr[4][1] += parsedLine.balance;
 			coinsDistr[4][2] += parsedLine.percent;
@@ -1067,7 +1067,7 @@ function tokenID2HexString(groupIdEncoded) {
  * Given groupAuthotiry encoede as 64buit unsigned BigInt, return the a map
  * rappresenting the 6 most significant digits of the given value encoded
  * as a binary. Each digit as a particular meaning as described here:
- * https://gitlab.com/nexa/nexa/-/blame/dev/src/consensus/grouptokens.h#L28
+ * https://gitlab.com/xena/xena/-/blame/dev/src/consensus/grouptokens.h#L28
  *
  * The following is the C++ code that defines the meaning of those digits:
  *
@@ -1102,19 +1102,9 @@ function tokenAuthToFlags(groupAuth) {
 
 function knownTokens(chain) {
 	let tokens = [];
-	if (chain === "nexa") {
+	if (chain === "xena") {
 		tokens = [
-			'nexa:tqcr5dzhetyyughy9uwgsc35altfmhwuk9t5vyn7yjzw9pc0pqqqqyz68skt0',
-			'nexa:tptlgmqhvmwqppajq7kduxenwt5ljzcccln8ysn9wdzde540vcqqqcra40x0x',
-			'nexa:tzs4e8n7dqtsyk0axx7zvcgt2snzt3t7z07ued0nu89hlvp6ggqqqdrypc4ea',
-			'nexa:tztnyazksgqpkphrx2m2fgxapllufqmuwp6k07xtlc8k4xcjpqqqq99lxywr8',
-			'nexa:tp0jg4h6gj5gcj5rrf9h6xclxstk52dr72yyttmrn6umrjyd6sqqqsy86tk9q',
-			'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f',
-			'nexa:tpc29y9ahl0m62av6qv4n44vhl9yx8fl2prcvdmfm2zkggg75qqqq3f2seyj9',
-			'nexa:tzjntmuvat5px5fp44auwpcjuqk4dkxz5wtysal4e3wmmut08yqqqy2ltpmwz',
-			'nexa:tpjkhlhuazsgskkt5hyqn3d0e7l6vfvfg97cf42pprntks4x7vqqqcavzypmt',
-			'nexa:trm9zcajh900a02t8fmqklw99uflcvcd6antut98asxfxlq4rcqqqdw80lls5',
-			'nexa:tqjn69vd07zu2lf2jwsvhwr5s3yse2epq4823zyazz62732w0vqqq5fhgdygx'
+			
 		];
 	} else {
 		//testnet
@@ -1123,9 +1113,9 @@ function knownTokens(chain) {
 }
 
 function knownNFTProviders(chain) {
-	if (chain === "nexa") {
+	if (chain === "xena") {
 		return [
-			'nexa:tr9v70v4s9s6jfwz32ts60zqmmkp50lqv7t0ux620d50xa7dhyqqqcg6kdm6f'
+			 
 		]
 	} else {
 		return [];
